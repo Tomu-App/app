@@ -6,7 +6,7 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 /** Decodes base64url without padding; returns null for invalid characters or an impossible length. */
-export function fromBase64Url(s: string): Uint8Array | null {
+export function fromBase64Url(s: string): Uint8Array<ArrayBuffer> | null {
   if (!/^[A-Za-z0-9_-]*$/.test(s) || s.length % 4 === 1) return null;
   const padded = s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (s.length % 4)) % 4);
   try {
@@ -19,6 +19,6 @@ export function fromBase64Url(s: string): Uint8Array | null {
   }
 }
 
-export function randomBytes(n: number): Uint8Array {
+export function randomBytes(n: number): Uint8Array<ArrayBuffer> {
   return crypto.getRandomValues(new Uint8Array(n));
 }

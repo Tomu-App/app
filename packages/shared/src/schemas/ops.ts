@@ -2,7 +2,8 @@ import { z } from "zod";
 import { CLIENT_ID_RE, DOC_ID_RE, DOC_KEY_RE, OP_ID_RE } from "../ids.ts";
 
 // Own limits so one op always fits into a 4 KB envelope (spec: "Max. Größe einer Envelope 4 KB").
-export const MAX_ITEM_TEXT = 1000;
+// 900 so that even 3-byte characters (e.g. Japanese) stay under 4 KB after encryption and base64url.
+export const MAX_ITEM_TEXT = 900;
 export const MAX_TITLE = 200;
 export const MAX_LABEL_NAME = 100;
 export const MAX_OWNER = 50;
@@ -12,7 +13,9 @@ const text = (max: number) =>
   z
     .string()
     .max(max)
-    .refine((s) => s.trim().length > 0, "empty");
+    .refine((s) => s.trim().length > 0, { error: "empty" })
+    // No control characters (incl. newlines): entries are single lines, and JSON escapes them to 6 bytes each.
+    .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), { error: "control character" });
 
 const base = {
   v: z.literal(1),

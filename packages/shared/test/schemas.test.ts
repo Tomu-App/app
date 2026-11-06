@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { newDocId, newOpId } from "../src/ids.ts";
 import { envelopeSchema, envelopeSize, MAX_ENVELOPE_BYTES } from "../src/schemas/envelope.ts";
 import { clientMessageSchema, opsPageSchema, serverMessageSchema } from "../src/schemas/messages.ts";
-import { labelOpSchema, listOpSchema, opSchema } from "../src/schemas/ops.ts";
+import { labelOpSchema, listOpSchema, MAX_ITEM_TEXT, opSchema } from "../src/schemas/ops.ts";
 import { addOp, initLabel, linkOp, SPEC_EXAMPLES, unlinkOp } from "./fixtures.ts";
 
 test("accepts every op type from the spec", () => {
@@ -22,9 +22,12 @@ test("list ops and label ops are disjoint except init", () => {
 });
 
 test("text limits", () => {
-  expect(opSchema.safeParse({ ...addOp, text: "ä".repeat(1000) }).success).toBe(true);
-  expect(opSchema.safeParse({ ...addOp, text: "x".repeat(1001) }).success).toBe(false);
+  expect(MAX_ITEM_TEXT).toBe(900);
+  expect(opSchema.safeParse({ ...addOp, text: "ä".repeat(MAX_ITEM_TEXT) }).success).toBe(true);
+  expect(opSchema.safeParse({ ...addOp, text: "x".repeat(MAX_ITEM_TEXT + 1) }).success).toBe(false);
   expect(opSchema.safeParse({ ...addOp, text: "   " }).success).toBe(false);
+  expect(opSchema.safeParse({ ...addOp, text: "Milch\nBrot" }).success).toBe(false);
+  expect(opSchema.safeParse({ ...addOp, text: "a\u0001b" }).success).toBe(false);
 });
 
 test("ids and timestamps are validated", () => {
