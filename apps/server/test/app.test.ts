@@ -2,7 +2,7 @@ import { opsPageSchema } from "@tomu/shared";
 import { expect, test } from "bun:test";
 import { createApp } from "../src/app.ts";
 import { readConfig } from "../src/config.ts";
-import { clientIp } from "../src/ip.ts";
+import { clientIp, limitKey } from "../src/ip.ts";
 import { WindowCounter } from "../src/limits.ts";
 import { Store } from "../src/store.ts";
 import { memDb } from "./helpers.ts";
@@ -115,4 +115,14 @@ test("clientIp trusts cf-connecting-ip only when configured", () => {
   expect(clientIp(h, "10.0.0.1", false)).toBe("10.0.0.1");
   expect(clientIp(new Headers(), "10.0.0.1", true)).toBe("10.0.0.1");
   expect(clientIp(new Headers(), null, false)).toBe("unknown");
+});
+
+test("limitKey groups IPv6 by /64 and unwraps IPv4-mapped addresses", () => {
+  expect(limitKey("1.2.3.4")).toBe("1.2.3.4");
+  expect(limitKey("::ffff:1.2.3.4")).toBe("1.2.3.4");
+  expect(limitKey("2001:db8:1:2:aaaa::1")).toBe("2001:db8:1:2::/64");
+  expect(limitKey("2001:db8:1:2:bbbb:cccc:dddd:eeee")).toBe("2001:db8:1:2::/64");
+  expect(limitKey("2001:DB8::1")).toBe("2001:db8:0:0::/64");
+  expect(limitKey("::1")).toBe("0:0:0:0::/64");
+  expect(limitKey("unknown")).toBe("unknown");
 });

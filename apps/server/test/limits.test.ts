@@ -44,3 +44,12 @@ test("conn counter caps per key and frees on release", () => {
   k.release("ip");
   expect(k.acquire("ip")).toBe(true);
 });
+
+test("window counter reclaims expired keys on its own, without sweep()", () => {
+  const c = fakeClock(0);
+  const w = new WindowCounter(1, 1000, c.now);
+  for (let i = 0; i < 1000; i++) w.hit(`ip${i}`);
+  c.advance(1000);
+  w.hit("late");
+  expect(w.size).toBe(1);
+});

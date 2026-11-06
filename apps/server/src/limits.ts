@@ -37,16 +37,19 @@ export class WindowCounter {
   private readonly max: number;
   private readonly windowMs: number;
   private readonly now: () => number;
+  private lastSweep: number;
 
   constructor(max: number, windowMs: number, now: () => number) {
     this.max = max;
     this.windowMs = windowMs;
     this.now = now;
+    this.lastSweep = now();
   }
 
-  /** Records a hit; false (and nothing recorded) when the key is at its limit. */
+  /** Records a hit; false (and nothing recorded) when the key is at its limit. Sweeps once per window. */
   hit(key: string): boolean {
     const t = this.now();
+    if (t - this.lastSweep >= this.windowMs) this.sweep();
     const recent = (this.hits.get(key) ?? []).filter((h) => h > t - this.windowMs);
     if (recent.length >= this.max) {
       this.hits.set(key, recent);
@@ -59,7 +62,8 @@ export class WindowCounter {
 
   /** Drops keys whose hits have all expired. */
   sweep(): void {
-    const cutoff = this.now() - this.windowMs;
+    this.lastSweep = this.now();
+    const cutoff = this.lastSweep - this.windowMs;
     for (const [key, hits] of this.hits) if (hits.every((h) => h <= cutoff)) this.hits.delete(key);
   }
 
