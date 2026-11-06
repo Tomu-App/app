@@ -1,5 +1,5 @@
 import type { Envelope, OpsPage } from "@tomu/shared";
-import { and, asc, eq, gt, lte, max } from "drizzle-orm";
+import { and, asc, eq, gt, lte, max, sql } from "drizzle-orm";
 import type { Db } from "./db/open.ts";
 import { docs, ops } from "./db/schema.ts";
 
@@ -91,6 +91,11 @@ export class Store {
       .where(lte(docs.lastActivityAt, this.now() - INACTIVE_AFTER_MS))
       .returning({ id: docs.id })
       .all().length;
+  }
+
+  /** Throws when the database is unusable; used by the health check. */
+  ping(): void {
+    this.db.run(sql`select 1`);
   }
 
   private maxSeq(docId: string): number {
