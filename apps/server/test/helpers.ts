@@ -1,4 +1,6 @@
+import { serverMessageSchema, type ServerMessage } from "@tomu/shared";
 import { openDb } from "../src/db/open.ts";
+import type { Conn } from "../src/hub.ts";
 
 export const memDb = () => openDb(":memory:");
 
@@ -21,3 +23,14 @@ export const fillOps = (h: ReturnType<typeof openDb>, doc: string, n: number) =>
     `with recursive k(i) as (select 1 union all select i + 1 from k where i < ${n})
      insert into ops select '${doc}', i, 'x' || i, '{}', 0 from k`,
   );
+
+/** In-memory connection; validates every message the hub sends. */
+export class FakeConn implements Conn {
+  sent: ServerMessage[] = [];
+  send(msg: ServerMessage): void {
+    this.sent.push(serverMessageSchema.parse(msg));
+  }
+  of<T extends ServerMessage["type"]>(type: T): Extract<ServerMessage, { type: T }>[] {
+    return this.sent.filter((m): m is Extract<ServerMessage, { type: T }> => m.type === type);
+  }
+}
