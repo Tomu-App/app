@@ -63,7 +63,7 @@ test("EnvelopeTooLargeError is exported for callers", () => {
   expect(new EnvelopeTooLargeError(5000)).toBeInstanceOf(Error);
 });
 
-type Vector = { docId: string; key: string; opId: string; nonce: string; op: Op; envelope: Envelope };
+type Vector = { docId: string; key: string; opId: string; nonce: string; op: Op; plaintext: string; envelope: Envelope };
 const vectors = JSON.parse(readFileSync(new URL("./vectors/aes-gcm.json", import.meta.url), "utf8")) as Vector[];
 
 test("matches the fixed vectors", async () => {
@@ -73,5 +73,19 @@ test("matches the fixed vectors", async () => {
     const env = await encryptOp(v.docId, key, v.op, { opId: v.opId, nonce: fromBase64Url(v.nonce)! });
     expect(env).toEqual(v.envelope);
     expect(await decryptOp(v.docId, key, v.envelope)).toEqual({ opId: v.opId, op: v.op });
+  }
+});
+
+test("vector plaintext is the normative input: encrypting it gives the envelope, decrypting gives the op", async () => {
+  for (const v of vectors) {
+    expect(typeof v.plaintext).toBe("string");
+    const key = await importDocKey(v.key);
+    const ct = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: fromBase64Url(v.nonce)!, additionalData: new TextEncoder().encode(`${v.docId}:${v.opId}`), tagLength: 128 },
+      key,
+      new TextEncoder().encode(v.plaintext),
+    );
+    expect(toBase64Url(new Uint8Array(ct))).toBe(v.envelope.c);
+    expect(JSON.parse(v.plaintext)).toEqual(v.op);
   }
 });

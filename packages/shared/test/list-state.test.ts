@@ -110,3 +110,22 @@ test("order and duplicates do not matter", () => {
     }),
   );
 });
+
+test("equal stamps from one client still converge (op id tie-break)", () => {
+  const t1: ListOp = { v: 1, t: "title", text: "A", c: A, ts: 5 };
+  const t2: ListOp = { v: 1, t: "title", text: "B", c: A, ts: 5 };
+  const x = applyListOp(applyListOp(emptyListState(), "aaaaaaaaaaaaaaaaaaaaaa", t1), "bbbbbbbbbbbbbbbbbbbbbb", t2);
+  const y = applyListOp(applyListOp(emptyListState(), "bbbbbbbbbbbbbbbbbbbbbb", t2), "aaaaaaaaaaaaaaaaaaaaaa", t1);
+  expect(listView(x).title).toBe(listView(y).title);
+});
+
+test("order does not matter even when stamps collide", () => {
+  fc.assert(
+    fc.property(arbListOpLog(), fc.integer(), fc.integer({ min: 1, max: 3 }), (log, seed, spread) => {
+      const collided = log.map(([opId, op], i): [string, ListOp] => [opId, { ...op, ts: (i % spread) + 1, c: A }]);
+      const a = collided.reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
+      const b = shuffleWithDuplicates(collided, seed).reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
+      expect(listView(b)).toEqual(listView(a));
+    }),
+  );
+});

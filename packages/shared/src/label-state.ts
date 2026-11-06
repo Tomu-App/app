@@ -34,7 +34,7 @@ const newer = (stamp: Stamp, current: Stamp | null) => current === null || compa
 export function applyLabelOp(state: LabelState, opId: string, op: LabelOp): LabelState {
   if (state.seen[opId]) return state;
   state.seen[opId] = true;
-  const stamp: Stamp = { ts: op.ts, c: op.c };
+  const stamp: Stamp = { ts: op.ts, c: op.c, id: opId };
   switch (op.t) {
     case "init":
       state.initialized = true;

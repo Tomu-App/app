@@ -14,6 +14,8 @@ const text = (max: number) =>
     .string()
     .max(max)
     .refine((s) => s.trim().length > 0, { error: "empty" })
+    // Lone surrogates (e.g. from a cut emoji) would be escaped to 6 bytes each and break the 4 KB limit.
+    .refine((s) => s.isWellFormed(), { error: "malformed text" })
     // No control characters (incl. newlines): entries are single lines, and JSON escapes them to 6 bytes each.
     .refine((s) => !/[\u0000-\u001f\u007f]/.test(s), { error: "control character" });
 

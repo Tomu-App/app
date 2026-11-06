@@ -12,6 +12,7 @@
       "c": "AbCdEfGhIjKlMnOpQrStUv",
       "ts": 1793900000000
     },
+    "plaintext": "{\"v\":1,\"c\":\"AbCdEfGhIjKlMnOpQrStUv\",\"ts\":1793900000000,\"t\":\"add\",\"item\":\"0b6f3c2e-8a4d-4c1e-9f7a-2d5b6e8c9a10\",\"text\":\"Brötchen für Tante Ilse\"}",
     "envelope": {
       "id": "Zx9Yw8Vu7Ts6Rq5Po4Nm3L",
       "n": "AAECAwQFBgcICQoL",
@@ -31,6 +32,7 @@
       "c": "AbCdEfGhIjKlMnOpQrStUv",
       "ts": 1793900000001
     },
+    "plaintext": "{\"v\":1,\"c\":\"AbCdEfGhIjKlMnOpQrStUv\",\"ts\":1793900000001,\"t\":\"link\",\"list\":\"f3K9xQ2mLp7RvT1bN8cZaw\",\"key\":\"Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ\"}",
     "envelope": {
       "id": "Op2Op2Op2Op2Op2Op2Op2A",
       "n": "DA0ODxAREhMUFRYX",
@@ -49,6 +51,7 @@
       "c": "AbCdEfGhIjKlMnOpQrStUv",
       "ts": 1793899999999
     },
+    "plaintext": "{\"v\":1,\"c\":\"AbCdEfGhIjKlMnOpQrStUv\",\"ts\":1793899999999,\"t\":\"init\",\"kind\":\"list\"}",
     "envelope": {
       "id": "Op3Op3Op3Op3Op3Op3Op3A",
       "n": "GBkaGxwdHh8gISIj",

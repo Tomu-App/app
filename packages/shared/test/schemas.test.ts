@@ -30,6 +30,12 @@ test("text limits", () => {
   expect(opSchema.safeParse({ ...addOp, text: "a\u0001b" }).success).toBe(false);
 });
 
+test("lone surrogates are rejected", () => {
+  expect(opSchema.safeParse({ ...addOp, text: "a\ud800b" }).success).toBe(false);
+  expect(opSchema.safeParse({ ...addOp, text: "\udc00".repeat(900) }).success).toBe(false);
+  expect(opSchema.safeParse({ ...addOp, text: "😀" }).success).toBe(true);
+});
+
 test("ids and timestamps are validated", () => {
   expect(opSchema.safeParse({ ...addOp, item: "not-a-uuid" }).success).toBe(false);
   expect(opSchema.safeParse({ ...linkOp, key: "short" }).success).toBe(false);

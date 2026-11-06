@@ -51,7 +51,7 @@ function itemOf(state: ListState, id: string): ItemState {
 export function applyListOp(state: ListState, opId: string, op: ListOp): ListState {
   if (state.seen[opId]) return state;
   state.seen[opId] = true;
-  const stamp: Stamp = { ts: op.ts, c: op.c };
+  const stamp: Stamp = { ts: op.ts, c: op.c, id: opId };
   switch (op.t) {
     case "init":
       state.initialized = true;

@@ -123,3 +123,15 @@ test("order and duplicates do not matter", () => {
     }),
   );
 });
+
+test("order does not matter even when stamps collide", () => {
+  fc.assert(
+    fc.property(arbLabelOpLog(), fc.integer(), (log, seed) => {
+      const collided = log.map(([opId, op], i): [string, LabelOp] => [opId, { ...op, ts: (i % 2) + 1, c: A }]);
+      const a = run(collided);
+      const b = run(shuffleWithDuplicates(collided, seed));
+      expect(labelMembers(b)).toEqual(labelMembers(a));
+      expect([b.name, b.owner]).toEqual([a.name, a.owner]);
+    }),
+  );
+});
