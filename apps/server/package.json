@@ -1,0 +1,23 @@
+{
+  "name": "@tomu/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/main.ts",
+    "build": "bun build src/main.ts --target bun --outfile dist/server.js",
+    "db:generate": "drizzle-kit generate",
+    "test": "bun test",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tomu/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.16"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "^6.0.3"
+  }
+}
