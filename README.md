@@ -4,7 +4,7 @@ Shared, end-to-end encrypted lists, shared through labels. Specification: `../do
 
 ## Workspace
 
-pnpm workspace (`apps/*`, `packages/*`), Node version in `.node-version`.
+pnpm workspace (`apps/*`, `packages/*`), Node version in `.node-version`, Bun version in `.bun-version`.
 
 ```sh
 pnpm install
@@ -15,6 +15,7 @@ pnpm check   # TypeScript
 ## Packages
 
 - `packages/shared` (`@tomu/shared`): protocol core used by server and client. IDs and share links (`https://link.tomu.foo/<docId>#<key>`), Zod schemas for ops, envelopes and sync messages, AES-256-GCM encryption of ops (WebCrypto), the logical clock, and the CRDT reducers for list documents (LWW fields, tombstones) and shared label documents (add-wins set).
+- `apps/server` (`@tomu/server`): sync server on Bun. Hono for REST, `Bun.serve` for the multiplexed WebSocket `/api/ws`, SQLite (WAL) via Drizzle. It stores and numbers encrypted ops and never sees plaintext.
 
 `packages/shared/test/vectors/aes-gcm.json` holds fixed encryption test vectors for other implementations (the planned Kotlin app). Each vector has the key, nonce, op id, the exact `plaintext` bytes (UTF-8 JSON), the parsed `op` and the resulting `envelope`. Normative for interop:
 
@@ -23,6 +24,26 @@ pnpm check   # TypeScript
 - JSON key order and formatting are not part of the protocol; implementations only need to produce valid JSON and read any key order.
 
 Never regenerate the file; add new vectors instead.
+
+## Server
+
+Needs Bun (version in `.bun-version`); tests run with `bun test`.
+
+```sh
+pnpm --filter @tomu/server start      # http://localhost:3000
+pnpm --filter @tomu/server db:generate  # after changing src/db/schema.ts; commit the new file in drizzle/
+pnpm --filter @tomu/server build      # dist/server.js, the bundle the Docker image runs
+```
+
+| Variable            | Default                 | Meaning                                                                 |
+| ------------------- | ----------------------- | ----------------------------------------------------------------------- |
+| `PORT`              | `3000`                  | HTTP and WebSocket port                                                 |
+| `DB_PATH`           | `./tomu.db`             | SQLite file                                                             |
+| `ALLOWED_ORIGINS`   | `http://localhost:5173` | Comma-separated frontend origins for CORS and the WebSocket `Origin`    |
+| `TRUST_CLOUDFLARE`  | unset                   | `1`: take the client IP from `cf-connecting-ip` (only behind Cloudflare) |
+| `MIGRATIONS_FOLDER` | `apps/server/drizzle`   | Where the migrations are (the image sets `/app/drizzle`)                |
+
+On every push to `main`, CI publishes the image `ghcr.io/tomu-app/server` (`latest` and `sha-<commit>`) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
 
 ## License
 

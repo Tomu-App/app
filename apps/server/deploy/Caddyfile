@@ -1,0 +1,9 @@
+{
+	auto_https disable_certs
+}
+
+{$API_DOMAIN} {
+	# Cloudflare origin certificate; Cloudflare terminates TLS for visitors.
+	tls /certs/origin.pem /certs/origin-key.pem
+	reverse_proxy app:3000
+}
