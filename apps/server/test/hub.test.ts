@@ -204,3 +204,47 @@ test("messages from an unknown connection are ignored", () => {
   hub.message(a, opMsg("a".repeat(22)));
   expect(a.sent).toEqual([]);
 });
+
+test("catch-up pauses while the socket is full and resumes on drain, without gaps", () => {
+  const { hub, store } = setup();
+  for (let i = 0; i < 1200; i++) store.appendOp(D, envOf(oid(i)));
+  const b = conn(hub);
+  const orig = b.send.bind(b);
+  b.send = (m) => {
+    orig(m);
+    if (m.type === "ops") b.writable = false; // one page fills the buffer
+  };
+  hub.message(b, sub([D, 0]));
+  expect(b.of("ops").length).toBe(1);
+  hub.message(conn(hub), opMsg("z".repeat(22))); // live op while D is still catching up
+  expect(b.of("op")).toEqual([]);
+  for (let i = 0; i < 5; i++) {
+    b.writable = true;
+    hub.drain(b);
+  }
+  const seqs = [...b.of("ops").flatMap((p) => p.ops.map((o) => o.seq)), ...b.of("op").map((o) => o.seq)];
+  expect(seqs).toEqual(Array.from({ length: 1201 }, (_, i) => i + 1));
+  expect(b.of("ops").at(-1)!.head).toBe(1201);
+  hub.message(conn(hub), opMsg("y".repeat(22))); // catch-up done: live again
+  expect(b.sent.at(-1)).toEqual(expect.objectContaining({ type: "op", seq: 1202 }));
+});
+
+test("a doc repeated in one subscribe is caught up once", () => {
+  const { hub, store } = setup();
+  for (let i = 0; i < 600; i++) store.appendOp(D, envOf(oid(i)));
+  const b = conn(hub);
+  hub.message(b, sub(...Array.from({ length: 20 }, (): [string, number] => [D, 0])));
+  expect(b.of("ops").map((p) => p.ops.length)).toEqual([500, 100]);
+});
+
+test("unsubscribe cancels a pending catch-up", () => {
+  const { hub, store } = setup();
+  for (let i = 0; i < 1200; i++) store.appendOp(D, envOf(oid(i)));
+  const b = conn(hub);
+  b.writable = false;
+  hub.message(b, sub([D, 0]));
+  hub.message(b, JSON.stringify({ type: "unsubscribe", docs: [D] }));
+  b.writable = true;
+  hub.drain(b);
+  expect(b.of("ops")).toEqual([]);
+});

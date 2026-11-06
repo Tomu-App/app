@@ -27,6 +27,11 @@ export const fillOps = (h: ReturnType<typeof openDb>, doc: string, n: number) =>
 /** In-memory connection; validates every message the hub sends. */
 export class FakeConn implements Conn {
   sent: ServerMessage[] = [];
+  /** Set to false to simulate a full socket buffer. */
+  writable = true;
+  ready(): boolean {
+    return this.writable;
+  }
   send(msg: ServerMessage): void {
     this.sent.push(serverMessageSchema.parse(msg));
   }

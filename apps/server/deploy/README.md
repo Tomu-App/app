@@ -16,9 +16,14 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
    ```
 
 6. In the Cloudflare dashboard, create an origin certificate for `api.tomu.foo` (SSL/TLS, Origin Server). Save it as `/opt/tomu/certs/origin.pem` and the key as `/opt/tomu/certs/origin-key.pem`. Set the SSL mode of the zone to "Full (strict)".
-7. DNS: `api.tomu.foo` as a proxied record (orange cloud) pointing at the VPS. WebSockets are allowed through the proxy by default.
-8. If the GHCR package is private: `docker login ghcr.io` with a token that can read packages.
-9. `docker compose up -d`, then check `curl https://api.tomu.foo/api/health` returns `{"ok":true}`.
+7. Turn on Authenticated Origin Pulls for the zone (SSL/TLS, Origin Server, "Authenticated Origin Pulls", zone-level). Download Cloudflare's origin-pull CA certificate (linked there as `authenticated_origin_pull_ca.pem`) and save it as `/opt/tomu/certs/cloudflare-origin-pull-ca.pem`. Caddy then rejects every TLS connection that does not come from Cloudflare. This matters: the server trusts the `cf-connecting-ip` header for its per-IP limits, and without this check anyone connecting to the VPS directly could forge it.
+8. DNS: `api.tomu.foo` as a proxied record (orange cloud) pointing at the VPS. WebSockets are allowed through the proxy by default.
+9. If the GHCR package is private: `docker login ghcr.io` with a token that can read packages.
+10. `docker compose up -d`, then check `curl https://api.tomu.foo/api/health` returns `{"ok":true}`. A direct request to the VPS (`curl -k --resolve api.tomu.foo:443:<vps-ip> https://api.tomu.foo/api/health`) must fail the TLS handshake.
+
+## Logs
+
+Neither the app nor Caddy logs IP addresses or URLs (Caddy's global `log` filter deletes them). Docker keeps at most 3 �, 10 MB per container (`daemon.json`).
 
 ## Update
 

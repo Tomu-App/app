@@ -114,3 +114,22 @@ test("non-websocket requests reach the REST app", async () => {
   expect(await (await fetch(`${url}/api/health`)).json()).toEqual({ ok: true });
   expect((await fetch(`${url}/api/ws`)).status).toBe(426);
 });
+
+test("catch-up larger than the socket buffer arrives complete", async () => {
+  const doc = newDocId();
+  srv.store.createDoc(doc);
+  const c = "A".repeat(3000);
+  for (let i = 0; i < 7000; i++) srv.store.appendOp(doc, { id: String(i).padStart(22, "0"), n: "A".repeat(16), c });
+  const mike = await openWs();
+  mike.send({ type: "subscribe", docs: [{ doc, since: 0 }] });
+  const seqs: number[] = [];
+  for (;;) {
+    const page = await mike.next("ops");
+    seqs.push(...page.ops.map((o) => o.seq));
+    if ((page.ops.at(-1)?.seq ?? page.head) >= page.head) break;
+  }
+  expect(seqs).toEqual(Array.from({ length: 7000 }, (_, i) => i + 1));
+  mike.send({ type: "ping" });
+  expect(await mike.next("pong")).toEqual({ type: "pong" });
+  mike.ws.close();
+}, 30_000);

@@ -9,6 +9,8 @@ import { Store } from "./store.ts";
 
 export const PURGE_INTERVAL_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
+/** Catch-up stops sending while more than this is buffered on a socket, and resumes on drain. */
+export const CATCHUP_BUFFER_BYTES = 1_048_576;
 
 type WsData = { key: string; conn?: Conn };
 
@@ -44,9 +46,15 @@ export function startServer(config: Config) {
     },
     websocket: {
       maxPayloadLength: MAX_FRAME_BYTES,
+      // A reader so slow that 16 MB pile up is dropped instead of losing messages silently;
+      // it reconnects and resubscribes from its last seq.
+      closeOnBackpressureLimit: true,
       idleTimeout: 90, // clients ping every 30 s
       open(ws) {
-        const conn: Conn = { send: (msg) => ws.send(JSON.stringify(msg)) };
+        const conn: Conn = {
+          send: (msg) => void ws.send(JSON.stringify(msg)),
+          ready: () => ws.getBufferedAmount() < CATCHUP_BUFFER_BYTES,
+        };
         ws.data.conn = conn;
         hub.open(conn);
       },
@@ -61,6 +69,9 @@ export function startServer(config: Config) {
         } catch (e) {
           console.error("hub error:", e instanceof Error ? e.name : "unknown");
         }
+      },
+      drain(ws) {
+        if (ws.data.conn) hub.drain(ws.data.conn);
       },
       close(ws) {
         if (ws.data.conn) hub.close(ws.data.conn);
@@ -77,6 +88,7 @@ export function startServer(config: Config) {
 
   return {
     server,
+    store,
     url: `http://localhost:${server.port}`,
     async stop() {
       clearInterval(purge);

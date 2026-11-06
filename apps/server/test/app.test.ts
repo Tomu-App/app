@@ -126,3 +126,9 @@ test("limitKey groups IPv6 by /64 and unwraps IPv4-mapped addresses", () => {
   expect(limitKey("::1")).toBe("0:0:0:0::/64");
   expect(limitKey("unknown")).toBe("unknown");
 });
+
+test("clientIp ignores a cf-connecting-ip that is not an IP address", () => {
+  for (const junk of ["", "evil", "1.2.3", "999.1.1.1", "1.2.3.4, 5.6.7.8", "::g"])
+    expect(clientIp(new Headers({ "cf-connecting-ip": junk }), "10.0.0.1", true)).toBe("10.0.0.1");
+  expect(clientIp(new Headers({ "cf-connecting-ip": "2001:db8::1" }), "10.0.0.1", true)).toBe("2001:db8::1");
+});
