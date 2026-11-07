@@ -110,11 +110,11 @@
 <Sheet offline={tomu.status === "offline"}>
   {#if view}
     {#if labels.length > 0}
-      <div class="labels">{#each labels as label (label.id)}<LabelTag {label} />{/each}</div>
+      <div class="labels">{#each labels as label (label.id)}<LabelTag {label} plain />{/each}</div>
     {/if}
     <div class="head">
       <h1 class="title">{view.title}</h1>
-      <p class="open">
+      <p class="open" class:top={view.title.length > 24}>
         <span class="count">{count}</span>
         <span class="open-label">{m.open_label()}</span>
       </p>
@@ -144,7 +144,7 @@
       <button type="button" class="tear" onclick={tearOff}>{m.tear_off()}</button>
     {/if}
   {:else if status === "loading"}
-    <p class="note">{m.list_loading()}</p>
+    <p class="note">{tomu.status === "offline" ? m.list_waiting_offline() : m.list_loading()}</p>
   {:else}
     <p class="note">{status === "gone" ? m.list_gone() : m.list_missing()}</p>
   {/if}
@@ -172,27 +172,42 @@
   .labels {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.2rem 1rem;
   }
   .head {
+    container-type: inline-size;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem 1rem;
     margin-top: 0.5rem;
   }
   .title {
-    flex: 1;
+    flex: 1 1 10rem;
     min-width: 0;
     margin: 0;
     font-size: 2rem;
     line-height: 1.1;
     overflow-wrap: anywhere;
+    hyphens: auto;
   }
   .open {
     flex: none;
     margin: 0;
     text-align: right;
+  }
+  /* A long title grows downwards; the count stays at the top, in view. */
+  .open.top {
+    align-self: flex-start;
+  }
+  /* Too narrow for title and count side by side: the count takes its own line above. */
+  @container (max-width: 18rem) {
+    .open {
+      order: -1;
+      flex-basis: 100%;
+      text-align: left;
+    }
   }
   .count {
     display: block;
@@ -241,9 +256,12 @@
   }
   .tear {
     display: block;
-    min-height: var(--tap);
-    margin: 1rem 0 0 auto;
+    width: 100%;
+    min-height: 3.75rem;
+    margin: 1rem 0 0;
     padding: 0 1.25rem;
+    text-align: center;
+    font-size: 1.15rem;
     border: 3px solid var(--rule);
     border-radius: var(--radius);
     background: transparent;

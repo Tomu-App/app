@@ -122,8 +122,8 @@
     <section>
       <h2>{m.settings_name_heading()}</h2>
       <p class="hint">{m.settings_name_hint()}</p>
-      <form onsubmit={saveName}>
-        <input type="text" aria-label={m.settings_name_field()} bind:value={name} maxlength={MAX_NAME} autocomplete="given-name" />
+      <form class="inline-form" onsubmit={saveName}>
+        <input type="text" aria-label={m.settings_name_field()} placeholder={m.settings_name_field()} bind:value={name} maxlength={MAX_NAME} autocomplete="given-name" />
         <button type="submit">{m.item_save()}</button>
       </form>
       {#if nameError}<p class="note" role="alert">{m.settings_name_empty()}</p>{/if}
@@ -172,8 +172,8 @@
           {/each}
         </ul>
       {/if}
-      <form onsubmit={addLabel}>
-        <input type="text" aria-label={m.settings_label_new_field()} bind:value={newLabel} maxlength={MAX_LABEL} />
+      <form class="inline-form" onsubmit={addLabel}>
+        <input type="text" aria-label={m.settings_label_new_field()} placeholder={m.settings_label_new_field()} bind:value={newLabel} maxlength={MAX_LABEL} />
         <button type="submit" disabled={newLabel.trim().length === 0}>{m.settings_add()}</button>
       </form>
     </section>
@@ -199,8 +199,8 @@
           {/each}
         </ul>
       {/if}
-      <form onsubmit={addFolder}>
-        <input type="text" aria-label={m.settings_folder_new_field()} bind:value={newFolder} maxlength={MAX_LABEL} />
+      <form class="inline-form" onsubmit={addFolder}>
+        <input type="text" aria-label={m.settings_folder_new_field()} placeholder={m.settings_folder_new_field()} bind:value={newFolder} maxlength={MAX_LABEL} />
         <button type="submit" disabled={newFolder.trim().length === 0}>{m.settings_add()}</button>
       </form>
     </section>
@@ -222,10 +222,9 @@
     <section>
       <h2>{m.settings_about_heading()}</h2>
       <p>{m.settings_about_text()}</p>
-      <p>{m.settings_hosting()}</p>
       <p class="legal">
-        <a href={legal.imprint}>{m.settings_imprint()}</a>
-        <a href={legal.privacy}>{m.settings_privacy()}</a>
+        <a href={legal.imprint} target="_blank">{m.settings_imprint()}</a>
+        <a href={legal.privacy} target="_blank">{m.settings_privacy()}</a>
       </p>
     </section>
   </Sheet>
@@ -287,23 +286,6 @@
     margin: 0.5rem 0 0;
     color: var(--ink);
     font-weight: 700;
-  }
-  form {
-    display: flex;
-    gap: 0.75rem;
-    align-items: stretch;
-    margin-top: 0.75rem;
-  }
-  input[type="text"] {
-    flex: 1;
-    min-width: 0;
-    min-height: 3.5rem;
-    padding: 0 0.75rem;
-    border: 3px solid var(--field-line);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink);
-    font: inherit;
   }
   button,
   .btn {
@@ -412,8 +394,9 @@
     font-weight: 700;
   }
   .dform {
+    display: flex;
     flex-direction: column;
-    margin: 0;
+    gap: 0.75rem;
   }
   .field {
     display: flex;
@@ -423,6 +406,7 @@
   }
   .dactions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.75rem;
   }

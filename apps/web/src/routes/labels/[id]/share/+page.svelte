@@ -109,16 +109,6 @@
     font-size: 1.15rem;
     font-weight: 700;
   }
-  input {
-    min-height: 3.5rem;
-    padding: 0 0.75rem;
-    border: 3px solid var(--field-line);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink);
-    font: inherit;
-    font-weight: 400;
-  }
   button {
     min-width: var(--tap);
     min-height: var(--tap);

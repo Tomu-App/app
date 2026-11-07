@@ -24,8 +24,7 @@
         </svg>
       {/if}
     </span>
-    <span class="text">{item.text}</span>
-    {#if fresh}<span class="mark">{m.fresh_mark()}</span>{/if}
+    <span class="text">{item.text}{#if fresh}<span class="mark">{m.fresh_mark()}</span>{/if}</span>
   </button>
   <button type="button" class="edit" onclick={onEdit}>
     <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -74,10 +73,13 @@
     overflow-wrap: anywhere;
     line-height: 1.25;
   }
+  /* Inside the text flow, so a narrow column wraps it with the words. */
   .mark {
-    flex: none;
-    margin-left: auto;
+    display: inline-block;
+    margin-left: 0.6rem;
     padding: 0 0.4rem;
+    line-height: 1.3;
+    vertical-align: 0.1em;
     border: 2px solid var(--open);
     border-radius: 4px;
     color: var(--open);

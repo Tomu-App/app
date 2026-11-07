@@ -25,11 +25,12 @@
 <style>
   .hint {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.75rem;
+    margin: 0.75rem 0 1rem;
     padding-top: 0.5rem;
-    border-top: 3px solid var(--rule);
+    border-top: 2px dashed var(--perf);
     color: var(--ink-soft);
   }
   .text {

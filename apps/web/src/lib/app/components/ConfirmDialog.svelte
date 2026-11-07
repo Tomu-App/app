@@ -40,6 +40,7 @@
   }
   .actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.75rem;
   }

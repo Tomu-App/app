@@ -163,18 +163,9 @@
     margin-bottom: 1rem;
     font-weight: 700;
   }
-  input[type="text"] {
-    min-height: 3.5rem;
-    padding: 0 0.75rem;
-    border: 3px solid var(--field-line);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink);
-    font: inherit;
-    font-weight: 400;
-  }
   .actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.75rem;
   }

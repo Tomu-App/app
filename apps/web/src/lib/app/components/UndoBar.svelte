@@ -18,14 +18,16 @@
     display: none;
   }
   .bar {
-    position: fixed;
-    inset: auto 0 0 0;
+    /* Sticky at the end of the page: it stays in view and never covers the last rows. */
+    position: sticky;
+    bottom: 0;
     z-index: 20;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+    gap: 0.5rem 1rem;
+    padding: 0.5rem max(1rem, calc((100% - 40rem) / 2 + 1.25rem + 3px)) calc(0.5rem + env(safe-area-inset-bottom));
     background: var(--ink);
     color: var(--sheet);
     font-size: 1.15rem;

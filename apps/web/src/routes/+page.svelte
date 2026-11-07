@@ -62,7 +62,7 @@
     font-size: 1.125rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--board);
+    color: var(--board-text);
   }
   .sr {
     position: absolute;

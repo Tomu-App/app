@@ -8,6 +8,7 @@
     children,
   }: { open?: boolean; title: string; children?: Snippet } = $props();
 
+  const titleId = $props.id();
   let el: HTMLDialogElement;
 
   $effect(() => {
@@ -22,10 +23,14 @@
 </script>
 
 <!-- Escape fires the native close event, which keeps `open` in step. -->
-<dialog bind:this={el} aria-labelledby="dialog-title" onclose={() => (open = false)}>
+<dialog bind:this={el} aria-labelledby={titleId} onclose={() => (open = false)}>
   <div class="head">
-    <h2 id="dialog-title">{title}</h2>
-    <button type="button" class="x" aria-label={m.dialog_close()} onclick={() => (open = false)}>&times;</button>
+    <h2 id={titleId}>{title}</h2>
+    <button type="button" class="x" aria-label={m.dialog_close()} onclick={() => (open = false)}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
   </div>
   {#if open}{@render children?.()}{/if}
 </dialog>
@@ -58,14 +63,16 @@
     line-height: 1.2;
   }
   .x {
+    flex: none;
     width: var(--tap);
     height: var(--tap);
     border: 3px solid var(--rule);
     border-radius: var(--radius);
     background: transparent;
     color: inherit;
-    font: inherit;
-    font-size: 1.5rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
     cursor: pointer;
   }
 </style>

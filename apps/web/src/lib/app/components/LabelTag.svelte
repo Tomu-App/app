@@ -3,10 +3,10 @@
   import { m } from "#lib/paraglide/messages.js";
   import type { LabelInfo } from "#lib/tomu/index.js";
 
-  let { label }: { label: LabelInfo } = $props();
+  let { label, plain = false }: { label: LabelInfo; plain?: boolean } = $props();
 </script>
 
-<span class="tag" class:shared={label.shared}>
+<span class="tag" class:shared={label.shared && !plain} class:plain>
   {labelText(label)}<span class="sr">, {label.shared ? m.label_shared() : m.label_private()}</span>
 </span>
 
@@ -24,8 +24,19 @@
   /* Shared: filled in board blue, private: outlined grey. Never red. */
   .shared {
     background: var(--board);
-    border-color: var(--board);
+    border-color: var(--board-text);
     color: var(--board-ink);
+  }
+  /* List sheet: plain capitals in board blue, no box. */
+  .plain {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--board-text);
+    font-size: 1.125rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .sr {
     position: absolute;

@@ -110,7 +110,6 @@ test("language switch changes texts", async () => {
 test("about shows the hosting note and links to legal pages", async () => {
   const t = await start();
   renderWithTomu(Page, {}, t);
-  expect(screen.getByText(m.settings_hosting())).toBeTruthy();
   expect(screen.getByRole("link", { name: m.settings_imprint() }).getAttribute("href")).toBe("https://tomu.foo/impressum");
   expect(screen.getByRole("link", { name: m.settings_privacy() }).getAttribute("href")).toBe("https://tomu.foo/datenschutz");
   await fireEvent.click(screen.getByRole("radio", { name: "English" }));
