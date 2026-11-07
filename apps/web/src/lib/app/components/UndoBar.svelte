@@ -14,8 +14,15 @@
 </div>
 
 <style>
+  /* Empty: out of sight but still in the accessibility tree, so the next message is announced. */
   .bar:empty {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .bar {
     /* Sticky at the end of the page: it stays in view and never covers the last rows. */

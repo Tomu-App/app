@@ -80,6 +80,35 @@ test("tear off hides ticked items at once and deletes them after 6 s", async () 
   expect(bar().textContent).toBe("");
 });
 
+test("after tearing off, focus lands on the first remaining entry", async () => {
+  await setup();
+  tearBtn().focus();
+  await fireEvent.click(tearBtn());
+  await vi.waitFor(() => expect(document.activeElement).toBe(box("Eier")));
+});
+
+test("after tearing off the last entries, focus lands on the add field", async () => {
+  const t = await start();
+  const id = await t.createList("Einkauf");
+  await t.addItems(id, "Milch");
+  for (const item of t.list(id)!.items) await t.setChecked(id, item.id, true);
+  route.id = id;
+  renderWithTomu(UndoPage, {}, t);
+  tearBtn().focus();
+  await fireEvent.click(tearBtn());
+  await vi.waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(m.add_label())));
+});
+
+test("ticking an entry keeps focus on it", async () => {
+  const { t, id } = await setup();
+  const eier = box("Eier");
+  eier.focus();
+  await fireEvent.click(eier);
+  await vi.waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Eier")!.checked).toBe(true));
+  await tick();
+  expect(document.activeElement).toBe(box("Eier"));
+});
+
 test("undo brings the items back and deletes nothing", async () => {
   const { t, id } = await setup();
   await fireEvent.click(tearBtn());

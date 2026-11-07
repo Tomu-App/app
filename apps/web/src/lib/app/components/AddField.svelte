@@ -11,6 +11,11 @@
   let busy = false;
   let el: HTMLTextAreaElement;
 
+  /** Puts the cursor in the field, e.g. when the list below it has just been emptied. */
+  export function focus(): void {
+    el.focus();
+  }
+
   async function submit(e?: Event): Promise<void> {
     e?.preventDefault();
     const text = value;

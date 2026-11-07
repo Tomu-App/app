@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { tick } from "svelte";
   import { flip } from "svelte/animate";
   import { cubicIn } from "svelte/easing";
   import AddField from "#lib/app/components/AddField.svelte";
@@ -50,6 +51,19 @@
     if (status === "gone") pending.drop(id);
   });
 
+  let addField: AddField | undefined;
+  let listEl: HTMLUListElement | undefined;
+
+  // A moved or removed button loses focus; keyboard and screen reader users must not land on the page body.
+  const toggleOf = (itemId: string): HTMLElement | null =>
+    listEl?.querySelector<HTMLElement>(`[data-item="${CSS.escape(itemId)}"] [role="checkbox"]`) ?? null;
+
+  async function setChecked(itemId: string, checked: boolean): Promise<void> {
+    await tomu.setChecked(id, itemId, checked);
+    await tick();
+    toggleOf(itemId)?.focus();
+  }
+
   let editId = $state<string | null>(null);
   let editOpen = $state(false);
   const editing = $derived(view?.items.find((i) => i.id === editId) ?? null);
@@ -81,6 +95,7 @@
   function tearOff(): void {
     const ids = items.filter((i) => i.checked).map((i) => i.id);
     if (ids.length === 0) return;
+    const next = items.find((i) => !i.checked)?.id;
     const listId = id;
     motion.tearing = !reduceMotion();
     setTimeout(() => (motion.tearing = false), tearDuration + 100);
@@ -90,6 +105,7 @@
         all.filter((itemId) => tomu.list(listId)?.items.some((i) => i.id === itemId && i.checked)),
       ),
     );
+    void tick().then(() => (next ? toggleOf(next)?.focus() : addField?.focus()));
   }
 </script>
 
@@ -132,11 +148,12 @@
       </p>
     </div>
     <div class="rule"></div>
-    <AddField listId={id} {fresh} />
+    <AddField bind:this={addField} listId={id} {fresh} />
     <InstallHint />
-    <ul>
+    <ul bind:this={listEl}>
       {#each items as item, i (item.id)}
         <li
+          data-item={item.id}
           animate:flip={{ duration: reduceMotion() ? 0 : 250 }}
           out:tear={{ duration: motion.tearing ? tearDuration : 0 }}
         >
@@ -146,7 +163,7 @@
           <ItemRow
             {item}
             fresh={fresh.isFresh(item.id)}
-            onToggle={() => void tomu.setChecked(id, item.id, !item.checked)}
+            onToggle={() => void setChecked(item.id, !item.checked)}
             onEdit={() => {
               editId = item.id;
               editOpen = true;
@@ -277,12 +294,12 @@
     margin: 1rem 0 0;
     padding: 0 1.25rem;
     text-align: center;
-    font-size: 1.15rem;
     border: 3px solid var(--rule);
     border-radius: var(--radius);
     background: transparent;
     color: var(--ink);
     font: inherit;
+    font-size: 1.15rem;
     font-weight: 700;
     cursor: pointer;
   }
