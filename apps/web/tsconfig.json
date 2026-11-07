@@ -10,6 +10,6 @@
     "types": ["$app/types", "node"]
   },
   "include": ["src", "test", "vite.config.ts"],
-  // The service worker needs the webworker lib, which conflicts with the DOM lib used everywhere else.
-  "exclude": ["src/service-worker.ts"]
+  // The service worker needs the webworker lib, which conflicts with the DOM lib; it has its own tsconfig.
+  "exclude": ["src/service-worker"]
 }

@@ -51,8 +51,8 @@
     if (status === "gone") pending.drop(id);
   });
 
-  let addField: AddField | undefined;
-  let listEl: HTMLUListElement | undefined;
+  let addField = $state<AddField>();
+  let listEl = $state<HTMLUListElement>();
 
   // A moved or removed button loses focus; keyboard and screen reader users must not land on the page body.
   const toggleOf = (itemId: string): HTMLElement | null =>

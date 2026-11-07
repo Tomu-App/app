@@ -8,7 +8,7 @@
     "build": "vite build",
     "prepare": "svelte-kit sync || echo ''",
     "precheck": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p src/service-worker/tsconfig.json",
     "pretest": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
     "test": "vitest run"
   },
