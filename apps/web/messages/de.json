@@ -21,5 +21,20 @@
   "new_list_title_field": "Titel",
   "new_list_save": "Speichern",
   "new_list_cancel": "Abbrechen",
-  "dialog_close": "Schließen"
+  "dialog_close": "Schließen",
+  "back_to_lists": "Alle Listen",
+  "add_placeholder": "Milch, Brot, Eier …",
+  "add_button": "Hinzufügen",
+  "open_label": "offen",
+  "done_count": "{count} abgehakt",
+  "fresh_mark": "neu",
+  "item_edit": "Bearbeiten",
+  "item_edit_title": "Eintrag bearbeiten",
+  "item_text_field": "Eintrag",
+  "item_save": "Speichern",
+  "item_delete": "Löschen",
+  "item_too_long": "Ein Eintrag darf höchstens 900 Zeichen lang sein.",
+  "list_missing": "Diese Liste gibt es nicht mehr.",
+  "list_gone_hint": "Jemand hat diese Liste gelöscht.",
+  "add_label": "Neuer Eintrag"
 }

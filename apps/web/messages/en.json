@@ -21,5 +21,20 @@
   "new_list_title_field": "Title",
   "new_list_save": "Save",
   "new_list_cancel": "Cancel",
-  "dialog_close": "Close"
+  "dialog_close": "Close",
+  "back_to_lists": "All lists",
+  "add_placeholder": "Milk, bread, eggs …",
+  "add_button": "Add",
+  "open_label": "open",
+  "done_count": "{count} done",
+  "fresh_mark": "new",
+  "item_edit": "Edit",
+  "item_edit_title": "Edit entry",
+  "item_text_field": "Entry",
+  "item_save": "Save",
+  "item_delete": "Delete",
+  "item_too_long": "An entry can have 900 characters at most.",
+  "list_missing": "This list is gone.",
+  "list_gone_hint": "Someone deleted this list.",
+  "add_label": "New entry"
 }
