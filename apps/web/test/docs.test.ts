@@ -32,7 +32,11 @@ test("newDocRecord sets defaults and an empty state matching the kind", () => {
     kind: "list",
     state: emptyListState(),
   });
-  expect(newDocRecord(D, K, "link", "label")).toMatchObject({ created: true, kind: "label", state: emptyLabelState() });
+  expect(newDocRecord(D, K, "link", "label")).toMatchObject({
+    created: true,
+    kind: "label",
+    state: emptyLabelState(),
+  });
   expect(newDocRecord(D, K, "label", null)).toMatchObject({ created: true, kind: null, state: null });
 });
 

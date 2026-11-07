@@ -11,10 +11,20 @@
     <p class="text">{hint.kind === "ios" ? m.install_ios() : m.install_text()}</p>
     <div class="actions">
       {#if hint.kind === "prompt"}
-        <button type="button" class="install" onclick={() => void hint.install()}>{m.install_button()}</button>
+        <button type="button" class="install" onclick={() => void hint.install()}>{m.install_button()}</button
+        >
       {/if}
       <button type="button" class="close" aria-label={m.install_close()} onclick={() => hint.dismiss()}>
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+          stroke-linecap="square"
+        >
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>

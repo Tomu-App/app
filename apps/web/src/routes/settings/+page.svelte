@@ -105,7 +105,16 @@
   <Board>
     {#snippet start()}
       <a class="back" href="/">
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+          stroke-linecap="square"
+        >
           <path d="M15 4l-8 8 8 8" />
         </svg>
         {m.back_to_lists()}
@@ -123,7 +132,14 @@
       <h2>{m.settings_name_heading()}</h2>
       <p class="hint">{m.settings_name_hint()}</p>
       <form class="inline-form" onsubmit={saveName}>
-        <input type="text" aria-label={m.settings_name_field()} placeholder={m.settings_name_field()} bind:value={name} maxlength={MAX_NAME} autocomplete="given-name" />
+        <input
+          type="text"
+          aria-label={m.settings_name_field()}
+          placeholder={m.settings_name_field()}
+          bind:value={name}
+          maxlength={MAX_NAME}
+          autocomplete="given-name"
+        />
         <button type="submit">{m.item_save()}</button>
       </form>
       {#if nameError}<p class="note" role="alert">{m.settings_name_empty()}</p>{/if}
@@ -157,23 +173,43 @@
               <LabelTag {label} />
               <span class="actions">
                 {#if canRename(label)}
-                  <button type="button" class="ghost" aria-label={m.settings_rename_item({ name: text })} onclick={() => startRename({ kind: "label", id: label.id }, label.name)}>
+                  <button
+                    type="button"
+                    class="ghost"
+                    aria-label={m.settings_rename_item({ name: text })}
+                    onclick={() => startRename({ kind: "label", id: label.id }, label.name)}
+                  >
                     {m.menu_rename()}
                   </button>
                 {/if}
                 {#if canRename(label) && !label.shared}
-                  <button type="button" class="ghost" aria-label={m.settings_delete_item({ name: text })} onclick={() => startRemove({ kind: "label", id: label.id })}>
+                  <button
+                    type="button"
+                    class="ghost"
+                    aria-label={m.settings_delete_item({ name: text })}
+                    onclick={() => startRemove({ kind: "label", id: label.id })}
+                  >
                     {m.item_delete()}
                   </button>
                 {/if}
-                <a class="btn ghost" href="/labels/{label.id}/share" aria-label={m.settings_share_item({ name: text })}>{m.menu_share()}</a>
+                <a
+                  class="btn ghost"
+                  href="/labels/{label.id}/share"
+                  aria-label={m.settings_share_item({ name: text })}>{m.menu_share()}</a
+                >
               </span>
             </li>
           {/each}
         </ul>
       {/if}
       <form class="inline-form" onsubmit={addLabel}>
-        <input type="text" aria-label={m.settings_label_new_field()} placeholder={m.settings_label_new_field()} bind:value={newLabel} maxlength={MAX_LABEL} />
+        <input
+          type="text"
+          aria-label={m.settings_label_new_field()}
+          placeholder={m.settings_label_new_field()}
+          bind:value={newLabel}
+          maxlength={MAX_LABEL}
+        />
         <button type="submit" disabled={newLabel.trim().length === 0}>{m.settings_add()}</button>
       </form>
     </section>
@@ -188,10 +224,20 @@
             <li>
               <span class="fname">{folder.name}</span>
               <span class="actions">
-                <button type="button" class="ghost" aria-label={m.settings_rename_item({ name: folder.name })} onclick={() => startRename({ kind: "folder", id: folder.id }, folder.name)}>
+                <button
+                  type="button"
+                  class="ghost"
+                  aria-label={m.settings_rename_item({ name: folder.name })}
+                  onclick={() => startRename({ kind: "folder", id: folder.id }, folder.name)}
+                >
                   {m.menu_rename()}
                 </button>
-                <button type="button" class="ghost" aria-label={m.settings_delete_item({ name: folder.name })} onclick={() => startRemove({ kind: "folder", id: folder.id })}>
+                <button
+                  type="button"
+                  class="ghost"
+                  aria-label={m.settings_delete_item({ name: folder.name })}
+                  onclick={() => startRemove({ kind: "folder", id: folder.id })}
+                >
                   {m.item_delete()}
                 </button>
               </span>
@@ -200,7 +246,13 @@
         </ul>
       {/if}
       <form class="inline-form" onsubmit={addFolder}>
-        <input type="text" aria-label={m.settings_folder_new_field()} placeholder={m.settings_folder_new_field()} bind:value={newFolder} maxlength={MAX_LABEL} />
+        <input
+          type="text"
+          aria-label={m.settings_folder_new_field()}
+          placeholder={m.settings_folder_new_field()}
+          bind:value={newFolder}
+          maxlength={MAX_LABEL}
+        />
         <button type="submit" disabled={newFolder.trim().length === 0}>{m.settings_add()}</button>
       </form>
     </section>
@@ -209,11 +261,23 @@
       <h2>{m.settings_language_heading()}</h2>
       <div class="langs" role="radiogroup" aria-label={m.settings_language_heading()}>
         <label class="opt">
-          <input id="lang-de" type="radio" name="lang" checked={locale === "de"} onchange={() => chooseLocale("de")} />
+          <input
+            id="lang-de"
+            type="radio"
+            name="lang"
+            checked={locale === "de"}
+            onchange={() => chooseLocale("de")}
+          />
           <span>Deutsch</span>
         </label>
         <label class="opt">
-          <input id="lang-en" type="radio" name="lang" checked={locale === "en"} onchange={() => chooseLocale("en")} />
+          <input
+            id="lang-en"
+            type="radio"
+            name="lang"
+            checked={locale === "en"}
+            onchange={() => chooseLocale("en")}
+          />
           <span>English</span>
         </label>
       </div>
@@ -229,7 +293,10 @@
     </section>
   </Sheet>
 
-  <Dialog bind:open={renameOpen} title={renaming?.kind === "folder" ? m.settings_rename_folder_title() : m.settings_rename_label_title()}>
+  <Dialog
+    bind:open={renameOpen}
+    title={renaming?.kind === "folder" ? m.settings_rename_folder_title() : m.settings_rename_label_title()}
+  >
     <form class="dform" onsubmit={saveRename}>
       <label class="field">
         <span>{m.settings_rename_name_field()}</span>
@@ -237,7 +304,8 @@
       </label>
       <div class="dactions">
         <button type="button" class="ghost" onclick={() => (renameOpen = false)}>{m.confirm_cancel()}</button>
-        <button type="submit" disabled={renameValue.trim().length === 0 || renameBusy}>{m.item_save()}</button>
+        <button type="submit" disabled={renameValue.trim().length === 0 || renameBusy}>{m.item_save()}</button
+        >
       </div>
     </form>
   </Dialog>

@@ -16,4 +16,16 @@ export const delOp = { ...base, t: "del" as const, item: ITEM };
 export const metaOp = { ...base, t: "meta" as const, name: "Familie", owner: "Lisa" };
 export const linkOp = { ...base, t: "link" as const, list: LIST, key: KEY };
 export const unlinkOp = { ...base, t: "unlink" as const, list: LIST, seen: [OPID] };
-export const SPEC_EXAMPLES = [initList, initLabel, titleOp, dropOp, addOp, textOp, checkOp, delOp, metaOp, linkOp, unlinkOp];
+export const SPEC_EXAMPLES = [
+  initList,
+  initLabel,
+  titleOp,
+  dropOp,
+  addOp,
+  textOp,
+  checkOp,
+  delOp,
+  metaOp,
+  linkOp,
+  unlinkOp,
+];

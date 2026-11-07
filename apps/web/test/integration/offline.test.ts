@@ -32,7 +32,14 @@ test("offline edits sync after reconnect", async () => {
   expect(mike.list(id)!.items).toEqual([]);
 
   net.online();
-  await waitFor(() => mike.list(id)!.items.map((i) => i.text).join() === "Milch,Brot,Eier", 3000);
+  await waitFor(
+    () =>
+      mike
+        .list(id)!
+        .items.map((i) => i.text)
+        .join() === "Milch,Brot,Eier",
+    3000,
+  );
   await waitFor(() => lisa.status === "synced");
 });
 
@@ -52,6 +59,13 @@ test("offline edits survive a reload before reconnecting", async () => {
 
   const lisa2 = await client("lisa", server, undefined, "lisa-reload");
   expect(lisa2.list(id)!.items.map((i) => i.text)).toEqual(["Schrauben", "Dübel"]);
-  await waitFor(() => mike.list(id)!.items.map((i) => i.text).join() === "Schrauben,Dübel", 3000);
+  await waitFor(
+    () =>
+      mike
+        .list(id)!
+        .items.map((i) => i.text)
+        .join() === "Schrauben,Dübel",
+    3000,
+  );
   await waitFor(() => lisa2.status === "synced");
 });

@@ -30,6 +30,7 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
    ```
 
    Then log in as `tomu` for the remaining steps. Copy `compose.yaml` and `Caddyfile` from this folder into `/opt/tomu`.
+
 5. Create `/opt/tomu/.env`:
 
    ```sh

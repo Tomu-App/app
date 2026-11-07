@@ -27,7 +27,16 @@
   <div class="head">
     <h2 id={titleId}>{title}</h2>
     <button type="button" class="x" aria-label={m.dialog_close()} onclick={() => (open = false)}>
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="square"
+      >
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
     </button>

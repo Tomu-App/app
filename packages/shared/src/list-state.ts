@@ -68,7 +68,8 @@ export function applyListOp(state: ListState, opId: string, op: ListOp): ListSta
     case "add":
     case "text": {
       const item = itemOf(state, op.item);
-      if (op.t === "add" && (item.created === null || compareStamp(stamp, item.created) < 0)) item.created = stamp;
+      if (op.t === "add" && (item.created === null || compareStamp(stamp, item.created) < 0))
+        item.created = stamp;
       if (newer(stamp, item.textStamp)) {
         item.text = op.text;
         item.textStamp = stamp;
@@ -90,7 +91,11 @@ export function applyListOp(state: ListState, opId: string, op: ListOp): ListSta
   return state;
 }
 
-export type ListView = { title: string; dropped: boolean; items: { id: string; text: string; checked: boolean }[] };
+export type ListView = {
+  title: string;
+  dropped: boolean;
+  items: { id: string; text: string; checked: boolean }[];
+};
 
 /** What the UI shows: no deleted or provisional items; open ones by creation, checked ones below. */
 export function listView(state: ListState): ListView {

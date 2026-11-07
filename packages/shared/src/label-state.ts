@@ -65,7 +65,8 @@ export function labelMembers(state: LabelState): Map<string, string> {
   for (const [linkId, l] of Object.entries(state.links)) {
     if (state.removed[linkId]) continue;
     const current = best.get(l.list);
-    if (!current || compareStamp(l.stamp, current.stamp) > 0) best.set(l.list, { key: l.key, stamp: l.stamp });
+    if (!current || compareStamp(l.stamp, current.stamp) > 0)
+      best.set(l.list, { key: l.key, stamp: l.stamp });
   }
   return new Map([...best].map(([list, { key }]) => [list, key]));
 }

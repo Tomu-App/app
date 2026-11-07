@@ -42,9 +42,7 @@ sw.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     // Single page app: every route is answered by the one shell, from the network first so updates arrive.
-    event.respondWith(
-      fetch(request).catch(async () => (await caches.match(SHELL)) ?? Response.error()),
-    );
+    event.respondWith(fetch(request).catch(async () => (await caches.match(SHELL)) ?? Response.error()));
     return;
   }
 

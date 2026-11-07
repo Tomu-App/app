@@ -273,7 +273,9 @@ export class SyncEngine {
     this.markDirty(docId);
     this.emitStatus();
     try {
-      await this.opts.store.commit(mergeChange({ addOutbox: rows.map((r) => ({ doc: r.doc, env: r.env })) }, extra));
+      await this.opts.store.commit(
+        mergeChange({ addOutbox: rows.map((r) => ({ doc: r.doc, env: r.env })) }, extra),
+      );
     } finally {
       // Sending an unsaved op beats losing it; it is only held back until the commit has settled.
       for (const r of rows) r.stored = true;
@@ -414,7 +416,10 @@ export class SyncEngine {
     await this.opts.store.commit({ removeOutbox: [{ doc, id }] });
   }
 
-  private async onError(doc: string | undefined, code: "too_large" | "rate_limited" | "not_found" | "invalid"): Promise<void> {
+  private async onError(
+    doc: string | undefined,
+    code: "too_large" | "rate_limited" | "not_found" | "invalid",
+  ): Promise<void> {
     console.warn(`server error ${code}${doc ? ` (doc ${doc})` : ""}`);
     if (code === "rate_limited") {
       this.paused = true;
@@ -538,7 +543,12 @@ export class SyncEngine {
    * Deletes the record and its local data at once and stops its subscription; `drop` also leaves a tombstone.
    * `keepOutbox` leaves the doc's outbox entries so that they (e.g. a `drop`) are still sent.
    */
-  private async dispose(rec: DocRecord, tombstone: boolean, changed: Set<string>, keepOutbox: boolean): Promise<void> {
+  private async dispose(
+    rec: DocRecord,
+    tombstone: boolean,
+    changed: Set<string>,
+    keepOutbox: boolean,
+  ): Promise<void> {
     const id = rec.id;
     this.docs.delete(id);
     this.keys.delete(id);

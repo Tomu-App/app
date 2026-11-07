@@ -49,7 +49,18 @@ const unlink = z.object({
 
 export const listOpSchema = z.discriminatedUnion("t", [init, title, drop, add, editText, check, del]);
 export const labelOpSchema = z.discriminatedUnion("t", [init, meta, link, unlink]);
-export const opSchema = z.discriminatedUnion("t", [init, title, drop, add, editText, check, del, meta, link, unlink]);
+export const opSchema = z.discriminatedUnion("t", [
+  init,
+  title,
+  drop,
+  add,
+  editText,
+  check,
+  del,
+  meta,
+  link,
+  unlink,
+]);
 
 export type ListOp = z.infer<typeof listOpSchema>;
 export type LabelOp = z.infer<typeof labelOpSchema>;

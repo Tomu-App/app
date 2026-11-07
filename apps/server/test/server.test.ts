@@ -1,4 +1,12 @@
-import { decryptOp, encryptOp, importDocKey, newDocId, newDocKey, serverMessageSchema, type ServerMessage } from "@tomu/shared";
+import {
+  decryptOp,
+  encryptOp,
+  importDocKey,
+  newDocId,
+  newDocKey,
+  serverMessageSchema,
+  type ServerMessage,
+} from "@tomu/shared";
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readConfig } from "../src/config.ts";
 import { CONNS_PER_IP, MAX_FRAME_BYTES } from "../src/limits.ts";
@@ -63,7 +71,9 @@ test("Lisa writes, Mike reads it live, server only stores ciphertext", async () 
   lisa.send({ type: "op", doc, op: env });
   expect(await lisa.next("ack")).toEqual({ type: "ack", doc, id: env.id, seq: 1 });
   const live = await mike.next("op");
-  expect((await decryptOp(doc, key, live.op))?.op).toEqual(expect.objectContaining({ t: "title", text: "Wochenende" }));
+  expect((await decryptOp(doc, key, live.op))?.op).toEqual(
+    expect.objectContaining({ t: "title", text: "Wochenende" }),
+  );
   const page = await (await fetch(`${url}/api/docs/${doc}/ops`)).json();
   expect(page.head).toBe(1);
   expect(JSON.stringify(page)).not.toContain("Wochenende");
@@ -131,7 +141,8 @@ test("catch-up larger than the socket buffer arrives complete", async () => {
   const doc = newDocId();
   srv.store.createDoc(doc);
   const c = "A".repeat(3000);
-  for (let i = 0; i < 7000; i++) srv.store.appendOp(doc, { id: String(i).padStart(22, "0"), n: "A".repeat(16), c });
+  for (let i = 0; i < 7000; i++)
+    srv.store.appendOp(doc, { id: String(i).padStart(22, "0"), n: "A".repeat(16), c });
   const mike = await openWs();
   mike.send({ type: "subscribe", docs: [{ doc, since: 0 }] });
   const seqs: number[] = [];
@@ -148,7 +159,8 @@ test("catch-up larger than the socket buffer arrives complete", async () => {
 
 test("REST doc creation limit is keyed by the client IP through the real server", async () => {
   const codes: number[] = [];
-  for (let i = 0; i < 31; i++) codes.push((await fetch(`${url}/api/docs/${newDocId()}`, { method: "POST" })).status);
+  for (let i = 0; i < 31; i++)
+    codes.push((await fetch(`${url}/api/docs/${newDocId()}`, { method: "POST" })).status);
   expect(codes.filter((c) => c === 201).length).toBe(30);
   expect(codes.at(-1)).toBe(429);
 });

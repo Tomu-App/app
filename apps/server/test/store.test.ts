@@ -76,7 +76,13 @@ test("opsSince pages and returns head", () => {
   const s = new Store(memDb().db);
   s.createDoc(D);
   for (let i = 0; i < 5; i++) s.appendOp(D, env(oid(i)));
-  expect(s.opsSince(D, 2, 2)).toEqual({ ops: [{ seq: 3, ...env(oid(2)) }, { seq: 4, ...env(oid(3)) }], head: 5 });
+  expect(s.opsSince(D, 2, 2)).toEqual({
+    ops: [
+      { seq: 3, ...env(oid(2)) },
+      { seq: 4, ...env(oid(3)) },
+    ],
+    head: 5,
+  });
   expect(s.opsSince(D, 5, 500)).toEqual({ ops: [], head: 5 });
   expect(s.opsSince(E, 0, 500)).toBeNull();
 });

@@ -25,16 +25,44 @@ import {
 
 test("exports the documented API", () => {
   for (const name of [
-    "toBase64Url", "fromBase64Url", "randomBytes", "newDocId", "newDocKey", "newOpId", "newClientId",
-    "DOC_ID_RE", "DOC_KEY_RE", "OP_ID_RE", "CLIENT_ID_RE",
-    "buildLink", "parseLink", "LINK_ORIGIN",
-    "opSchema", "listOpSchema", "labelOpSchema", "envelopeSchema", "envelopeSize", "MAX_ENVELOPE_BYTES",
-    "clientMessageSchema", "serverMessageSchema", "opsPageSchema",
-    "importDocKey", "encryptOp", "decryptOp", "EnvelopeTooLargeError",
-    "Clock", "compareStamp",
-    "emptyListState", "applyListOp", "listView",
-    "emptyLabelState", "applyLabelOp", "labelMembers", "liveLinkIds",
-  ]) expect(shared, name).toHaveProperty(name);
+    "toBase64Url",
+    "fromBase64Url",
+    "randomBytes",
+    "newDocId",
+    "newDocKey",
+    "newOpId",
+    "newClientId",
+    "DOC_ID_RE",
+    "DOC_KEY_RE",
+    "OP_ID_RE",
+    "CLIENT_ID_RE",
+    "buildLink",
+    "parseLink",
+    "LINK_ORIGIN",
+    "opSchema",
+    "listOpSchema",
+    "labelOpSchema",
+    "envelopeSchema",
+    "envelopeSize",
+    "MAX_ENVELOPE_BYTES",
+    "clientMessageSchema",
+    "serverMessageSchema",
+    "opsPageSchema",
+    "importDocKey",
+    "encryptOp",
+    "decryptOp",
+    "EnvelopeTooLargeError",
+    "Clock",
+    "compareStamp",
+    "emptyListState",
+    "applyListOp",
+    "listView",
+    "emptyLabelState",
+    "applyLabelOp",
+    "labelMembers",
+    "liveLinkIds",
+  ])
+    expect(shared, name).toHaveProperty(name);
 });
 
 test("end to end: Lisa shares a label, Mike reads the list", async () => {
@@ -84,5 +112,8 @@ test("end to end: Lisa shares a label, Mike reads the list", async () => {
     const op = listOpSchema.safeParse(d?.op);
     if (d && op.success) applyListOp(list, d.opId, op.data);
   }
-  expect(listView(list)).toMatchObject({ title: "Wochenende", items: [{ text: "Kuchen backen", checked: false }] });
+  expect(listView(list)).toMatchObject({
+    title: "Wochenende",
+    items: [{ text: "Kuchen backen", checked: false }],
+  });
 });

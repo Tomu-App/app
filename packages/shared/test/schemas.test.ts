@@ -61,8 +61,12 @@ test("envelope shape and size", () => {
 test("server messages and ops page parse", () => {
   const env = { id: newOpId(), n: "AAAAAAAAAAAAAAAA", c: "AAAA" };
   const doc = newDocId();
-  expect(serverMessageSchema.safeParse({ type: "ops", doc, ops: [{ ...env, seq: 1 }], head: 1 }).success).toBe(true);
-  expect(serverMessageSchema.safeParse({ type: "error", code: "rate_limited", message: "slow down" }).success).toBe(true);
+  expect(
+    serverMessageSchema.safeParse({ type: "ops", doc, ops: [{ ...env, seq: 1 }], head: 1 }).success,
+  ).toBe(true);
+  expect(
+    serverMessageSchema.safeParse({ type: "error", code: "rate_limited", message: "slow down" }).success,
+  ).toBe(true);
   expect(serverMessageSchema.safeParse({ type: "error", code: "nope", message: "" }).success).toBe(false);
   expect(opsPageSchema.safeParse({ ops: [{ ...env, seq: 3 }], head: 3 }).success).toBe(true);
 });

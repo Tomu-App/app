@@ -51,7 +51,9 @@
       <span>{m.item_text_field()}</span>
       <textarea bind:value={text} rows="3" aria-describedby="item-hint"></textarea>
     </label>
-    <p id="item-hint" class="hint" role="status">{#if tooLong}{m.item_too_long()}{/if}</p>
+    <p id="item-hint" class="hint" role="status">
+      {#if tooLong}{m.item_too_long()}{/if}
+    </p>
     <div class="actions">
       <button type="button" class="ghost" onclick={remove}>{m.item_delete()}</button>
       <button type="submit" disabled={!valid}>{m.item_save()}</button>

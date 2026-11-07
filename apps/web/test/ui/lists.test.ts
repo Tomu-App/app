@@ -9,7 +9,12 @@ const info = (id: string, title: string, folderId: string | null = null): ListIn
   folderId,
   origin: "own",
 });
-const label = (name: string, owner: string | null): LabelInfo => ({ id: "l", name, shared: owner !== null, owner });
+const label = (name: string, owner: string | null): LabelInfo => ({
+  id: "l",
+  name,
+  shared: owner !== null,
+  owner,
+});
 
 test("openCount counts unchecked items", () => {
   const item = (id: string, checked: boolean) => ({ id, text: id, checked });

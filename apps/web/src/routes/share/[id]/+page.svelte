@@ -19,7 +19,9 @@
 
   async function run(): Promise<void> {
     try {
-      const opened = await tomu.openLink(normalizeShareUrl(location.href, dev || PUBLIC_LINK_REWRITE === "1"));
+      const opened = await tomu.openLink(
+        normalizeShareUrl(location.href, dev || PUBLIC_LINK_REWRITE === "1"),
+      );
       if (!opened) {
         notFound = true;
         return;

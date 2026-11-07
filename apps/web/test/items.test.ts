@@ -3,7 +3,13 @@ import { expect, test } from "vitest";
 import { splitItems } from "../src/lib/tomu/items.ts";
 
 test("splits on commas and newlines, trims, drops empty parts", () => {
-  expect(splitItems("Milch, Brot,,  Eier \n\nKäse\r\n Tomaten,")).toEqual(["Milch", "Brot", "Eier", "Käse", "Tomaten"]);
+  expect(splitItems("Milch, Brot,,  Eier \n\nKäse\r\n Tomaten,")).toEqual([
+    "Milch",
+    "Brot",
+    "Eier",
+    "Käse",
+    "Tomaten",
+  ]);
 });
 
 test("collapses inner whitespace and strips control characters", () => {

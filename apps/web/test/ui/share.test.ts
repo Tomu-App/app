@@ -68,7 +68,12 @@ test("QR code is black on white with a quiet zone", async () => {
   const size = Number(svg.getAttribute("viewBox")!.split(" ")[2]);
   expect(size).toBeGreaterThanOrEqual(29 + 8);
   // Dark modules start after 4 light modules on every side.
-  const xs = [...svg.querySelector("path")!.getAttribute("d")!.matchAll(/M(\d+) (\d+)/g)].map((x) => [Number(x[1]), Number(x[2])]);
+  const xs = [
+    ...svg
+      .querySelector("path")!
+      .getAttribute("d")!
+      .matchAll(/M(\d+) (\d+)/g),
+  ].map((x) => [Number(x[1]), Number(x[2])]);
   expect(Math.min(...xs.map((p) => p[0]!))).toBeGreaterThanOrEqual(4);
   expect(Math.min(...xs.map((p) => p[1]!))).toBeGreaterThanOrEqual(4);
 });

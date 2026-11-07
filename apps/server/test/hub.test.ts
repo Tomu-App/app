@@ -11,7 +11,8 @@ const did = (i: number) => `d${i}`.padEnd(22, "_");
 const opMsg = (id: string, doc = D) => JSON.stringify({ type: "op", doc, op: envOf(id) });
 const sub = (...docs: [string, number][]) =>
   JSON.stringify({ type: "subscribe", docs: docs.map(([doc, since]) => ({ doc, since })) });
-const many = (from: number, n: number) => Array.from({ length: n }, (_, i): [string, number] => [did(from + i), 0]);
+const many = (from: number, n: number) =>
+  Array.from({ length: n }, (_, i): [string, number] => [did(from + i), 0]);
 
 const setup = (now?: () => number) => {
   const h = memDb();
@@ -166,7 +167,14 @@ test("op flood is rate_limited softly", () => {
 test("garbage is invalid and does not throw", () => {
   const { hub } = setup();
   const a = conn(hub);
-  const raws = ["", "{", "null", "[]", JSON.stringify({ type: "nope" }), JSON.stringify({ type: "op", doc: D, op: { id: "x" } })];
+  const raws = [
+    "",
+    "{",
+    "null",
+    "[]",
+    JSON.stringify({ type: "nope" }),
+    JSON.stringify({ type: "op", doc: D, op: { id: "x" } }),
+  ];
   for (const raw of raws) hub.message(a, raw);
   expect(a.sent.length).toBe(raws.length);
   expect(a.sent.every((m) => m.type === "error" && m.code === "invalid")).toBe(true);

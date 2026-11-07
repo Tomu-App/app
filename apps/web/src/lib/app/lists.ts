@@ -12,10 +12,16 @@ export function groupLists(
   const byTitle = (a: ListInfo, b: ListInfo): number => a.title.localeCompare(b.title, locale);
   const known = new Set(folders.map((f) => f.id));
   const groups = [
-    { folder: null as Folder | null, lists: lists.filter((l) => l.folderId === null || !known.has(l.folderId)) },
+    {
+      folder: null as Folder | null,
+      lists: lists.filter((l) => l.folderId === null || !known.has(l.folderId)),
+    },
     ...[...folders]
       .sort((a, b) => a.name.localeCompare(b.name, locale))
-      .map((folder) => ({ folder: folder as Folder | null, lists: lists.filter((l) => l.folderId === folder.id) })),
+      .map((folder) => ({
+        folder: folder as Folder | null,
+        lists: lists.filter((l) => l.folderId === folder.id),
+      })),
   ];
   return groups.filter((g) => g.lists.length > 0).map((g) => ({ ...g, lists: g.lists.sort(byTitle) }));
 }

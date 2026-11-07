@@ -17,11 +17,15 @@
   <span class="text">
     <span class="title">{list.title}</span>
     {#if labels.length > 0}
-      <span class="labels">{#each labels as label (label.id)}<LabelTag {label} />{/each}</span>
+      <span class="labels"
+        >{#each labels as label (label.id)}<LabelTag {label} />{/each}</span
+      >
     {/if}
   </span>
   {#if view}
-    <span class="count" class:zero={count === 0} role="img" aria-label={m.list_open_count({ count })}>{count}</span>
+    <span class="count" class:zero={count === 0} role="img" aria-label={m.list_open_count({ count })}
+      >{count}</span
+    >
   {:else}
     <span class="loading">{m.list_loading()}</span>
   {/if}

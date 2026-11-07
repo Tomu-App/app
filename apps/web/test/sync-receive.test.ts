@@ -13,7 +13,13 @@ const L1 = id22("list1");
 const K1 = key43("k1");
 const L2 = id22("list2");
 const K2 = key43("k2");
-const [o1, o2, o3, o4, o5] = ["o1", "o2", "o3", "o4", "o5"].map(id22) as [string, string, string, string, string];
+const [o1, o2, o3, o4, o5] = ["o1", "o2", "o3", "o4", "o5"].map(id22) as [
+  string,
+  string,
+  string,
+  string,
+  string,
+];
 
 const init = (kind: "list" | "label") => op({ t: "init", kind });
 const title = (text: string, ts = 2) => op({ t: "title", text }, ts);
@@ -42,7 +48,15 @@ test("own docs not yet created are not subscribed", async () => {
 
 test("catch-up page is decrypted, applied, and state + lastSeq persist together", async () => {
   const { engine, store, ws } = await startEngine({ docs: [listDoc(D, "link", K)] });
-  ws().receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[o1, init("list")], [o2, title("Einkauf")]]), head: 2 });
+  ws().receive({
+    type: "ops",
+    doc: D,
+    ops: await encrypted(D, K, [
+      [o1, init("list")],
+      [o2, title("Einkauf")],
+    ]),
+    head: 2,
+  });
   await engine.flush();
   const rec = (await store.load()).docs[0]!;
   expect(rec.lastSeq).toBe(2);
@@ -100,7 +114,15 @@ test("remote ts is observed by the clock", async () => {
 
 test("label link adds the unknown list as origin label and subscribes it from 0", async () => {
   const { engine, ws } = await startEngine({ docs: [labelDoc(A, [], "link", KA)] });
-  ws().receive({ type: "ops", doc: A, ops: await encrypted(A, KA, [[o1, init("label")], [o2, link(L, KL)]]), head: 2 });
+  ws().receive({
+    type: "ops",
+    doc: A,
+    ops: await encrypted(A, KA, [
+      [o1, init("label")],
+      [o2, link(L, KL)],
+    ]),
+    head: 2,
+  });
   await vi.waitFor(() => expect(engine.docs.get(L)).toMatchObject({ origin: "label", key: KL, kind: null }));
   expect(ws().sent.at(-1)).toEqual({ type: "subscribe", docs: [{ doc: L, since: 0 }] });
 });
@@ -129,8 +151,18 @@ test("reconcile also runs when the last label doc finishes catching up", async (
 });
 
 test("unlink removes a label-only list and unsubscribes it; own lists stay", async () => {
-  const a = labelDoc(A, [[L1, K1], [L2, K2]], "link", KA);
-  const { engine, store, ws } = await startEngine({ docs: [a, listDoc(L1, "label", K1), listDoc(L2, "own", K2)] });
+  const a = labelDoc(
+    A,
+    [
+      [L1, K1],
+      [L2, K2],
+    ],
+    "link",
+    KA,
+  );
+  const { engine, store, ws } = await startEngine({
+    docs: [a, listDoc(L1, "label", K1), listDoc(L2, "own", K2)],
+  });
   ws().receive(nothing(A));
   ws().receive(nothing(L1));
   ws().receive(nothing(L2));
@@ -151,7 +183,10 @@ test("drop removes the list, tombstones it, and a later link does not bring it b
   ws().receive({
     type: "ops",
     doc: L,
-    ops: await encrypted(L, KL, [[o1, init("list")], [o2, op({ t: "drop" }, 3)]]),
+    ops: await encrypted(L, KL, [
+      [o1, init("list")],
+      [o2, op({ t: "drop" }, 3)],
+    ]),
     head: 2,
   });
   await vi.waitFor(() => expect(engine.docs.has(L)).toBe(false));
@@ -166,11 +201,18 @@ test("drop removes the list, tombstones it, and a later link does not bring it b
 });
 
 test("reconnect resubscribes with the stored lastSeq", async () => {
-  const { engine, ws } = await startEngine({ docs: [listDoc(D, "link", K)], backoff: { baseMs: 1, maxMs: 1 } });
+  const { engine, ws } = await startEngine({
+    docs: [listDoc(D, "link", K)],
+    backoff: { baseMs: 1, maxMs: 1 },
+  });
   ws().receive({
     type: "ops",
     doc: D,
-    ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")], [o3, title("b", 3)]]),
+    ops: await encrypted(D, K, [
+      [o1, init("list")],
+      [o2, title("a")],
+      [o3, title("b", 3)],
+    ]),
     head: 3,
   });
   await engine.flush();
@@ -187,7 +229,11 @@ test("restart resumes from the persisted lastSeq", async () => {
   a.ws().receive({
     type: "ops",
     doc: D,
-    ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")], [o3, title("b", 3)]]),
+    ops: await encrypted(D, K, [
+      [o1, init("list")],
+      [o2, title("a")],
+      [o3, title("b", 3)],
+    ]),
     head: 3,
   });
   await a.engine.flush();
@@ -254,10 +300,21 @@ test("old-socket page queued when the new socket opens does not leave the new ca
     return orig(...a);
   });
   try {
-    const { engine, ws } = await startEngine({ docs: [listDoc(D, "link", K)], backoff: { baseMs: 1, maxMs: 1 } });
+    const { engine, ws } = await startEngine({
+      docs: [listDoc(D, "link", K)],
+      backoff: { baseMs: 1, maxMs: 1 },
+    });
     const first = ws();
     // Page would finish catch-up (last seq >= head), but is still decrypting when the socket changes.
-    first.receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")]]), head: 2 });
+    first.receive({
+      type: "ops",
+      doc: D,
+      ops: await encrypted(D, K, [
+        [o1, init("list")],
+        [o2, title("a")],
+      ]),
+      head: 2,
+    });
     first.drop();
     await vi.waitFor(() => expect(ws()).not.toBe(first));
     ws().open();
@@ -327,7 +384,15 @@ test("a throwing onStatus does not stall the message queue", async () => {
     },
   });
   armed = true;
-  ws().receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")]]), head: 2 });
+  ws().receive({
+    type: "ops",
+    doc: D,
+    ops: await encrypted(D, K, [
+      [o1, init("list")],
+      [o2, title("a")],
+    ]),
+    head: 2,
+  });
   ws().receive(await live(D, K, o3, title("b", 3), 3));
   await vi.waitFor(() => expect(engine.docs.get(D)!.state).toMatchObject({ title: "b" }));
   expect(threw).toBe(true);

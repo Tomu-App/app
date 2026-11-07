@@ -10,7 +10,12 @@ test("first open creates settings with a client id that survives reopening", asy
   a.close();
   const b = await LocalStore.open(name);
   const s2 = (await b.load()).settings;
-  expect(s1).toEqual({ clientId: expect.stringMatching(CLIENT_ID_RE), displayName: "", largeView: false, clockLast: 0 });
+  expect(s1).toEqual({
+    clientId: expect.stringMatching(CLIENT_ID_RE),
+    displayName: "",
+    largeView: false,
+    clockLast: 0,
+  });
   expect(s2.clientId).toBe(s1.clientId);
 });
 
@@ -57,7 +62,9 @@ test("removeOutbox removes by doc and op id, clearOutbox by doc", async () => {
 
 test("a failing commit writes nothing", async () => {
   const s = await LocalStore.open(freshDbName());
-  await expect(s.commit({ putDocs: [listDoc("L")], putFolders: [{ id: undefined as never, name: "x" }] })).rejects.toThrow();
+  await expect(
+    s.commit({ putDocs: [listDoc("L")], putFolders: [{ id: undefined as never, name: "x" }] }),
+  ).rejects.toThrow();
   expect((await s.load()).docs).toEqual([]);
   // The store stays usable after a failure.
   await s.commit({ putDocs: [listDoc("M")] });

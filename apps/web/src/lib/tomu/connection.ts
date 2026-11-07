@@ -1,4 +1,9 @@
-import { clientMessageSchema, serverMessageSchema, type ClientMessage, type ServerMessage } from "@tomu/shared";
+import {
+  clientMessageSchema,
+  serverMessageSchema,
+  type ClientMessage,
+  type ServerMessage,
+} from "@tomu/shared";
 
 export const PING_INTERVAL_MS = 30_000;
 export const PONG_TIMEOUT_MS = 10_000;

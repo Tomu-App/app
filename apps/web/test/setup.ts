@@ -5,4 +5,5 @@ import { setLocale } from "#lib/paraglide/runtime.js";
 setLocale("de", { reload: false });
 
 // jsdom has no Web Animations API; Svelte's animate:flip asks for running animations of moved elements.
-if (typeof Element !== "undefined" && !Element.prototype.getAnimations) Element.prototype.getAnimations = () => [];
+if (typeof Element !== "undefined" && !Element.prototype.getAnimations)
+  Element.prototype.getAnimations = () => [];

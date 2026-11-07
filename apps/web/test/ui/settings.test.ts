@@ -70,12 +70,22 @@ test("own labels can be renamed and shared, foreign labels cannot be renamed", a
 
   // Foreign: share only.
   expect(screen.getByText(/Lisa \/ Familie/)).toBeTruthy();
-  expect(screen.queryByRole("button", { name: m.settings_rename_item({ name: "Lisa / Familie" }) })).toBeNull();
-  expect(screen.queryByRole("button", { name: m.settings_delete_item({ name: "Lisa / Familie" }) })).toBeNull();
-  expect(screen.getByRole("link", { name: m.settings_share_item({ name: "Lisa / Familie" }) }).getAttribute("href")).toBe(`/labels/${A}/share`);
+  expect(
+    screen.queryByRole("button", { name: m.settings_rename_item({ name: "Lisa / Familie" }) }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: m.settings_delete_item({ name: "Lisa / Familie" }) }),
+  ).toBeNull();
+  expect(
+    screen
+      .getByRole("link", { name: m.settings_share_item({ name: "Lisa / Familie" }) })
+      .getAttribute("href"),
+  ).toBe(`/labels/${A}/share`);
 
   // Own private: rename, delete, share.
-  expect(screen.getByRole("link", { name: m.settings_share_item({ name: "Arbeit" }) }).getAttribute("href")).toBe(`/labels/${own}/share`);
+  expect(
+    screen.getByRole("link", { name: m.settings_share_item({ name: "Arbeit" }) }).getAttribute("href"),
+  ).toBe(`/labels/${own}/share`);
   await fireEvent.click(screen.getByRole("button", { name: m.settings_rename_item({ name: "Arbeit" }) }));
   const dialog = screen.getByRole("dialog");
   const input = within(dialog).getByLabelText(m.settings_rename_name_field()) as HTMLInputElement;
@@ -110,9 +120,19 @@ test("language switch changes texts", async () => {
 test("about links to the legal pages", async () => {
   const t = await start();
   renderWithTomu(Page, {}, t);
-  expect(screen.getByRole("link", { name: m.settings_imprint() }).getAttribute("href")).toBe("https://tomu.foo/impressum");
-  expect(screen.getByRole("link", { name: m.settings_privacy() }).getAttribute("href")).toBe("https://tomu.foo/datenschutz");
+  expect(screen.getByRole("link", { name: m.settings_imprint() }).getAttribute("href")).toBe(
+    "https://tomu.foo/impressum",
+  );
+  expect(screen.getByRole("link", { name: m.settings_privacy() }).getAttribute("href")).toBe(
+    "https://tomu.foo/datenschutz",
+  );
   await fireEvent.click(screen.getByRole("radio", { name: "English" }));
-  await waitFor(() => expect(screen.getByRole("link", { name: "Legal notice" }).getAttribute("href")).toBe("https://tomu.foo/en/legal-notice"));
-  expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("https://tomu.foo/en/privacy");
+  await waitFor(() =>
+    expect(screen.getByRole("link", { name: "Legal notice" }).getAttribute("href")).toBe(
+      "https://tomu.foo/en/legal-notice",
+    ),
+  );
+  expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe(
+    "https://tomu.foo/en/privacy",
+  );
 });

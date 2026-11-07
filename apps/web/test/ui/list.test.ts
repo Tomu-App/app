@@ -42,7 +42,8 @@ const open = async (t: Tomu, title = "Einkauf", items = ""): Promise<string> => 
   return id;
 };
 
-const field = (): HTMLTextAreaElement => screen.getByPlaceholderText(m.add_placeholder()) as HTMLTextAreaElement;
+const field = (): HTMLTextAreaElement =>
+  screen.getByPlaceholderText(m.add_placeholder()) as HTMLTextAreaElement;
 const type = async (text: string): Promise<void> => {
   await fireEvent.input(field(), { target: { value: text } });
   flushSync();
@@ -137,7 +138,8 @@ test("long title and item wrap without horizontal overflow", async () => {
   const text = screen.getByText("w".repeat(900));
   // jsdom does not compute scoped Svelte CSS, so check the class and the component rule instead.
   const src = (f: string): string => readFileSync(resolve(process.cwd(), "src", f), "utf8");
-  const rule = (css: string, cls: string): string => css.match(new RegExp(`\\.${cls}\\s*\\{[^}]*\\}`))?.[0] ?? "";
+  const rule = (css: string, cls: string): string =>
+    css.match(new RegExp(`\\.${cls}\\s*\\{[^}]*\\}`))?.[0] ?? "";
   const pageCss = src("routes/list/[id]/+page.svelte");
   const rowCss = src("lib/app/components/ItemRow.svelte");
   expect(h1.classList.contains("title")).toBe(true);

@@ -36,13 +36,13 @@ pnpm --filter @tomu/server db:generate  # after changing src/db/schema.ts; commi
 pnpm --filter @tomu/server build      # dist/server.js, the bundle the Docker image runs
 ```
 
-| Variable            | Default                 | Meaning                                                                 |
-| ------------------- | ----------------------- | ----------------------------------------------------------------------- |
-| `PORT`              | `3000`                  | HTTP and WebSocket port                                                 |
-| `DB_PATH`           | `./tomu.db`             | SQLite file                                                             |
-| `ALLOWED_ORIGINS`   | `http://localhost:5173` | Comma-separated frontend origins for CORS and the WebSocket `Origin`    |
+| Variable            | Default                 | Meaning                                                                  |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `PORT`              | `3000`                  | HTTP and WebSocket port                                                  |
+| `DB_PATH`           | `./tomu.db`             | SQLite file                                                              |
+| `ALLOWED_ORIGINS`   | `http://localhost:5173` | Comma-separated frontend origins for CORS and the WebSocket `Origin`     |
 | `TRUST_CLOUDFLARE`  | unset                   | `1`: take the client IP from `cf-connecting-ip` (only behind Cloudflare) |
-| `MIGRATIONS_FOLDER` | `apps/server/drizzle`   | Where the migrations are (the image sets `/app/drizzle`)                |
+| `MIGRATIONS_FOLDER` | `apps/server/drizzle`   | Where the migrations are (the image sets `/app/drizzle`)                 |
 
 On every push to `main`, CI publishes the image `ghcr.io/tomu-app/server` (`latest` and `sha-<commit>`) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
 

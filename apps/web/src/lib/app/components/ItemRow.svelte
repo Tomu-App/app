@@ -19,15 +19,35 @@
   <button type="button" role="checkbox" aria-checked={item.checked} class="tick" onclick={onToggle}>
     <span class="box" aria-hidden="true">
       {#if item.checked}
-        <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square">
+        <svg
+          viewBox="0 0 24 24"
+          width="100%"
+          height="100%"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="4"
+          stroke-linecap="square"
+        >
           <path d="M5 12.5l5 5L19 7" />
         </svg>
       {/if}
     </span>
-    <span class="text">{item.text}{#if fresh}<span class="mark">{m.fresh_mark()}</span>{/if}</span>
+    <span class="text"
+      >{item.text}{#if fresh}<span class="mark">{m.fresh_mark()}</span>{/if}</span
+    >
   </button>
   <button type="button" class="edit" onclick={onEdit}>
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
       <path d="M4 20l1-4L16 5l3 3L8 19z" />
       <path d="M14 7l3 3" />
     </svg>

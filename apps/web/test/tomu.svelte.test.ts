@@ -293,7 +293,9 @@ test("views are replaced, not mutated, so effects rerun", async () => {
 test("online events nudge the connection", async () => {
   const online = new EventTarget();
   const sock = fakeSocket();
-  const t = await startTomu(offlineOpts({ online, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }));
+  const t = await startTomu(
+    offlineOpts({ online, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }),
+  );
   expect(sock.sockets.length).toBe(1);
   sock.sockets[0]!.drop(); // reconnect is now waiting for 60 s
   online.dispatchEvent(new Event("online"));
@@ -307,7 +309,9 @@ test("focus and visible visibilitychange nudge the connection; hidden does not; 
   const online = new EventTarget();
   const visibility = new EventTarget();
   const sock = fakeSocket();
-  const t = await startTomu(offlineOpts({ online, visibility, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }));
+  const t = await startTomu(
+    offlineOpts({ online, visibility, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }),
+  );
   sock.sockets[0]!.drop(); // reconnect waits for 60 s
   online.dispatchEvent(new Event("focus"));
   expect(sock.sockets.length).toBe(2);
@@ -331,7 +335,10 @@ test("shareLabel resumes a share that was interrupted after the label doc was st
   const opts = offlineOpts();
   const labelId = newDocId();
   const store = await LocalStore.open(opts.dbName!);
-  await store.commit({ putDocs: [newDocRecord(labelId, newDocKey(), "own", "label")], putLabels: [{ id: labelId, name: "Familie" }] });
+  await store.commit({
+    putDocs: [newDocRecord(labelId, newDocKey(), "own", "label")],
+    putLabels: [{ id: labelId, name: "Familie" }],
+  });
   store.close();
   const t = await startTomu(opts);
   await t.setDisplayName("Lisa");

@@ -99,6 +99,12 @@ export class Store {
   }
 
   private maxSeq(docId: string): number {
-    return this.db.select({ m: max(ops.seq) }).from(ops).where(eq(ops.docId, docId)).get()?.m ?? 0;
+    return (
+      this.db
+        .select({ m: max(ops.seq) })
+        .from(ops)
+        .where(eq(ops.docId, docId))
+        .get()?.m ?? 0
+    );
   }
 }

@@ -54,7 +54,16 @@
 <Board>
   {#snippet start()}
     <a class="back" href="/">
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="square"
+      >
         <path d="M15 4l-8 8 8 8" />
       </svg>
       {m.menu_back()}
@@ -73,7 +82,13 @@
     <form onsubmit={saveName}>
       <label class="field">
         <span>{m.share_name_prompt()}</span>
-        <input type="text" aria-label={m.share_name_field()} bind:value={name} maxlength="60" autocomplete="given-name" />
+        <input
+          type="text"
+          aria-label={m.share_name_field()}
+          bind:value={name}
+          maxlength="60"
+          autocomplete="given-name"
+        />
       </label>
       <button type="submit" disabled={name.trim().length === 0 || busy}>{m.share_name_save()}</button>
     </form>

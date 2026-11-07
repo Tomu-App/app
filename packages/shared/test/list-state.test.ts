@@ -15,9 +15,30 @@ const id = () => `op${String(n++).padStart(20, "0")}`;
 const run = (ops: ListOp[], state: ListState = emptyListState()) =>
   ops.reduce((s, op) => applyListOp(s, id(), op), state);
 
-const add = (item: string, text: string, ts: number, c = A): ListOp => ({ v: 1, t: "add", item, text, c, ts });
-const edit = (item: string, text: string, ts: number, c = A): ListOp => ({ v: 1, t: "text", item, text, c, ts });
-const check = (item: string, value: boolean, ts: number, c = A): ListOp => ({ v: 1, t: "check", item, value, c, ts });
+const add = (item: string, text: string, ts: number, c = A): ListOp => ({
+  v: 1,
+  t: "add",
+  item,
+  text,
+  c,
+  ts,
+});
+const edit = (item: string, text: string, ts: number, c = A): ListOp => ({
+  v: 1,
+  t: "text",
+  item,
+  text,
+  c,
+  ts,
+});
+const check = (item: string, value: boolean, ts: number, c = A): ListOp => ({
+  v: 1,
+  t: "check",
+  item,
+  value,
+  c,
+  ts,
+});
 const del = (item: string, ts: number, c = A): ListOp => ({ v: 1, t: "del", item, c, ts });
 const title = (text: string, ts: number, c = A): ListOp => ({ v: 1, t: "title", text, c, ts });
 const drop = (ts: number, c = A): ListOp => ({ v: 1, t: "drop", c, ts });
@@ -62,7 +83,9 @@ test("title is LWW", () => {
 });
 
 test("sort: open by created, checked below", () => {
-  const view = listView(run([add(I2, "zwei", 2), add(I1, "eins", 1), add(I3, "drei", 3), check(I1, true, 4)]));
+  const view = listView(
+    run([add(I2, "zwei", 2), add(I1, "eins", 1), add(I3, "drei", 3), check(I1, true, 4)]),
+  );
   expect(view.items.map((i) => i.id)).toEqual([I2, I3, I1]);
 });
 
@@ -91,12 +114,17 @@ const arbListOpLog = () =>
       rows.map((r, i): [string, ListOp] => {
         const base = { v: 1 as const, c: r.c, ts: i + 1 };
         const op: ListOp =
-          r.t === "add" ? { ...base, t: "add", item: r.item, text: r.text }
-          : r.t === "text" ? { ...base, t: "text", item: r.item, text: r.text }
-          : r.t === "check" ? { ...base, t: "check", item: r.item, value: r.value }
-          : r.t === "del" ? { ...base, t: "del", item: r.item }
-          : r.t === "title" ? { ...base, t: "title", text: r.text }
-          : { ...base, t: "drop" };
+          r.t === "add"
+            ? { ...base, t: "add", item: r.item, text: r.text }
+            : r.t === "text"
+              ? { ...base, t: "text", item: r.item, text: r.text }
+              : r.t === "check"
+                ? { ...base, t: "check", item: r.item, value: r.value }
+                : r.t === "del"
+                  ? { ...base, t: "del", item: r.item }
+                  : r.t === "title"
+                    ? { ...base, t: "title", text: r.text }
+                    : { ...base, t: "drop" };
         return [`log${String(i).padStart(19, "0")}`, op];
       }),
     );
@@ -105,7 +133,10 @@ test("order and duplicates do not matter", () => {
   fc.assert(
     fc.property(arbListOpLog(), fc.integer(), (log, seed) => {
       const a = log.reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
-      const b = shuffleWithDuplicates(log, seed).reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
+      const b = shuffleWithDuplicates(log, seed).reduce(
+        (s, [opId, op]) => applyListOp(s, opId, op),
+        emptyListState(),
+      );
       expect(listView(b)).toEqual(listView(a));
     }),
   );
@@ -114,17 +145,31 @@ test("order and duplicates do not matter", () => {
 test("equal stamps from one client still converge (op id tie-break)", () => {
   const t1: ListOp = { v: 1, t: "title", text: "A", c: A, ts: 5 };
   const t2: ListOp = { v: 1, t: "title", text: "B", c: A, ts: 5 };
-  const x = applyListOp(applyListOp(emptyListState(), "aaaaaaaaaaaaaaaaaaaaaa", t1), "bbbbbbbbbbbbbbbbbbbbbb", t2);
-  const y = applyListOp(applyListOp(emptyListState(), "bbbbbbbbbbbbbbbbbbbbbb", t2), "aaaaaaaaaaaaaaaaaaaaaa", t1);
+  const x = applyListOp(
+    applyListOp(emptyListState(), "aaaaaaaaaaaaaaaaaaaaaa", t1),
+    "bbbbbbbbbbbbbbbbbbbbbb",
+    t2,
+  );
+  const y = applyListOp(
+    applyListOp(emptyListState(), "bbbbbbbbbbbbbbbbbbbbbb", t2),
+    "aaaaaaaaaaaaaaaaaaaaaa",
+    t1,
+  );
   expect(listView(x).title).toBe(listView(y).title);
 });
 
 test("order does not matter even when stamps collide", () => {
   fc.assert(
     fc.property(arbListOpLog(), fc.integer(), fc.integer({ min: 1, max: 3 }), (log, seed, spread) => {
-      const collided = log.map(([opId, op], i): [string, ListOp] => [opId, { ...op, ts: (i % spread) + 1, c: A }]);
+      const collided = log.map(([opId, op], i): [string, ListOp] => [
+        opId,
+        { ...op, ts: (i % spread) + 1, c: A },
+      ]);
       const a = collided.reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
-      const b = shuffleWithDuplicates(collided, seed).reduce((s, [opId, op]) => applyListOp(s, opId, op), emptyListState());
+      const b = shuffleWithDuplicates(collided, seed).reduce(
+        (s, [opId, op]) => applyListOp(s, opId, op),
+        emptyListState(),
+      );
       expect(listView(b)).toEqual(listView(a));
     }),
   );

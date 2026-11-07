@@ -21,7 +21,8 @@ const setup = () => {
   });
   return { store, app };
 };
-const post = (app: ReturnType<typeof setup>["app"], id: string) => app.request(`/api/docs/${id}`, { method: "POST" });
+const post = (app: ReturnType<typeof setup>["app"], id: string) =>
+  app.request(`/api/docs/${id}`, { method: "POST" });
 
 test("POST creates, second POST conflicts", async () => {
   const { app } = setup();
@@ -31,7 +32,8 @@ test("POST creates, second POST conflicts", async () => {
 
 test("POST rejects malformed ids", async () => {
   const { app } = setup();
-  for (const id of ["short", "D".repeat(23), "D".repeat(21) + "+"]) expect((await post(app, id)).status).toBe(400);
+  for (const id of ["short", "D".repeat(23), "D".repeat(21) + "+"])
+    expect((await post(app, id)).status).toBe(400);
 });
 
 test("POST is limited to 30 new docs per IP per hour; conflicts do not count", async () => {
@@ -50,7 +52,10 @@ test("GET ops returns a schema-valid page", async () => {
   store.appendOp(D, env("a".repeat(22)));
   const res = await app.request(`/api/docs/${D}/ops?since=0`);
   expect(res.status).toBe(200);
-  expect(opsPageSchema.parse(await res.json())).toEqual({ ops: [{ seq: 1, ...env("a".repeat(22)) }], head: 1 });
+  expect(opsPageSchema.parse(await res.json())).toEqual({
+    ops: [{ seq: 1, ...env("a".repeat(22)) }],
+    head: 1,
+  });
 });
 
 test("GET ops: 404 for a missing doc, 400 for bad params, limit capped at 500", async () => {

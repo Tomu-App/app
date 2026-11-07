@@ -67,7 +67,11 @@ test("lists still loading show a calm loading row", async () => {
   await t.openLink(buildLink(id, newDocKey()));
   expect(t.docStatus(id)).toBe("loading");
   // Tomu.lists only holds lists with known content, so the row is rendered for a known ListInfo directly.
-  renderWithTomu(ListRow, { list: { id, title: "Grillen", labelIds: [], folderId: null, origin: "link" } }, t);
+  renderWithTomu(
+    ListRow,
+    { list: { id, title: "Grillen", labelIds: [], folderId: null, origin: "link" } },
+    t,
+  );
   expect(screen.getByText(m.list_loading())).toBeTruthy();
   expect(screen.queryByRole("link")).toBeNull();
   expect(screen.queryByRole("img")).toBeNull();

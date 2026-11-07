@@ -85,7 +85,9 @@ export class InstallHint {
   #isStandalone(): boolean {
     const nav = this.#win.navigator as Navigator & { standalone?: boolean };
     // matchMedia is missing in some test and embedded environments; treat that as "not installed".
-    const media = typeof this.#win.matchMedia === "function" && this.#win.matchMedia("(display-mode: standalone)").matches;
+    const media =
+      typeof this.#win.matchMedia === "function" &&
+      this.#win.matchMedia("(display-mode: standalone)").matches;
     return nav.standalone === true || media;
   }
 

@@ -2,7 +2,11 @@
   import { m } from "#lib/paraglide/messages.js";
   import QrCode from "./QrCode.svelte";
 
-  let { link, title, explain = m.share_explain() }: { link: string; title: string; explain?: string } = $props();
+  let {
+    link,
+    title,
+    explain = m.share_explain(),
+  }: { link: string; title: string; explain?: string } = $props();
 
   // Fixed for the page's lifetime: the browser either has a share sheet or not.
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -42,7 +46,9 @@
     <button type="button" class="ghost" onclick={share}>{m.share_native()}</button>
   {/if}
 </div>
-<p class="copied" role="status">{#if copied}{m.share_copied()}{/if}</p>
+<p class="copied" role="status">
+  {#if copied}{m.share_copied()}{/if}
+</p>
 
 <style>
   .title {

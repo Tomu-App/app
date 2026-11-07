@@ -49,7 +49,9 @@ test("menu offers delete only for own lists", async () => {
   await open(t);
   await menu();
   expect(screen.getByRole("button", { name: m.menu_delete() })).toBeTruthy();
-  expect(screen.getByRole("link", { name: m.menu_share() }).getAttribute("href")).toBe(`/list/${route.id}/share`);
+  expect(screen.getByRole("link", { name: m.menu_share() }).getAttribute("href")).toBe(
+    `/list/${route.id}/share`,
+  );
   cleanup();
 
   const opts = offlineOpts();

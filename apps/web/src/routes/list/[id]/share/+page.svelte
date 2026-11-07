@@ -17,7 +17,16 @@
 <Board>
   {#snippet start()}
     <a class="back" href={status === "list" ? `/list/${id}` : "/"}>
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="square"
+      >
         <path d="M15 4l-8 8 8 8" />
       </svg>
       {m.menu_back()}

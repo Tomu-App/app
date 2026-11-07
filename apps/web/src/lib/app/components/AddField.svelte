@@ -50,15 +50,25 @@
     autocomplete="off"
     aria-label={m.add_label()}
     aria-describedby="add-hint"
-    placeholder={m.add_placeholder()}
-  ></textarea>
+    placeholder={m.add_placeholder()}></textarea>
   <button type="submit" class="plus" aria-label={m.add_button()}>
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="4"
+      stroke-linecap="square"
+    >
       <path d="M12 4v16M4 12h16" />
     </svg>
   </button>
 </form>
-<p id="add-hint" class="hint" role="status">{#if tooLong}{m.item_too_long()}{/if}</p>
+<p id="add-hint" class="hint" role="status">
+  {#if tooLong}{m.item_too_long()}{/if}
+</p>
 
 <style>
   .add {

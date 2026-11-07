@@ -1,6 +1,12 @@
 import fc from "fast-check";
 import { expect, test } from "vitest";
-import { applyLabelOp, emptyLabelState, labelMembers, liveLinkIds, type LabelState } from "../src/label-state.ts";
+import {
+  applyLabelOp,
+  emptyLabelState,
+  labelMembers,
+  liveLinkIds,
+  type LabelState,
+} from "../src/label-state.ts";
 import type { LabelOp } from "../src/schemas/ops.ts";
 import { shuffleWithDuplicates } from "./shuffle.ts";
 
@@ -13,9 +19,30 @@ const K2 = "2".repeat(43);
 const L1 = "L1".padEnd(22, "_");
 const L2 = "L2".padEnd(22, "_");
 
-const meta = (name: string, owner: string, ts: number, c = A): LabelOp => ({ v: 1, t: "meta", name, owner, c, ts });
-const link = (list: string, key: string, ts: number, c = A): LabelOp => ({ v: 1, t: "link", list, key, c, ts });
-const unlink = (list: string, seen: string[], ts: number, c = A): LabelOp => ({ v: 1, t: "unlink", list, seen, c, ts });
+const meta = (name: string, owner: string, ts: number, c = A): LabelOp => ({
+  v: 1,
+  t: "meta",
+  name,
+  owner,
+  c,
+  ts,
+});
+const link = (list: string, key: string, ts: number, c = A): LabelOp => ({
+  v: 1,
+  t: "link",
+  list,
+  key,
+  c,
+  ts,
+});
+const unlink = (list: string, seen: string[], ts: number, c = A): LabelOp => ({
+  v: 1,
+  t: "unlink",
+  list,
+  seen,
+  c,
+  ts,
+});
 const run = (ops: [string, LabelOp][], state: LabelState = emptyLabelState()) =>
   ops.reduce((s, [id, op]) => applyLabelOp(s, id, op), state);
 
@@ -43,7 +70,10 @@ test("concurrent re-add wins (add-wins)", () => {
   const base: [string, LabelOp] = [L1, link(X, K1, 1)];
   const removeA: [string, LabelOp] = ["u1", unlink(X, [L1], 2, A)];
   const readdB: [string, LabelOp] = [L2, link(X, K2, 2, B)];
-  for (const order of [[base, removeA, readdB], [base, readdB, removeA]]) {
+  for (const order of [
+    [base, removeA, readdB],
+    [base, readdB, removeA],
+  ]) {
     expect(labelMembers(run(order))).toEqual(new Map([[X, K2]]));
   }
 });
@@ -127,7 +157,10 @@ test("order and duplicates do not matter", () => {
 test("order does not matter even when stamps collide", () => {
   fc.assert(
     fc.property(arbLabelOpLog(), fc.integer(), (log, seed) => {
-      const collided = log.map(([opId, op], i): [string, LabelOp] => [opId, { ...op, ts: (i % 2) + 1, c: A }]);
+      const collided = log.map(([opId, op], i): [string, LabelOp] => [
+        opId,
+        { ...op, ts: (i % 2) + 1, c: A },
+      ]);
       const a = run(collided);
       const b = run(shuffleWithDuplicates(collided, seed));
       expect(labelMembers(b)).toEqual(labelMembers(a));

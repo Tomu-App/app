@@ -73,7 +73,8 @@
   const tear = (_node: Element, { duration }: { duration: number }) => ({
     duration,
     easing: cubicIn,
-    css: (t: number, u: number) => `transform: translateY(${u * 2.5}rem) rotate(${u * 3}deg); opacity: ${t}; transform-origin: 0 0;`,
+    css: (t: number, u: number) =>
+      `transform: translateY(${u * 2.5}rem) rotate(${u * 3}deg); opacity: ${t}; transform-origin: 0 0;`,
   });
 
   // Only entries ticked right now go; one that someone unticked before the window ended stays.
@@ -95,7 +96,16 @@
 <Board>
   {#snippet start()}
     <a class="back" href="/">
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="3"
+        stroke-linecap="square"
+      >
         <path d="M15 4l-8 8 8 8" />
       </svg>
       {m.back_to_lists()}
@@ -110,7 +120,9 @@
 <Sheet offline={tomu.status === "offline"}>
   {#if view}
     {#if labels.length > 0}
-      <div class="labels">{#each labels as label (label.id)}<LabelTag {label} plain />{/each}</div>
+      <div class="labels">
+        {#each labels as label (label.id)}<LabelTag {label} plain />{/each}
+      </div>
     {/if}
     <div class="head">
       <h1 class="title">{view.title}</h1>
@@ -124,7 +136,10 @@
     <InstallHint />
     <ul>
       {#each items as item, i (item.id)}
-        <li animate:flip={{ duration: reduceMotion() ? 0 : 250 }} out:tear={{ duration: motion.tearing ? tearDuration : 0 }}>
+        <li
+          animate:flip={{ duration: reduceMotion() ? 0 : 250 }}
+          out:tear={{ duration: motion.tearing ? tearDuration : 0 }}
+        >
           {#if item.checked && i === count}
             <div class="perf"><span>{m.done_count({ count: doneCount })}</span></div>
           {/if}

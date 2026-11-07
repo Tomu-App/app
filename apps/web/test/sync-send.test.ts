@@ -1,7 +1,12 @@
 import type { ClientMessage } from "@tomu/shared";
 import { afterEach, expect, test, vi } from "vitest";
 import { newDocRecord } from "../src/lib/tomu/docs.ts";
-import { CREATE_RETRY_MS, MISSING_RETRY_MS, RATE_LIMIT_WAIT_MS, type SyncEngine } from "../src/lib/tomu/sync.ts";
+import {
+  CREATE_RETRY_MS,
+  MISSING_RETRY_MS,
+  RATE_LIMIT_WAIT_MS,
+  type SyncEngine,
+} from "../src/lib/tomu/sync.ts";
 import type { SyncStatus } from "../src/lib/tomu/types.ts";
 import {
   encrypted,
@@ -221,7 +226,9 @@ test("rate_limited pauses sending and resends unacked ops after RATE_LIMIT_WAIT_
 
   await vi.advanceTimersByTimeAsync(RATE_LIMIT_WAIT_MS);
   await settle(engine);
-  const after = opMsgs(ws()).slice(2).map((m) => m.op.id);
+  const after = opMsgs(ws())
+    .slice(2)
+    .map((m) => m.op.id);
   expect(after.slice(0, 2)).toEqual(ids);
   expect(after.length).toBe(3);
   await engine.stop();
@@ -279,7 +286,9 @@ test("local op survives a restart before the state flush", async () => {
   expect(Object.keys((snapshot.docs[0]!.state as { items: object }).items)).toEqual([]);
 
   const second = await startEngine({ store: first.store, snapshot });
-  const items = Object.values((second.engine.docs.get(D)!.state as { items: Record<string, { text: string }> }).items);
+  const items = Object.values(
+    (second.engine.docs.get(D)!.state as { items: Record<string, { text: string }> }).items,
+  );
   expect(items.map((i) => i.text)).toEqual(["Milch"]);
   expect(opMsgs(second.ws()).length).toBe(1);
   await second.engine.stop();
@@ -317,7 +326,12 @@ test("queue lag longer than the backoff: one subscribe round and one send per op
     });
     await engine.localOps(D, [title("a"), title("b", 3)]);
     // Slow work at the head of the queue; the next opens and closes pile up behind it.
-    sock.sockets[0]!.receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[id22("x1"), title("x")]]), head: 1 });
+    sock.sockets[0]!.receive({
+      type: "ops",
+      doc: D,
+      ops: await encrypted(D, K, [[id22("x1"), title("x")]]),
+      head: 1,
+    });
     sock.sockets[0]!.drop();
     await vi.waitFor(() => expect(sock.sockets.length).toBe(2), { interval: 1 });
     sock.sockets[1]!.open(); // open1: queued behind the slow page

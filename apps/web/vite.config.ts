@@ -21,7 +21,8 @@ const paraglideRuntimeIdFix = (): Plugin => ({
 export default defineConfig(({ mode }) => {
   // The API origin is allowed for fetch and WebSocket; falls back to the local dev server.
   // Cast: the CSP Source type only models dotted hosts, but "localhost" URLs are valid at runtime.
-  const api = (loadEnv(mode, process.cwd(), "PUBLIC_").PUBLIC_API_URL || "http://localhost:3000") as `${string}.${string}`;
+  const api = (loadEnv(mode, process.cwd(), "PUBLIC_").PUBLIC_API_URL ||
+    "http://localhost:3000") as `${string}.${string}`;
   const ws = api.replace(/^http/, "ws") as `${string}.${string}`;
 
   return {

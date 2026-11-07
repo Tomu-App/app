@@ -18,7 +18,9 @@ test("a member known as a record is not added again", () => {
 });
 
 test("a member in several labels is added once", () => {
-  expect(reconcile([labelDoc(A, [[L1, K1]]), labelDoc(B, [[L1, K1]])], new Set()).add).toEqual([{ id: L1, key: K1 }]);
+  expect(reconcile([labelDoc(A, [[L1, K1]]), labelDoc(B, [[L1, K1]])], new Set()).add).toEqual([
+    { id: L1, key: K1 },
+  ]);
 });
 
 test("list that only came through a label disappears when no label has it any more", () => {
@@ -30,7 +32,9 @@ test("own and single-link lists stay", () => {
 });
 
 test("list stays while a second label still has it", () => {
-  expect(reconcile([labelDoc(A, []), labelDoc(B, [[L1, K1]]), listDoc(L1, "label")], new Set()).remove).toEqual([]);
+  expect(
+    reconcile([labelDoc(A, []), labelDoc(B, [[L1, K1]]), listDoc(L1, "label")], new Set()).remove,
+  ).toEqual([]);
 });
 
 test("tombstoned lists are never added again", () => {

@@ -8,7 +8,13 @@
     body,
     confirmLabel,
     onConfirm,
-  }: { open?: boolean; title: string; body: string; confirmLabel: string; onConfirm: () => void | Promise<void> } = $props();
+  }: {
+    open?: boolean;
+    title: string;
+    body: string;
+    confirmLabel: string;
+    onConfirm: () => void | Promise<void>;
+  } = $props();
 
   let busy = $state(false);
 

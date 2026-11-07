@@ -25,7 +25,13 @@ const LOCK_NAME = "tomu";
 
 /** owner is null for private labels and for labels this device shares. */
 export type LabelInfo = { id: string; name: string; shared: boolean; owner: string | null };
-export type ListInfo = { id: string; title: string; labelIds: string[]; folderId: string | null; origin: Origin };
+export type ListInfo = {
+  id: string;
+  title: string;
+  labelIds: string[];
+  folderId: string | null;
+  origin: Origin;
+};
 
 export type TomuOptions = {
   apiUrl: string;
@@ -59,7 +65,8 @@ function bounded(input: string, max: number, what: string): string {
 /** One list entry, cleaned like `splitItems` does but never split. */
 function entryText(input: string): string {
   const s = cleanEntry(input);
-  if (s.length < 1 || s.length > MAX_ITEM_TEXT) throw new RangeError(`entry must have 1 to ${MAX_ITEM_TEXT} characters`);
+  if (s.length < 1 || s.length > MAX_ITEM_TEXT)
+    throw new RangeError(`entry must have 1 to ${MAX_ITEM_TEXT} characters`);
   return s;
 }
 
@@ -127,13 +134,15 @@ export class Tomu {
   async _start(): Promise<void> {
     if (!this.#engine || !this.#parts) return;
     this.#rebuild(null);
-    const online = this.#parts.opts.online === undefined ? (globalThis.window ?? null) : this.#parts.opts.online;
+    const online =
+      this.#parts.opts.online === undefined ? (globalThis.window ?? null) : this.#parts.opts.online;
     if (online) {
       this.#onlineTarget = online;
       online.addEventListener("online", this.#onOnline);
       online.addEventListener("focus", this.#onOnline);
     }
-    const visibility = this.#parts.opts.visibility === undefined ? (globalThis.document ?? null) : this.#parts.opts.visibility;
+    const visibility =
+      this.#parts.opts.visibility === undefined ? (globalThis.document ?? null) : this.#parts.opts.visibility;
     if (visibility) {
       this.#visibilityTarget = visibility;
       visibility.addEventListener("visibilitychange", this.#onVisibility);
@@ -192,7 +201,8 @@ export class Tomu {
       else if (rec?.kind === "label") shared.push(rec);
       else throw new Error(`unknown label ${lid}`);
     }
-    if (folderId !== null && !this.#folders.some((f) => f.id === folderId)) throw new Error(`unknown folder ${folderId}`);
+    if (folderId !== null && !this.#folders.some((f) => f.id === folderId))
+      throw new Error(`unknown folder ${folderId}`);
     const id = newDocId();
     const key = newDocKey();
     const ops = [this.#op({ t: "init", kind: "list" }), this.#op({ t: "title", text })];
@@ -220,7 +230,10 @@ export class Tomu {
     for (const rec of eng.docs.values()) {
       // A full label accepts no more ops: the list stays linked there.
       if (rec.kind !== "label" || rec.full || !labelMembers(rec.state).has(id)) continue;
-      unlinks.push({ label: rec.id, op: this.#op({ t: "unlink", list: id, seen: liveLinkIds(rec.state, id) }) });
+      unlinks.push({
+        label: rec.id,
+        op: this.#op({ t: "unlink", list: id, seen: liveLinkIds(rec.state, id) }),
+      });
     }
     // A full list accepts no more ops (not even a drop): it is only unlinked and removed locally.
     const drop = list.full ? null : this.#op({ t: "drop" });
@@ -336,9 +349,13 @@ export class Tomu {
       if (rec.kind !== "label") continue;
       const member = labelMembers(rec.state).has(listId);
       if (rec.full && want.has(rec.id) !== member) throw new Error(`label ${rec.id} is full`);
-      if (want.has(rec.id) && !member) labelOps.push({ label: rec.id, op: this.#op({ t: "link", list: listId, key: list.key }) });
+      if (want.has(rec.id) && !member)
+        labelOps.push({ label: rec.id, op: this.#op({ t: "link", list: listId, key: list.key }) });
       else if (!want.has(rec.id) && member) {
-        labelOps.push({ label: rec.id, op: this.#op({ t: "unlink", list: listId, seen: liveLinkIds(rec.state, listId) }) });
+        labelOps.push({
+          label: rec.id,
+          op: this.#op({ t: "unlink", list: listId, seen: liveLinkIds(rec.state, listId) }),
+        });
       }
     }
     checkOps(labelOps.map((o) => o.op));
@@ -362,7 +379,8 @@ export class Tomu {
     const priv = prevLabels.find((l) => l.id === labelId);
     // Done already: the private label is gone or the label doc has its ops. Otherwise (first call, or a share that
     // was interrupted after the doc was stored) the ops are written now.
-    if (existing?.kind === "label" && (!priv || existing.state.initialized)) return buildLink(labelId, existing.key);
+    if (existing?.kind === "label" && (!priv || existing.state.initialized))
+      return buildLink(labelId, existing.key);
     if (!priv) throw new Error(`unknown label ${labelId}`);
     if (!this.#displayName) throw new DisplayNameRequiredError();
     const members = [...eng.docs.values()].filter((r) => r.kind === "list" && r.labels.includes(labelId));
@@ -456,7 +474,8 @@ export class Tomu {
   async setListFolder(listId: string, folderId: string | null): Promise<void> {
     const eng = this.#eng();
     const list = this.#list(listId);
-    if (folderId !== null && !this.#folders.some((f) => f.id === folderId)) throw new Error(`unknown folder ${folderId}`);
+    if (folderId !== null && !this.#folders.some((f) => f.id === folderId))
+      throw new Error(`unknown folder ${folderId}`);
     await eng.updateDocs([{ ...list, folder: folderId }]);
   }
 
@@ -490,7 +509,8 @@ export class Tomu {
   // ---- internals ----
 
   #eng(): SyncEngine {
-    if (!this.#engine || this.#stopped) throw new Error(this.#parts ? "Tomu is stopped" : "Tomu is blocked by another tab");
+    if (!this.#engine || this.#stopped)
+      throw new Error(this.#parts ? "Tomu is stopped" : "Tomu is blocked by another tab");
     return this.#engine;
   }
 
@@ -521,7 +541,12 @@ export class Tomu {
     const shared: LabelInfo[] = [];
     for (const rec of eng.docs.values()) {
       if (rec.kind !== "label" || !rec.state.initialized) continue;
-      shared.push({ id: rec.id, name: rec.state.name, shared: true, owner: rec.origin === "own" ? null : rec.state.owner });
+      shared.push({
+        id: rec.id,
+        name: rec.state.name,
+        shared: true,
+        owner: rec.origin === "own" ? null : rec.state.owner,
+      });
       for (const list of labelMembers(rec.state).keys()) {
         const ids = labelsOfList.get(list);
         if (ids) ids.push(rec.id);
@@ -541,11 +566,15 @@ export class Tomu {
         folderId: rec.folder,
         origin: rec.origin,
       });
-      if (changed === null || changed.has(rec.id) || !views.has(rec.id)) views.set(rec.id, listView(rec.state));
+      if (changed === null || changed.has(rec.id) || !views.has(rec.id))
+        views.set(rec.id, listView(rec.state));
     }
     for (const id of [...views.keys()]) if (!visible.has(id)) views.delete(id);
     this.#lists = lists;
-    this.#labels = [...this.#privLabels.map((l) => ({ id: l.id, name: l.name, shared: false, owner: null })), ...shared];
+    this.#labels = [
+      ...this.#privLabels.map((l) => ({ id: l.id, name: l.name, shared: false, owner: null })),
+      ...shared,
+    ];
     this.#views = views;
     this.#rev++;
   }

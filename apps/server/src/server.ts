@@ -34,9 +34,11 @@ export function startServer(config: Config) {
     fetch(req, server) {
       const ip = keyOf(req.headers, server.requestIP(req)?.address ?? null);
       if (new URL(req.url).pathname !== "/api/ws") return app.fetch(req, { ip });
-      if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") return new Response(null, { status: 426 });
+      if (req.headers.get("upgrade")?.toLowerCase() !== "websocket")
+        return new Response(null, { status: 426 });
       const origin = req.headers.get("origin");
-      if (origin === null || !config.allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
+      if (origin === null || !config.allowedOrigins.includes(origin))
+        return new Response(null, { status: 403 });
       if (!conns.acquire(ip)) return new Response(null, { status: 429 });
       if (server.upgrade(req, { data: { key: ip } })) return undefined;
       conns.release(ip);

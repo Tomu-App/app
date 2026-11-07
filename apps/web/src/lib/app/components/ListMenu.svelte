@@ -24,7 +24,13 @@
   });
 
   const heading = $derived(
-    mode === "rename" ? m.rename_title() : mode === "labels" ? m.menu_labels() : mode === "folder" ? m.menu_folder() : m.menu_title(),
+    mode === "rename"
+      ? m.rename_title()
+      : mode === "labels"
+        ? m.menu_labels()
+        : mode === "folder"
+          ? m.menu_folder()
+          : m.menu_title(),
   );
   const valid = $derived(title.trim().length > 0 && !busy);
 
@@ -71,7 +77,9 @@
 <Dialog bind:open title={heading}>
   {#if mode === "menu"}
     <ul class="rows">
-      <li><a class="row" href={`/list/${listId}/share`} onclick={() => (open = false)}>{m.menu_share()}</a></li>
+      <li>
+        <a class="row" href={`/list/${listId}/share`} onclick={() => (open = false)}>{m.menu_share()}</a>
+      </li>
       <li><button type="button" class="row" onclick={() => show("rename")}>{m.menu_rename()}</button></li>
       <li><button type="button" class="row" onclick={() => show("labels")}>{m.menu_labels()}</button></li>
       <li><button type="button" class="row" onclick={() => show("folder")}>{m.menu_folder()}</button></li>
@@ -101,9 +109,16 @@
     </form>
   {:else}
     {#if mode === "labels"}
-      <LabelPicker selected={info?.labelIds ?? []} existingList={true} onChange={(ids) => void setLabels(ids)} />
+      <LabelPicker
+        selected={info?.labelIds ?? []}
+        existingList={true}
+        onChange={(ids) => void setLabels(ids)}
+      />
     {:else}
-      <FolderPicker selected={info?.folderId ?? null} onChange={(id) => void tomu.setListFolder(listId, id)} />
+      <FolderPicker
+        selected={info?.folderId ?? null}
+        onChange={(id) => void tomu.setListFolder(listId, id)}
+      />
     {/if}
     <div class="actions">
       <button type="button" onclick={() => (mode = "menu")}>{m.menu_back()}</button>

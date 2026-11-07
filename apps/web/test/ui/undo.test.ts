@@ -28,7 +28,12 @@ const start = async (dbName?: string): Promise<Tomu> => {
 
 beforeEach(() => {
   // Reduced motion: rows vanish at once, so nothing waits for an animation.
-  vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("reduce"), media: q, addEventListener() {}, removeEventListener() {} }));
+  vi.stubGlobal("matchMedia", (q: string) => ({
+    matches: q.includes("reduce"),
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
 });
 
 afterEach(async () => {
@@ -42,7 +47,11 @@ afterEach(async () => {
 const box = (name: string): HTMLElement => screen.getByRole("checkbox", { name });
 const bar = (): HTMLElement => document.querySelector<HTMLElement>("[role=status].bar")!;
 const tearBtn = (): HTMLElement => screen.getByRole("button", { name: m.tear_off() });
-const itemTexts = (t: Tomu, id: string): string[] => t.list(id)!.items.map((i) => i.text).sort();
+const itemTexts = (t: Tomu, id: string): string[] =>
+  t
+    .list(id)!
+    .items.map((i) => i.text)
+    .sort();
 
 /** List "Milch, Brot, Eier" with Milch and Brot ticked, page and bar rendered, timers faked. */
 const setup = async (pending = new PendingDeletes()) => {
@@ -118,7 +127,12 @@ test("closing the app inside the undo window deletes nothing", async () => {
   await t.stop();
   await vi.advanceTimersByTimeAsync(10_000);
   const again = await start(db);
-  expect(again.list(id)!.items.map((i) => i.text).sort()).toEqual(["Brot", "Milch"]);
+  expect(
+    again
+      .list(id)!
+      .items.map((i) => i.text)
+      .sort(),
+  ).toEqual(["Brot", "Milch"]);
 });
 
 test("a second tear commits the first immediately", async () => {
@@ -171,10 +185,22 @@ test("deleting one item from the dialog uses the same undo bar", async () => {
 });
 
 test("with motion the torn part leaves after the tear animation", async () => {
-  vi.stubGlobal("matchMedia", (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }));
+  vi.stubGlobal("matchMedia", (q: string) => ({
+    matches: false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
   // jsdom has no element.animate; a stand-in that finishes after the given duration.
   const animate = vi.fn(function (_k: unknown, o: { duration: number }) {
-    const a = { onfinish: null as null | (() => void), cancel() {}, finish() {}, pause() {}, play() {}, currentTime: 0 };
+    const a = {
+      onfinish: null as null | (() => void),
+      cancel() {},
+      finish() {},
+      pause() {},
+      play() {},
+      currentTime: 0,
+    };
     setTimeout(() => a.onfinish?.(), o.duration);
     return a;
   });

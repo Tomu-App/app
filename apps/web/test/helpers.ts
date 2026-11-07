@@ -47,7 +47,8 @@ export const id22 = (seed: string): string => seed.padEnd(22, "_").slice(0, 22);
 export const key43 = (seed: string): string => seed.padEnd(43, "_").slice(0, 43);
 
 /** Op builder: fills `v`, `c` and `ts`; the caller supplies the rest (validated by the shared schemas when applied). */
-export const op = (rest: Record<string, unknown> & { t: string }, ts = 1): Op => ({ v: 1, c: C, ts, ...rest }) as Op;
+export const op = (rest: Record<string, unknown> & { t: string }, ts = 1): Op =>
+  ({ v: 1, c: C, ts, ...rest }) as Op;
 
 /** Label record built from an init op and one link op per member ([listId, listKey]). */
 export const labelDoc = (
@@ -58,7 +59,9 @@ export const labelDoc = (
 ): DocRecord => {
   const rec = newDocRecord(id, key, origin, null);
   applyToDoc(rec, id22("init"), op({ t: "init", kind: "label" }));
-  members.forEach(([list, k], i) => applyToDoc(rec, id22(`link${i}`), op({ t: "link", list, key: k }, i + 2)));
+  members.forEach(([list, k], i) =>
+    applyToDoc(rec, id22(`link${i}`), op({ t: "link", list, key: k }, i + 2)),
+  );
   return rec;
 };
 
@@ -180,7 +183,13 @@ export type StartEngineOptions = Partial<EngineOptions> & {
 /** Fresh (or given) store, engine started on a fake socket that is opened right away. */
 export const startEngine = async (
   opts: StartEngineOptions = {},
-): Promise<{ engine: SyncEngine; store: LocalStore; ws: () => FakeWs; sock: FakeSocket; changes: string[][] }> => {
+): Promise<{
+  engine: SyncEngine;
+  store: LocalStore;
+  ws: () => FakeWs;
+  sock: FakeSocket;
+  changes: string[][];
+}> => {
   const store = opts.store ?? (await LocalStore.open(opts.dbName ?? freshDbName()));
   if (opts.docs?.length) await store.commit({ putDocs: opts.docs });
   const sock = fakeSocket();
@@ -225,7 +234,11 @@ export const offlineTomu = (opts: Partial<TomuOptions> = {}): Promise<Tomu> => s
 /** `navigator.locks` stand-in: a held name makes `request(name, { ifAvailable: true }, cb)` call `cb(null)`. */
 export const fakeLocks = (): LockManager => {
   const held = new Set<string>();
-  const request = async (name: string, _options: unknown, cb: (lock: unknown) => unknown): Promise<unknown> => {
+  const request = async (
+    name: string,
+    _options: unknown,
+    cb: (lock: unknown) => unknown,
+  ): Promise<unknown> => {
     if (held.has(name)) return cb(null);
     held.add(name);
     try {

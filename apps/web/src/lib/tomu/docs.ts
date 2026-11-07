@@ -16,7 +16,12 @@ export function kindOf(op: Op): "list" | "label" {
   return "list";
 }
 
-export function newDocRecord(id: string, key: string, origin: Origin, kind: "list" | "label" | null): DocRecord {
+export function newDocRecord(
+  id: string,
+  key: string,
+  origin: Origin,
+  kind: "list" | "label" | null,
+): DocRecord {
   const base = {
     id,
     key,
@@ -40,7 +45,10 @@ export function newDocRecord(id: string, key: string, origin: Origin, kind: "lis
 export function applyToDoc(rec: DocRecord, opId: string, op: Op): DocRecord {
   if (rec.kind === null) {
     const kind = kindOf(op);
-    Object.assign(rec, kind === "list" ? { kind, state: emptyListState() } : { kind, state: emptyLabelState() });
+    Object.assign(
+      rec,
+      kind === "list" ? { kind, state: emptyListState() } : { kind, state: emptyLabelState() },
+    );
   }
   if (rec.kind === "list") {
     const parsed = listOpSchema.safeParse(op);

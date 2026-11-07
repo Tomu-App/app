@@ -33,7 +33,12 @@ test("rejects decrypted json that violates the op schema", async () => {
   const opId = newOpId();
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: nonce, additionalData: new TextEncoder().encode(`${docId}:${opId}`), tagLength: 128 },
+    {
+      name: "AES-GCM",
+      iv: nonce,
+      additionalData: new TextEncoder().encode(`${docId}:${opId}`),
+      tagLength: 128,
+    },
     k,
     new TextEncoder().encode('{"v":1,"t":"move"}'),
   );
@@ -63,8 +68,18 @@ test("EnvelopeTooLargeError is exported for callers", () => {
   expect(new EnvelopeTooLargeError(5000)).toBeInstanceOf(Error);
 });
 
-type Vector = { docId: string; key: string; opId: string; nonce: string; op: Op; plaintext: string; envelope: Envelope };
-const vectors = JSON.parse(readFileSync(new URL("./vectors/aes-gcm.json", import.meta.url), "utf8")) as Vector[];
+type Vector = {
+  docId: string;
+  key: string;
+  opId: string;
+  nonce: string;
+  op: Op;
+  plaintext: string;
+  envelope: Envelope;
+};
+const vectors = JSON.parse(
+  readFileSync(new URL("./vectors/aes-gcm.json", import.meta.url), "utf8"),
+) as Vector[];
 
 test("matches the fixed vectors", async () => {
   expect(vectors.length).toBe(3);
@@ -81,7 +96,12 @@ test("vector plaintext is the normative input: encrypting it gives the envelope,
     expect(typeof v.plaintext).toBe("string");
     const key = await importDocKey(v.key);
     const ct = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: fromBase64Url(v.nonce)!, additionalData: new TextEncoder().encode(`${v.docId}:${v.opId}`), tagLength: 128 },
+      {
+        name: "AES-GCM",
+        iv: fromBase64Url(v.nonce)!,
+        additionalData: new TextEncoder().encode(`${v.docId}:${v.opId}`),
+        tagLength: 128,
+      },
       key,
       new TextEncoder().encode(v.plaintext),
     );
