@@ -303,6 +303,30 @@ test("online events nudge the connection", async () => {
   expect(sock.sockets.length).toBe(2);
 });
 
+test("focus and visible visibilitychange nudge the connection; hidden does not; stop detaches", async () => {
+  const online = new EventTarget();
+  const visibility = new EventTarget();
+  const sock = fakeSocket();
+  const t = await startTomu(offlineOpts({ online, visibility, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }));
+  sock.sockets[0]!.drop(); // reconnect waits for 60 s
+  online.dispatchEvent(new Event("focus"));
+  expect(sock.sockets.length).toBe(2);
+  sock.sockets[1]!.drop();
+  const state = vi.spyOn(document, "visibilityState", "get");
+  state.mockReturnValue("hidden");
+  visibility.dispatchEvent(new Event("visibilitychange"));
+  expect(sock.sockets.length).toBe(2);
+  state.mockReturnValue("visible");
+  visibility.dispatchEvent(new Event("visibilitychange"));
+  expect(sock.sockets.length).toBe(3);
+  sock.sockets[2]!.drop();
+  await t.stop();
+  online.dispatchEvent(new Event("focus"));
+  visibility.dispatchEvent(new Event("visibilitychange"));
+  expect(sock.sockets.length).toBe(3);
+  state.mockRestore();
+});
+
 test("shareLabel resumes a share that was interrupted after the label doc was stored", async () => {
   const opts = offlineOpts();
   const labelId = newDocId();

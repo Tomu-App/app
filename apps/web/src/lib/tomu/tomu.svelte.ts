@@ -38,6 +38,8 @@ export type TomuOptions = {
   locks?: LockManager | null;
   /** `online` events nudge the connection. undefined: `window`. null: none. */
   online?: EventTarget | null;
+  /** Receives `visibilitychange` (nudges when the page is visible); `focus` goes to `online`. undefined: `document`. null: none. */
+  visibility?: EventTarget | null;
 };
 
 export class DisplayNameRequiredError extends Error {
@@ -88,7 +90,11 @@ export class Tomu {
   #privLabels: LocalLabel[] = [];
   #stopped = false;
   #onlineTarget: EventTarget | null = null;
+  #visibilityTarget: EventTarget | null = null;
   readonly #onOnline = (): void => this.#engine?.nudge();
+  readonly #onVisibility = (): void => {
+    if (globalThis.document?.visibilityState === "visible") this.#engine?.nudge();
+  };
 
   /** Use `startTomu`. A null `parts` is the blocked instance (another tab holds the lock). */
   constructor(parts: Parts | null) {
@@ -125,8 +131,21 @@ export class Tomu {
     if (online) {
       this.#onlineTarget = online;
       online.addEventListener("online", this.#onOnline);
+      online.addEventListener("focus", this.#onOnline);
+    }
+    const visibility = this.#parts.opts.visibility === undefined ? (globalThis.document ?? null) : this.#parts.opts.visibility;
+    if (visibility) {
+      this.#visibilityTarget = visibility;
+      visibility.addEventListener("visibilitychange", this.#onVisibility);
     }
     await this.#engine.start();
+  }
+
+  /** @internal Removes the browser event listeners (stop and failed start). */
+  _detach(): void {
+    this.#onlineTarget?.removeEventListener("online", this.#onOnline);
+    this.#onlineTarget?.removeEventListener("focus", this.#onOnline);
+    this.#visibilityTarget?.removeEventListener("visibilitychange", this.#onVisibility);
   }
 
   // ---- reactive state ----
@@ -448,7 +467,7 @@ export class Tomu {
   async stop(): Promise<void> {
     if (this.#stopped) return;
     this.#stopped = true;
-    this.#onlineTarget?.removeEventListener("online", this.#onOnline);
+    this._detach();
     const parts = this.#parts;
     if (!parts) return;
     try {
@@ -560,12 +579,14 @@ export async function startTomu(opts: TomuOptions): Promise<Tomu> {
   const release = await acquire(lockManager(opts));
   if (!release) return new Tomu(null);
   let store: LocalStore | null = null;
+  let tomu: Tomu | null = null;
   try {
     store = await LocalStore.open(opts.dbName);
-    const tomu = new Tomu({ store, snapshot: await store.load(), opts, release });
+    tomu = new Tomu({ store, snapshot: await store.load(), opts, release });
     await tomu._start();
     return tomu;
   } catch (err) {
+    tomu?._detach();
     store?.close();
     await release();
     throw err;

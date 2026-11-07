@@ -215,6 +215,7 @@ export const offlineOpts = (opts: Partial<TomuOptions> = {}): TomuOptions => ({
   fetch: () => Promise.reject(new Error("no network in tests")),
   locks: null,
   online: null,
+  visibility: null,
   ...opts,
 });
 

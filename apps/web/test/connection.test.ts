@@ -26,7 +26,7 @@ test("reconnects with exponential backoff and resets after a successful open", (
   expect(f.sockets.length).toBe(4);
 });
 
-test("backoff is capped at 30 s and jittered by +-20 %", () => {
+test("backoff is capped at 10 s and jittered by +-20 %", () => {
   // random 0 -> factor 0.8
   let f = fakeSocket();
   new Connection({ url: U, connect: f.connect, random: () => 0 }, noop).start();
@@ -45,16 +45,16 @@ test("backoff is capped at 30 s and jittered by +-20 %", () => {
   vi.advanceTimersByTime(1);
   expect(f.sockets.length).toBe(2);
 
-  // after 10 failures the delay never exceeds 30 000 * 1.2 = 36 000 ms
+  // after 10 failures the delay never exceeds 10 000 * 1.2 = 12 000 ms
   f = fakeSocket();
   new Connection({ url: U, connect: f.connect, random: () => 1 }, noop).start();
   for (let i = 0; i < 10; i++) {
     f.last().drop();
-    vi.advanceTimersByTime(36_000);
+    vi.advanceTimersByTime(12_000);
   }
   expect(f.sockets.length).toBe(11);
   f.last().drop();
-  vi.advanceTimersByTime(35_999);
+  vi.advanceTimersByTime(11_999);
   expect(f.sockets.length).toBe(11);
   vi.advanceTimersByTime(1);
   expect(f.sockets.length).toBe(12);
@@ -165,6 +165,25 @@ test("nudge reconnects immediately while waiting for backoff", () => {
   // the pending backoff timer must be gone
   vi.advanceTimersByTime(60_000);
   expect(f.sockets.length).toBe(2);
+});
+
+test("nudge while connecting replaces the socket at once and resets the backoff", () => {
+  const f = fakeSocket();
+  const on = { open: vi.fn(), message: vi.fn(), close: vi.fn() };
+  const c = new Connection({ url: U, connect: f.connect, random: () => 0.5 }, on);
+  c.start();
+  const first = f.last();
+  c.nudge();
+  expect(f.sockets.length).toBe(2);
+  expect(first.closed).toBe(true);
+  first.drop(); // handlers are detached: no close callback, no retry
+  vi.advanceTimersByTime(60_000);
+  expect(f.sockets.length).toBe(2);
+  expect(on.close).not.toHaveBeenCalled();
+  // attempt counter was reset: the next failure waits the base delay again
+  f.last().drop();
+  vi.advanceTimersByTime(1_000);
+  expect(f.sockets.length).toBe(3);
 });
 
 test("nudge does nothing while a socket is connected", () => {

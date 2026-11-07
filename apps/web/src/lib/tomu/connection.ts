@@ -2,7 +2,7 @@ import { clientMessageSchema, serverMessageSchema, type ClientMessage, type Serv
 
 export const PING_INTERVAL_MS = 30_000;
 export const PONG_TIMEOUT_MS = 10_000;
-export const BACKOFF = { baseMs: 1_000, maxMs: 30_000 };
+export const BACKOFF = { baseMs: 1_000, maxMs: 10_000 };
 
 const OPEN = 1;
 
@@ -61,9 +61,25 @@ export class Connection {
     }
   }
 
-  /** Skips a pending backoff wait and reconnects now (e.g. when the browser comes back online). */
+  /**
+   * Reconnects now (browser came back online, tab focused): skips a pending backoff wait and replaces a socket that
+   * is still connecting (it may hang on a dead server). An open socket is left alone.
+   */
   nudge(): void {
-    if (this.stopped || this.ws || !this.retryTimer) return;
+    if (this.stopped || this.opened) return;
+    const ws = this.ws;
+    if (!ws && !this.retryTimer) return;
+    this.attempt = 0;
+    if (ws) {
+      // Never opened: detach quietly, so neither a close callback nor a retry follows.
+      ws.onopen = ws.onmessage = ws.onclose = null;
+      this.ws = null;
+      try {
+        ws.close();
+      } catch {
+        // already closed
+      }
+    }
     this.attemptConnect();
   }
 
