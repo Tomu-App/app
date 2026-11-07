@@ -149,12 +149,36 @@ export const encrypted = async (
   return out;
 };
 
-export type StartEngineOptions = Partial<EngineOptions> & { docs?: DocRecord[]; dbName?: string };
+export type FakeFetch = {
+  fetch: typeof fetch;
+  /** One entry per call: `METHOD url`. */
+  calls: string[];
+  /** Sets the answer for all following calls (default 201): an HTTP status, or "network" for a rejected fetch. */
+  respond(status: number | "network"): void;
+};
+
+export const fakeFetch = (): FakeFetch => {
+  let mode: number | "network" = 201;
+  const calls: string[] = [];
+  const f = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    calls.push(`${init?.method ?? "GET"} ${String(input)}`);
+    if (mode === "network") return Promise.reject(new TypeError("network error"));
+    return Promise.resolve(new Response(null, { status: mode }));
+  };
+  return { fetch: f as typeof fetch, calls, respond: (s) => void (mode = s) };
+};
+
+export type StartEngineOptions = Partial<EngineOptions> & {
+  docs?: DocRecord[];
+  dbName?: string;
+  /** Open the first socket right away (default true). */
+  autoOpen?: boolean;
+};
 
 /** Fresh (or given) store, engine started on a fake socket that is opened right away. */
 export const startEngine = async (
   opts: StartEngineOptions = {},
-): Promise<{ engine: SyncEngine; store: LocalStore; ws: () => FakeWs; changes: string[][] }> => {
+): Promise<{ engine: SyncEngine; store: LocalStore; ws: () => FakeWs; sock: FakeSocket; changes: string[][] }> => {
   const store = opts.store ?? (await LocalStore.open(opts.dbName ?? freshDbName()));
   if (opts.docs?.length) await store.commit({ putDocs: opts.docs });
   const sock = fakeSocket();
@@ -174,7 +198,9 @@ export const startEngine = async (
     onStatus: (s) => opts.onStatus?.(s),
   });
   await engine.start();
-  sock.last().open();
-  await engine.flush(); // lets the queued open handler subscribe
-  return { engine, store, ws: () => sock.last(), changes };
+  if (opts.autoOpen ?? true) {
+    sock.last().open();
+    await engine.flush(); // lets the queued open handler subscribe
+  }
+  return { engine, store, ws: () => sock.last(), sock, changes };
 };
