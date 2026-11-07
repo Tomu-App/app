@@ -17,6 +17,7 @@
   "label_shared": "shared",
   "label_private": "only you",
   "label_share_warning": "Everyone with this label will then see this list too.",
+  "label_share_confirm_title": "Share this list with this label?",
   "labels_heading": "Labels",
   "labels_none": "You have no labels yet.",
   "folder_heading": "Folder",

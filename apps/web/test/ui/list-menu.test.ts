@@ -98,18 +98,53 @@ test("rename validates and saves", async () => {
   await waitFor(() => expect(t.lists[0]!.title).toBe("Wocheneinkauf"));
 });
 
-test("adding a shared label to an existing list shows the warning", async () => {
-  const t = await start();
+const sharedLabelPicker = async (t: Tomu): Promise<string> => {
   const label = await t.createLabel("Familie");
   await t.setDisplayName("Luke");
   await t.shareLabel(label);
   await open(t);
   await menu();
   await fireEvent.click(screen.getByRole("button", { name: m.menu_labels() }));
-  expect(screen.queryByText(m.label_share_warning())).toBeNull();
+  return label;
+};
+
+test("adding a shared label to an existing list asks first and saves only after confirming", async () => {
+  const t = await start();
+  const label = await sharedLabelPicker(t);
+  const save = vi.spyOn(t, "setListLabels");
+  const box = screen.getByRole("checkbox") as HTMLInputElement;
+  await fireEvent.click(box);
+  expect(screen.getByText(m.label_share_warning())).toBeTruthy();
+  expect(save).not.toHaveBeenCalled();
+  expect(t.lists[0]!.labelIds).toEqual([]);
+  await fireEvent.click(screen.getByRole("button", { name: m.menu_share() }));
+  await waitFor(() => expect(t.lists[0]!.labelIds).toEqual([label]));
+  expect(save).toHaveBeenCalledOnce();
+  expect(box.checked).toBe(true);
+});
+
+test("cancelling the share question leaves the labels unchanged", async () => {
+  const t = await start();
+  await sharedLabelPicker(t);
+  const save = vi.spyOn(t, "setListLabels");
+  const box = screen.getByRole("checkbox") as HTMLInputElement;
+  await fireEvent.click(box);
+  await fireEvent.click(screen.getByRole("button", { name: m.confirm_cancel() }));
+  await new Promise((r) => setTimeout(r, 30));
+  expect(save).not.toHaveBeenCalled();
+  expect(t.lists[0]!.labelIds).toEqual([]);
+  expect(box.checked).toBe(false);
+});
+
+test("a private label is added without asking", async () => {
+  const t = await start();
+  const label = await t.createLabel("Privat");
+  await open(t);
+  await menu();
+  await fireEvent.click(screen.getByRole("button", { name: m.menu_labels() }));
   await fireEvent.click(screen.getByRole("checkbox"));
   await waitFor(() => expect(t.lists[0]!.labelIds).toEqual([label]));
-  expect(screen.getByText(m.label_share_warning())).toBeTruthy();
+  expect(screen.queryByText(m.label_share_warning())).toBeNull();
 });
 
 test("folder can be set and cleared", async () => {

@@ -17,6 +17,7 @@
   "label_shared": "geteilt",
   "label_private": "nur bei dir",
   "label_share_warning": "Alle mit diesem Label sehen dann auch diese Liste.",
+  "label_share_confirm_title": "Liste mit diesem Label teilen?",
   "labels_heading": "Labels",
   "labels_none": "Du hast noch keine Labels.",
   "folder_heading": "Ordner",
