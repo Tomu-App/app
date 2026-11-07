@@ -1,0 +1,91 @@
+@import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
+@import "@fontsource-variable/archivo/wdth.css";
+
+:root {
+  --board: #233a8c;
+  --board-ink: #ffffff;
+  --board-focus: #ffffff;
+  --sheet: #ffffff;
+  --ink: #141414;
+  --ink-soft: #5c5c5c;
+  /* Only for what is open right now (count of open entries, "new" mark). Never for buttons, labels or errors. */
+  --open: #c41c17;
+  --perf: #8a8a8a;
+  --rule: #141414;
+  --field-line: #141414;
+  --focus: #1d4ed8;
+  --font-text: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
+  --font-count: "Archivo Variable", "Arial Narrow", sans-serif;
+  --tap: 3rem;
+  --radius: 6px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --board: #14235f;
+    --board-ink: #ffffff;
+    --board-focus: #ffffff;
+    --sheet: #17191f;
+    --ink: #f0f0f0;
+    --ink-soft: #a9adb8;
+    --open: #ff7a70;
+    --perf: #7b7f8c;
+    --rule: #f0f0f0;
+    --field-line: #f0f0f0;
+    --focus: #8fb4ff;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 18px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Large view: type and targets grow by a third, everything is in rem. */
+html.large {
+  font-size: 24px;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--board);
+  font-family: var(--font-text);
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+body > div {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+}
+
+:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--board);
+  color: var(--board-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

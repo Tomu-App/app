@@ -18,3 +18,7 @@ apps/web/build/
 .env
 .env.*
 !.env.example
+
+# paraglide output
+apps/web/src/lib/paraglide/
+apps/web/project.inlang/cache/

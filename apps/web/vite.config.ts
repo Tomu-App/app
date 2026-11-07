@@ -1,6 +1,22 @@
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import adapter from "@sveltejs/adapter-static";
 import { sveltekit } from "@sveltejs/kit/vite";
-import { defineConfig, loadEnv } from "vite";
+import path from "node:path";
+import { defineConfig, loadEnv, type Plugin } from "vite";
+
+// Paraglide 3.1 resolves `../runtime.js` from its virtual message modules to a backslash path on Windows. That is a
+// different module id than the normalized one everything else imports, so the bundle gets two runtimes and
+// messages ignore the active locale. Resolve it to the normalized id instead.
+// Upstream: https://github.com/opral/paraglide-js/issues/877. Remove this plugin once that is fixed.
+const paraglideRuntimeIdFix = (): Plugin => ({
+  name: "paraglide-runtime-id-fix",
+  enforce: "pre",
+  resolveId(source, importer) {
+    if (path.sep !== "\\" || source !== "../runtime.js" || !importer?.startsWith("\0virtual:paraglide/"))
+      return null;
+    return path.resolve("src/lib/paraglide/runtime.js").replaceAll("\\", "/");
+  },
+});
 
 export default defineConfig(({ mode }) => {
   // The API origin is allowed for fetch and WebSocket; falls back to the local dev server.
@@ -10,6 +26,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      paraglideRuntimeIdFix(),
       sveltekit({
         compilerOptions: {
           // Force runes mode for the project, except for libraries. Can be removed in svelte 6.
@@ -30,7 +47,17 @@ export default defineConfig(({ mode }) => {
           },
         },
       }),
+      paraglideVitePlugin({
+        project: "./project.inlang",
+        outdir: "./src/lib/paraglide",
+        emitTsDeclarations: true,
+        strategy: ["localStorage", "preferredLanguage", "baseLocale"],
+      }),
     ],
+    build: {
+      // The CSP has no font-src (falls back to default-src 'self'), so fonts must never be inlined as data: URIs.
+      assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
+    },
     resolve: {
       // Svelte docs: needed so runes/lifecycle resolve to the client build in tests.
       conditions: process.env.VITEST ? ["browser"] : undefined,

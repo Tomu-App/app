@@ -1,0 +1,8 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "status_offline": "offline",
+  "status_offline_hint": "changes will be sent later",
+  "status_synced": "synced",
+  "blocked_title": "Tomu is already open in another tab",
+  "blocked_hint": "Close this tab and keep using Tomu there."
+}
