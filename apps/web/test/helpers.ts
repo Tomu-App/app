@@ -1,6 +1,17 @@
-import { emptyListState, newDocKey, toBase64Url, type ClientMessage, type Envelope, type Op } from "@tomu/shared";
+import {
+  emptyListState,
+  encryptOp,
+  importDocKey,
+  newDocKey,
+  toBase64Url,
+  type ClientMessage,
+  type Envelope,
+  type Op,
+} from "@tomu/shared";
 import type { Connect } from "../src/lib/tomu/connection.ts";
+import { LocalStore } from "../src/lib/tomu/db.ts";
 import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
+import { SyncEngine, type EngineOptions } from "../src/lib/tomu/sync.ts";
 import type { DocRecord, Origin } from "../src/lib/tomu/types.ts";
 
 export const TEST_KEY = newDocKey();
@@ -120,4 +131,49 @@ export const fakeSocket = (opts: { silentClose?: boolean } = {}): FakeSocket => 
 export const fakeClock = (start: number): { now(): number; advance(ms: number): void } => {
   let t = start;
   return { now: () => t, advance: (ms) => void (t += ms) };
+};
+
+/** Encrypts ops into server-side sequenced envelopes; `ops` are [opId, op] pairs, seq counts up from firstSeq. */
+export const encrypted = async (
+  docId: string,
+  key: string,
+  ops: [opId: string, op: Op][],
+  firstSeq = 1,
+): Promise<{ seq: number; id: string; n: string; c: string }[]> => {
+  const k = await importDocKey(key);
+  const out: { seq: number; id: string; n: string; c: string }[] = [];
+  for (const [i, [opId, o]] of ops.entries()) {
+    const e = await encryptOp(docId, k, o, { opId });
+    out.push({ seq: firstSeq + i, ...e });
+  }
+  return out;
+};
+
+export type StartEngineOptions = Partial<EngineOptions> & { docs?: DocRecord[]; dbName?: string };
+
+/** Fresh (or given) store, engine started on a fake socket that is opened right away. */
+export const startEngine = async (
+  opts: StartEngineOptions = {},
+): Promise<{ engine: SyncEngine; store: LocalStore; ws: () => FakeWs; changes: string[][] }> => {
+  const store = opts.store ?? (await LocalStore.open(opts.dbName ?? freshDbName()));
+  if (opts.docs?.length) await store.commit({ putDocs: opts.docs });
+  const sock = fakeSocket();
+  const changes: string[][] = [];
+  const engine = new SyncEngine({
+    store,
+    snapshot: opts.snapshot ?? (await store.load()),
+    apiUrl: opts.apiUrl ?? "http://example.test",
+    connect: opts.connect ?? sock.connect,
+    fetch: opts.fetch ?? (() => Promise.reject(new Error("no network in tests"))),
+    now: opts.now,
+    backoff: opts.backoff,
+    onChange: (ids) => {
+      changes.push([...ids]);
+      opts.onChange?.(ids);
+    },
+    onStatus: (s) => opts.onStatus?.(s),
+  });
+  await engine.start();
+  sock.last().open();
+  return { engine, store, ws: () => sock.last(), changes };
 };
