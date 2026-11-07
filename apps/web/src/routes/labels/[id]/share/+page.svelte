@@ -19,8 +19,12 @@
   let name = $state("");
   let busy = $state(false);
 
-  // Sharing turns a private label into a shared one; it runs once per label, not on every change of the label list.
+  let loadedFor = $state<string | null>(null);
+
+  // Sharing turns a private label into a shared one, so it only starts when the user asks (or the label is
+  // shared already), and then once per label, not on every change of the label list.
   async function load(labelId: string): Promise<void> {
+    loadedFor = labelId;
     link = null;
     needName = false;
     failed = false;
@@ -35,7 +39,16 @@
   }
   $effect(() => {
     const labelId = id;
-    untrack(() => void load(labelId));
+    const shared = label?.shared === true;
+    untrack(() => {
+      if (loadedFor === labelId) return;
+      if (shared) void load(labelId);
+      else {
+        link = null;
+        needName = false;
+        failed = false;
+      }
+    });
   });
 
   async function saveName(e: SubmitEvent): Promise<void> {
@@ -86,14 +99,22 @@
           type="text"
           aria-label={m.share_name_field()}
           bind:value={name}
-          maxlength="60"
+          maxlength="50"
           autocomplete="given-name"
         />
       </label>
       <button type="submit" disabled={name.trim().length === 0 || busy}>{m.share_name_save()}</button>
     </form>
-  {:else if failed || !label}
-    <p class="note">{m.list_missing()}</p>
+  {:else if !label}
+    <p class="note">{m.label_missing()}</p>
+  {:else if failed}
+    <h1 class="title">{label.name}</h1>
+    <p class="note">{m.share_label_failed()}</p>
+    <button type="button" onclick={() => void load(id)}>{m.start_retry()}</button>
+  {:else if loadedFor !== id}
+    <h1 class="title">{label.name}</h1>
+    <p class="explain">{m.share_explain_label()}</p>
+    <button type="button" onclick={() => void load(id)}>{m.share_label_create()}</button>
   {:else}
     <p class="note">{m.list_loading()}</p>
   {/if}
@@ -139,6 +160,11 @@
   button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+  .explain {
+    margin: 0 0 1rem;
+    font-size: 1.15rem;
+    line-height: 1.4;
   }
   .note {
     margin: 2rem 0;

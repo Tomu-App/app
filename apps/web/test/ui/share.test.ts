@@ -83,6 +83,7 @@ test("sharing a label without a display name asks for it inline", async () => {
   const id = await t.createLabel("Familie");
   route.id = id;
   const { container } = renderWithTomu(LabelSharePage, {}, t);
+  await fireEvent.click(screen.getByRole("button", { name: m.share_label_create() }));
   const field = (await screen.findByLabelText(m.share_name_field())) as HTMLInputElement;
   expect(container.querySelector("svg[role='img']")).toBeNull();
   await fireEvent.input(field, { target: { value: "Lisa" } });
@@ -93,14 +94,62 @@ test("sharing a label without a display name asks for it inline", async () => {
   expect(screen.queryByLabelText(m.share_name_field())).toBeNull();
 });
 
-test("sharing a label with a display name shows the link at once", async () => {
+test("an already shared label shows its link at once", async () => {
+  const t = await start();
+  await t.setDisplayName("Lisa");
+  const id = await t.createLabel("Familie");
+  await t.shareLabel(id);
+  route.id = id;
+  renderWithTomu(LabelSharePage, {}, t);
+  await screen.findByRole("button", { name: m.share_copy() });
+  expect(screen.queryByRole("button", { name: m.share_label_create() })).toBeNull();
+  expect(screen.queryByLabelText(m.share_name_field())).toBeNull();
+});
+
+test("a private label is not shared by just opening the page; the button creates the link", async () => {
   const t = await start();
   await t.setDisplayName("Lisa");
   const id = await t.createLabel("Familie");
   route.id = id;
+  const share = vi.spyOn(t, "shareLabel");
   renderWithTomu(LabelSharePage, {}, t);
+  const create = screen.getByRole("button", { name: m.share_label_create() });
+  await new Promise((r) => setTimeout(r, 30));
+  expect(share).not.toHaveBeenCalled();
+  expect(t.labels.find((l) => l.id === id)!.shared).toBe(false);
+  await fireEvent.click(create);
   await screen.findByRole("button", { name: m.share_copy() });
-  expect(screen.queryByLabelText(m.share_name_field())).toBeNull();
+  expect(share).toHaveBeenCalledOnce();
+  expect(t.labels.find((l) => l.id === id)!.shared).toBe(true);
+});
+
+test("a failed label share says so, not that the list is missing", async () => {
+  const t = await start();
+  await t.setDisplayName("Lisa");
+  const id = await t.createLabel("Familie");
+  route.id = id;
+  vi.spyOn(t, "shareLabel").mockRejectedValue(new Error("nope"));
+  renderWithTomu(LabelSharePage, {}, t);
+  await fireEvent.click(screen.getByRole("button", { name: m.share_label_create() }));
+  expect(await screen.findByText(m.share_label_failed())).toBeTruthy();
+  expect(screen.queryByText(m.list_missing())).toBeNull();
+});
+
+test("the display name field takes at most 50 characters", async () => {
+  const t = await start();
+  const id = await t.createLabel("Familie");
+  route.id = id;
+  renderWithTomu(LabelSharePage, {}, t);
+  await fireEvent.click(screen.getByRole("button", { name: m.share_label_create() }));
+  const field = (await screen.findByLabelText(m.share_name_field())) as HTMLInputElement;
+  expect(field.maxLength).toBe(50);
+});
+
+test("an unknown label shows its own notice", async () => {
+  const t = await start();
+  route.id = "x".repeat(22);
+  renderWithTomu(LabelSharePage, {}, t);
+  expect(screen.getByText(m.label_missing())).toBeTruthy();
 });
 
 test("share button hidden when Web Share is missing, shown and used when present", async () => {
