@@ -1,11 +1,11 @@
-// @vitest-environment happy-dom
+// @vitest-environment jsdom
 import { buildLink, MAX_ITEM_TEXT, MAX_TITLE, newDocId, newDocKey, parseLink } from "@tomu/shared";
 import { flushSync } from "svelte";
 import { expect, test } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
-import { applyToDoc } from "../src/lib/tomu/docs.ts";
+import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
 import { DisplayNameRequiredError, startTomu, type Tomu } from "../src/lib/tomu/tomu.svelte.ts";
-import { fakeLocks, id22, listDoc, offlineOpts, op, outboxOf } from "./helpers.ts";
+import { fakeLocks, fakeSocket, id22, listDoc, offlineOpts, op, outboxOf } from "./helpers.ts";
 
 const keyOf = (t: Tomu, listId: string): string => parseLink(t.shareList(listId))!.key;
 const types = (entries: { op: { t: string } }[]): string[] => entries.map((e) => e.op.t);
@@ -161,7 +161,8 @@ test("deleteList drops the list, unlinks it from shared labels and tombstones it
   await t.deleteList(id);
   const out = await outboxOf(opts.dbName!, { [id]: listKey, [label]: labelKey });
   const listOps = out.filter((e) => e.doc === id);
-  expect(types(listOps)).toEqual(["init", "title", "drop"]);
+  // The list never reached the server (offline), so nothing about it is sent; the label still hears about it.
+  expect(listOps).toEqual([]);
   const labelOps = out.filter((e) => e.doc === label);
   expect(types(labelOps)).toEqual(["init", "meta", "link", "unlink"]);
   const link = labelOps.find((e) => e.op.t === "link")!;
@@ -291,8 +292,42 @@ test("views are replaced, not mutated, so effects rerun", async () => {
 
 test("online events nudge the connection", async () => {
   const online = new EventTarget();
-  const t = await startTomu(offlineOpts({ online }));
-  expect(() => online.dispatchEvent(new Event("online"))).not.toThrow();
+  const sock = fakeSocket();
+  const t = await startTomu(offlineOpts({ online, connect: sock.connect, backoff: { baseMs: 60_000, maxMs: 60_000 } }));
+  expect(sock.sockets.length).toBe(1);
+  sock.sockets[0]!.drop(); // reconnect is now waiting for 60 s
+  online.dispatchEvent(new Event("online"));
+  expect(sock.sockets.length).toBe(2);
   await t.stop();
-  expect(() => online.dispatchEvent(new Event("online"))).not.toThrow();
+  online.dispatchEvent(new Event("online"));
+  expect(sock.sockets.length).toBe(2);
+});
+
+test("shareLabel resumes a share that was interrupted after the label doc was stored", async () => {
+  const opts = offlineOpts();
+  const labelId = newDocId();
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [newDocRecord(labelId, newDocKey(), "own", "label")], putLabels: [{ id: labelId, name: "Familie" }] });
+  store.close();
+  const t = await startTomu(opts);
+  await t.setDisplayName("Lisa");
+  const link = await t.shareLabel(labelId);
+  expect(parseLink(link)!.docId).toBe(labelId);
+  expect(types(await outboxOf(opts.dbName!, {}))).toEqual(["init", "meta"]);
+  expect(t.labels).toEqual([{ id: labelId, name: "Familie", shared: true, owner: null }]);
+  const count = (await outboxOf(opts.dbName!, {})).length;
+  expect(await t.shareLabel(labelId)).toBe(link);
+  expect((await outboxOf(opts.dbName!, {})).length).toBe(count);
+  await t.stop();
+});
+
+test("deleteList of a list the server never had clears its outbox and still tombstones it", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const id = await t.createList("A");
+  await t.deleteList(id);
+  expect(await outboxOf(opts.dbName!, {})).toEqual([]);
+  expect(t.docStatus(id)).toBe("gone");
+  expect(t.status).toBe("offline");
+  await t.stop();
 });

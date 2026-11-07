@@ -17,7 +17,7 @@ import {
 import type { Connect } from "./connection.ts";
 import { LocalStore } from "./db.ts";
 import { newDocRecord } from "./docs.ts";
-import { splitItems } from "./items.ts";
+import { cleanEntry, splitItems } from "./items.ts";
 import { SyncEngine } from "./sync.ts";
 import type { Change, DocRecord, Folder, LocalLabel, Origin, Snapshot, SyncStatus } from "./types.ts";
 
@@ -54,13 +54,9 @@ function bounded(input: string, max: number, what: string): string {
   return s;
 }
 
-/** One list entry as `splitItems` would clean it, but never split. */
+/** One list entry, cleaned like `splitItems` does but never split. */
 function entryText(input: string): string {
-  const s = input
-    .replace(/[\t\v\f\r]+/g, " ")
-    .replace(/[\u0000-\u001f\u007f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const s = cleanEntry(input);
   if (s.length < 1 || s.length > MAX_ITEM_TEXT) throw new RangeError(`entry must have 1 to ${MAX_ITEM_TEXT} characters`);
   return s;
 }
@@ -332,9 +328,11 @@ export class Tomu {
   async shareLabel(labelId: string): Promise<string> {
     const eng = this.#eng();
     const existing = eng.docs.get(labelId);
-    if (existing?.kind === "label") return buildLink(labelId, existing.key);
     const prevLabels = this.#privLabels;
     const priv = prevLabels.find((l) => l.id === labelId);
+    // Done already: the private label is gone or the label doc has its ops. Otherwise (first call, or a share that
+    // was interrupted after the doc was stored) the ops are written now.
+    if (existing?.kind === "label" && (!priv || existing.state.initialized)) return buildLink(labelId, existing.key);
     if (!priv) throw new Error(`unknown label ${labelId}`);
     if (!this.#displayName) throw new DisplayNameRequiredError();
     const members = [...eng.docs.values()].filter((r) => r.kind === "list" && r.labels.includes(labelId));
@@ -344,7 +342,6 @@ export class Tomu {
       ...members.map((m) => this.#op({ t: "link", list: m.id, key: m.key })),
     ];
     checkOps(ops);
-    // A record may be left over from an interrupted share; its ops are simply written again.
     const rec = existing ?? newDocRecord(labelId, newDocKey(), "own", "label");
     if (!existing) await eng.addDoc(rec);
     const prevMemberLabels = members.map((m) => m.labels);

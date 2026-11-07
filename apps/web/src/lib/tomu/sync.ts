@@ -536,7 +536,8 @@ export class SyncEngine {
     if (tombstone) this.tombstones.add(id);
     changed.add(id);
     const change: Change = { deleteDocs: [id] };
-    if (!keepOutbox) {
+    // An own doc the server never had: nothing to tell it, so its queued ops go too.
+    if (!keepOutbox || !rec.created) {
       change.clearOutbox = [id];
       this.dropOutbox(id);
     }
