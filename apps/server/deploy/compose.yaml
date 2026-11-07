@@ -7,20 +7,23 @@ services:
     volumes:
       - data:/data
 
-  caddy:
-    image: caddy:2
+  # Outbound-only connection to Cloudflare; no ports are published on the host.
+  # Public hostname api.tomu.foo -> http://app:3000 is configured in the dashboard.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.7
     restart: unless-stopped
     depends_on: [app]
-    ports:
-      - "80:80"
-      - "443:443"
+    # Spec: no IPs and no full URLs in logs. Request errors (e.g. a 502 during a restart)
+    # carry the full URL, so the main log shows only fatal errors. Connection problems
+    # stay visible through the transport log.
+    command: tunnel --no-autoupdate --loglevel fatal --transport-loglevel warn run
     environment:
-      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./certs:/certs:ro
-      - caddy_data:/data
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
 
 volumes:
+  # Created once by hand (docker volume create tomu_data). External, so
+  # `docker compose down -v` never deletes it, and the name does not depend
+  # on the folder name of the Compose project.
   data:
-  caddy_data:
+    external: true
+    name: tomu_data
