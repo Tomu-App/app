@@ -4,5 +4,22 @@
   "status_offline_hint": "changes will be sent later",
   "status_synced": "synced",
   "blocked_title": "Tomu is already open in another tab",
-  "blocked_hint": "Close this tab and keep using Tomu there."
+  "blocked_hint": "Close this tab and keep using Tomu there.",
+  "settings_button": "Settings",
+  "overview_title": "Your lists",
+  "overview_empty": "You have no list yet. Create your first one.",
+  "new_list": "New list",
+  "list_loading": "loading",
+  "list_open_count": "{count} open",
+  "label_shared": "shared",
+  "label_private": "only you",
+  "label_share_warning": "Everyone with this label will then see this list too.",
+  "labels_heading": "Labels",
+  "labels_none": "You have no labels yet.",
+  "folder_heading": "Folder",
+  "folder_none": "No folder",
+  "new_list_title_field": "Title",
+  "new_list_save": "Save",
+  "new_list_cancel": "Cancel",
+  "dialog_close": "Close"
 }

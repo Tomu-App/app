@@ -4,5 +4,22 @@
   "status_offline_hint": "Änderungen werden später gesendet",
   "status_synced": "synchronisiert",
   "blocked_title": "Tomu ist schon in einem anderen Tab geöffnet",
-  "blocked_hint": "Schließe diesen Tab und nutze Tomu dort weiter."
+  "blocked_hint": "Schließe diesen Tab und nutze Tomu dort weiter.",
+  "settings_button": "Einstellungen",
+  "overview_title": "Deine Listen",
+  "overview_empty": "Du hast noch keine Liste. Lege deine erste an.",
+  "new_list": "Neue Liste",
+  "list_loading": "wird geladen",
+  "list_open_count": "{count} offen",
+  "label_shared": "geteilt",
+  "label_private": "nur bei dir",
+  "label_share_warning": "Alle mit diesem Label sehen dann auch diese Liste.",
+  "labels_heading": "Labels",
+  "labels_none": "Du hast noch keine Labels.",
+  "folder_heading": "Ordner",
+  "folder_none": "Kein Ordner",
+  "new_list_title_field": "Titel",
+  "new_list_save": "Speichern",
+  "new_list_cancel": "Abbrechen",
+  "dialog_close": "Schließen"
 }
