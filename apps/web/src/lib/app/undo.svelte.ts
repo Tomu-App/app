@@ -13,6 +13,8 @@ type Op = {
 export class PendingDeletes {
   readonly #delayMs: number;
   #op = $state.raw<Op | null>(null);
+  // Operations whose commit is running: their ids stay hidden until it settles, so rows do not flash back.
+  #committing = $state.raw<readonly Op[]>([]);
 
   constructor(delayMs = 6000) {
     this.#delayMs = delayMs;
@@ -20,8 +22,10 @@ export class PendingDeletes {
 
   /** Ids of `listId` that are waiting to be deleted and must not be shown. */
   hidden(listId: string): ReadonlySet<string> {
-    const op = this.#op;
-    return op && op.listId === listId ? new Set(op.ids) : new Set();
+    const ids = new Set<string>();
+    for (const op of [this.#op, ...this.#committing])
+      if (op && op.listId === listId) for (const id of op.ids) ids.add(id);
+    return ids;
   }
 
   /** The waiting operation, for the undo bar. */
@@ -53,10 +57,13 @@ export class PendingDeletes {
     if (!op) return;
     clearTimeout(op.timer);
     this.#op = null;
+    this.#committing = [...this.#committing, op];
     try {
       await op.commit(op.ids);
     } catch {
       // The items stay in the list and show up again; nothing else to clean up.
+    } finally {
+      this.#committing = this.#committing.filter((o) => o !== op);
     }
   }
 

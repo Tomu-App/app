@@ -158,6 +158,27 @@ test("a gone list drops pending deletes", async () => {
   expect(t.list(id)!.items).toHaveLength(3);
 });
 
+test("PendingDeletes: ids stay hidden until the commit settles", async () => {
+  const p = new PendingDeletes(100);
+  let finish!: () => void;
+  const commit = vi.fn(() => new Promise<void>((r) => (finish = r)));
+  p.schedule("a", ["1", "2"], commit);
+  const done = p.flush();
+  expect(p.current).toBeNull(); // the bar goes at once
+  expect(p.hidden("a")).toEqual(new Set(["1", "2"])); // the rows must not flash back
+  expect(p.hidden("b").size).toBe(0);
+  finish();
+  await done;
+  expect(p.hidden("a").size).toBe(0);
+});
+
+test("PendingDeletes: a failing commit shows the ids again", async () => {
+  const p = new PendingDeletes(100);
+  p.schedule("a", ["1"], () => Promise.reject(new Error("boom")));
+  await p.flush();
+  expect(p.hidden("a").size).toBe(0);
+});
+
 test("PendingDeletes: drop never calls commit, a failing commit is swallowed", async () => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const p = new PendingDeletes(100);
