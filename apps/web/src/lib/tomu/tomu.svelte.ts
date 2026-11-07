@@ -218,7 +218,8 @@ export class Tomu {
     const list = this.#list(id);
     const unlinks: { label: string; op: Op }[] = [];
     for (const rec of eng.docs.values()) {
-      if (rec.kind !== "label" || !labelMembers(rec.state).has(id)) continue;
+      // A full label accepts no more ops: the list stays linked there.
+      if (rec.kind !== "label" || rec.full || !labelMembers(rec.state).has(id)) continue;
       unlinks.push({ label: rec.id, op: this.#op({ t: "unlink", list: id, seen: liveLinkIds(rec.state, id) }) });
     }
     // A full list accepts no more ops (not even a drop): it is only unlinked and removed locally.
@@ -226,8 +227,12 @@ export class Tomu {
     checkOps([...(drop ? [drop] : []), ...unlinks.map((u) => u.op)]);
     // Drop first: the last unlink can make a label-only list vanish locally (reconcile), which must not precede the drop.
     if (drop) await eng.localOps(id, [drop]);
-    for (const u of unlinks) await eng.localOps(u.label, [u.op]);
-    await eng.removeDoc(id, { tombstone: true });
+    try {
+      for (const u of unlinks) await eng.localOps(u.label, [u.op]);
+    } finally {
+      // The drop is out: a failed unlink must not leave a dropped record behind.
+      await eng.removeDoc(id, { tombstone: true });
+    }
   }
 
   async addItems(listId: string, input: string): Promise<string[]> {
@@ -330,12 +335,16 @@ export class Tomu {
     for (const rec of eng.docs.values()) {
       if (rec.kind !== "label") continue;
       const member = labelMembers(rec.state).has(listId);
+      if (rec.full && want.has(rec.id) !== member) throw new Error(`label ${rec.id} is full`);
       if (want.has(rec.id) && !member) labelOps.push({ label: rec.id, op: this.#op({ t: "link", list: listId, key: list.key }) });
       else if (!want.has(rec.id) && member) {
         labelOps.push({ label: rec.id, op: this.#op({ t: "unlink", list: listId, seen: liveLinkIds(rec.state, listId) }) });
       }
     }
     checkOps(labelOps.map((o) => o.op));
+    // Links first: an unlink that leaves a label-only list in no label makes reconcile remove it (losing its folder
+    // and private labels), even when a link to another label follows.
+    labelOps.sort((a, b) => Number(a.op.t === "unlink") - Number(b.op.t === "unlink"));
     const priv = desired.filter((id) => privIds.has(id));
     if (priv.length !== list.labels.length || priv.some((id, i) => list.labels[i] !== id)) {
       await eng.updateDocs([{ ...list, labels: priv }]);

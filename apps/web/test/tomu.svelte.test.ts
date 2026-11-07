@@ -418,3 +418,79 @@ test("deleteList works for a full list: no drop op, removed with a tombstone", a
   expect(snap.tombstones.has(id)).toBe(true);
   await t.stop();
 });
+
+test("setListLabels moving a label-only list from shared label A to B keeps it (links go out before unlinks)", async () => {
+  const opts = offlineOpts();
+  const A = id22("labelA");
+  const B = id22("labelB");
+  const L = id22("listL");
+  const KL = newDocKey();
+  const KA = newDocKey();
+  const KB = newDocKey();
+  const list = listDoc(L, "label", KL);
+  applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  const labelB = labelDoc(B, [], "link", KB);
+  applyToDoc(labelB, id22("metaB"), op({ t: "meta", name: "B", owner: "Max" }, 2));
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [labelDoc(A, [[L, KL]], "link", KA), labelB, list] });
+  store.close();
+  const t = await startTomu(opts);
+  const folder = await t.createFolder("Haus");
+  await t.setListFolder(L, folder);
+  const priv = await t.createLabel("Privat");
+  await t.setListLabels(L, [A, priv]);
+
+  await t.setListLabels(L, [B, priv]);
+  await new Promise((r) => setTimeout(r, 50)); // let the queued reconcile run
+  expect(t.docStatus(L)).toBe("list");
+  expect(t.lists).toHaveLength(1);
+  expect(t.lists[0]).toMatchObject({ id: L, folderId: folder });
+  expect(t.lists[0]!.labelIds.toSorted()).toEqual([B, priv].toSorted());
+  const out = await outboxOf(opts.dbName!, { [A]: KA, [B]: KB });
+  expect(out.map((e) => [e.doc, e.op.t])).toEqual([
+    [B, "link"],
+    [A, "unlink"],
+  ]);
+  await t.stop();
+});
+
+test("deleteList skips full labels: no unlink is queued there, the list is still removed", async () => {
+  const opts = offlineOpts();
+  const A = id22("fulllabel");
+  const L = id22("listL");
+  const KL = newDocKey();
+  const KA = newDocKey();
+  const list = listDoc(L, "own", KL);
+  applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  const label = labelDoc(A, [[L, KL]], "link", KA);
+  label.full = true;
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [label, list] });
+  store.close();
+  const t = await startTomu(opts);
+  await t.deleteList(L);
+  expect(t.docStatus(L)).toBe("gone");
+  const out = await outboxOf(opts.dbName!, { [A]: KA, [L]: KL });
+  expect(out.map((e) => [e.doc, e.op.t])).toEqual([[L, "drop"]]);
+  await t.stop();
+});
+
+test("setListLabels refuses to link or unlink at a full label before changing anything", async () => {
+  const opts = offlineOpts();
+  const A = id22("fulllabel");
+  const L = id22("listL");
+  const KL = newDocKey();
+  const list = listDoc(L, "own", KL);
+  applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  const label = labelDoc(A, [[L, KL]], "link", newDocKey());
+  applyToDoc(label, id22("metaA"), op({ t: "meta", name: "A", owner: "Max" }, 2));
+  label.full = true;
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [label, list] });
+  store.close();
+  const t = await startTomu(opts);
+  const priv = await t.createLabel("Privat");
+  await expect(t.setListLabels(L, [priv])).rejects.toThrow(/full/);
+  expect(t.lists[0]!.labelIds).toEqual([A]);
+  await t.stop();
+});

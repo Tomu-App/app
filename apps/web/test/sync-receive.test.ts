@@ -332,3 +332,18 @@ test("a throwing onStatus does not stall the message queue", async () => {
   await vi.waitFor(() => expect(engine.docs.get(D)!.state).toMatchObject({ title: "b" }));
   expect(threw).toBe(true);
 });
+
+test("a throwing onStatus does not escape a socket close handler", async () => {
+  let armed = false;
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  const { ws } = await startEngine({
+    docs: [listDoc(D, "link", K)],
+    onStatus: () => {
+      if (armed) throw new Error("boom");
+    },
+  });
+  armed = true;
+  expect(() => ws().drop()).not.toThrow(); // emits "offline" synchronously
+  expect(warn).toHaveBeenCalledWith("status callback failed");
+  warn.mockRestore();
+});

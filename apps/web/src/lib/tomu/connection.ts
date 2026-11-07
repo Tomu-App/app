@@ -3,6 +3,8 @@ import { clientMessageSchema, serverMessageSchema, type ClientMessage, type Serv
 export const PING_INTERVAL_MS = 30_000;
 export const PONG_TIMEOUT_MS = 10_000;
 export const BACKOFF = { baseMs: 1_000, maxMs: 10_000 };
+/** A connecting socket younger than this survives a nudge (focus and visibilitychange often fire together). */
+export const NUDGE_REPLACE_AFTER_MS = 3_000;
 
 const OPEN = 1;
 
@@ -25,6 +27,7 @@ export class Connection {
   private opened = false;
   private stopped = true;
   private attempt = 0;
+  private connectStartedAt = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private pingTimer: ReturnType<typeof setTimeout> | null = null;
   private pongTimer: ReturnType<typeof setTimeout> | null = null;
@@ -63,12 +66,14 @@ export class Connection {
 
   /**
    * Reconnects now (browser came back online, tab focused): skips a pending backoff wait and replaces a socket that
-   * is still connecting (it may hang on a dead server). An open socket is left alone.
+   * has been connecting for `NUDGE_REPLACE_AFTER_MS` (it may hang on a dead server). An open or a fresh socket is left
+   * alone.
    */
   nudge(): void {
     if (this.stopped || this.opened) return;
     const ws = this.ws;
     if (!ws && !this.retryTimer) return;
+    if (ws && Date.now() - this.connectStartedAt < NUDGE_REPLACE_AFTER_MS) return;
     this.attempt = 0;
     if (ws) {
       // Never opened: detach quietly, so neither a close callback nor a retry follows.
@@ -100,6 +105,7 @@ export class Connection {
     }
     this.ws = ws;
     this.opened = false;
+    this.connectStartedAt = Date.now();
     ws.onopen = () => {
       if (this.ws !== ws) return;
       this.opened = true;

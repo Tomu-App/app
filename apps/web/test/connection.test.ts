@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { Connection, type Connect } from "../src/lib/tomu/connection.ts";
+import { Connection, NUDGE_REPLACE_AFTER_MS, type Connect } from "../src/lib/tomu/connection.ts";
 import { env, fakeSocket, id22 } from "./helpers.ts";
 
 const U = "wss://example.test/ws";
@@ -173,6 +173,7 @@ test("nudge while connecting replaces the socket at once and resets the backoff"
   const c = new Connection({ url: U, connect: f.connect, random: () => 0.5 }, on);
   c.start();
   const first = f.last();
+  vi.advanceTimersByTime(NUDGE_REPLACE_AFTER_MS);
   c.nudge();
   expect(f.sockets.length).toBe(2);
   expect(first.closed).toBe(true);
@@ -184,6 +185,19 @@ test("nudge while connecting replaces the socket at once and resets the backoff"
   f.last().drop();
   vi.advanceTimersByTime(1_000);
   expect(f.sockets.length).toBe(3);
+});
+
+test("nudge keeps a socket that started connecting less than NUDGE_REPLACE_AFTER_MS ago", () => {
+  const f = fakeSocket();
+  const c = new Connection({ url: U, connect: f.connect }, noop);
+  c.start();
+  vi.advanceTimersByTime(NUDGE_REPLACE_AFTER_MS - 1);
+  c.nudge(); // focus and visibilitychange fire together: the second nudge must not abort the first handshake
+  expect(f.sockets.length).toBe(1);
+  expect(f.last().closed).toBe(false);
+  vi.advanceTimersByTime(1);
+  c.nudge();
+  expect(f.sockets.length).toBe(2);
 });
 
 test("nudge does nothing while a socket is connected", () => {

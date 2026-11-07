@@ -674,7 +674,12 @@ export class SyncEngine {
     }
     if (s === this.lastStatus) return;
     this.lastStatus = s;
-    this.opts.onStatus(s);
+    // Called from public methods and socket handlers too: a throwing callback must not break them.
+    try {
+      this.opts.onStatus(s);
+    } catch {
+      console.warn("status callback failed");
+    }
   }
 
   // ---- persistence ----
