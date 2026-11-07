@@ -14,7 +14,7 @@ pnpm check   # TypeScript
 
 ## Packages
 
-- `packages/shared` (`@tomu/shared`): protocol core used by server and client. IDs and share links (`https://link.tomu.foo/<docId>#<key>`), Zod schemas for ops, envelopes and sync messages, AES-256-GCM encryption of ops (WebCrypto), the logical clock, and the CRDT reducers for list documents (LWW fields, tombstones) and shared label documents (add-wins set).
+- `packages/shared` (`@tomu/shared`): protocol core used by server and client. IDs and share links (`https://app.tomu.foo/share/<docId>#<key>`), Zod schemas for ops, envelopes and sync messages, AES-256-GCM encryption of ops (WebCrypto), the logical clock, and the CRDT reducers for list documents (LWW fields, tombstones) and shared label documents (add-wins set).
 - `apps/server` (`@tomu/server`): sync server on Bun. Hono for REST, `Bun.serve` for the multiplexed WebSocket `/api/ws`, SQLite (WAL) via Drizzle. It stores and numbers encrypted ops and never sees plaintext.
 
 `packages/shared/test/vectors/aes-gcm.json` holds fixed encryption test vectors for other implementations (the planned Kotlin app). Each vector has the key, nonce, op id, the exact `plaintext` bytes (UTF-8 JSON), the parsed `op` and the resulting `envelope`. Normative for interop:

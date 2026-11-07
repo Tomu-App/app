@@ -96,14 +96,14 @@ test("readConfig defaults and parsing", () => {
   const c = readConfig({
     PORT: "8080",
     DB_PATH: "/data/x.db",
-    ALLOWED_ORIGINS: "https://tomu.foo, https://link.tomu.foo",
+    ALLOWED_ORIGINS: "https://tomu.foo, https://app.tomu.foo",
     TRUST_CLOUDFLARE: "1",
     MIGRATIONS_FOLDER: "/app/drizzle",
   });
   expect(c).toEqual({
     port: 8080,
     dbPath: "/data/x.db",
-    allowedOrigins: ["https://tomu.foo", "https://link.tomu.foo"],
+    allowedOrigins: ["https://tomu.foo", "https://app.tomu.foo"],
     trustCloudflare: true,
     migrationsFolder: "/app/drizzle",
   });

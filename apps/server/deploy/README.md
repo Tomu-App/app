@@ -2,6 +2,12 @@
 
 Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only reachable through Caddy). The SQLite database lives in the Docker volume `data`.
 
+## Domains
+
+- `tomu.foo`: the site (Worker, repo `site`).
+- `app.tomu.foo`: the app (static files, Worker).
+- `api.tomu.foo`: this server (VPS behind the Cloudflare proxy).
+
 ## One-time setup
 
 1. Install Docker with the Compose plugin.
@@ -12,8 +18,10 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
 
    ```sh
    API_DOMAIN=api.tomu.foo
-   ALLOWED_ORIGINS=https://tomu.foo
+   ALLOWED_ORIGINS=https://app.tomu.foo
    ```
+
+   `ALLOWED_ORIGINS` must name the origin of the app: without it the server rejects the app's WebSocket upgrade with 403. The site on `tomu.foo` does not talk to this server. Add preview origins of the app to the list, comma-separated, when you need them.
 
 6. In the Cloudflare dashboard, create an origin certificate for `api.tomu.foo` (SSL/TLS, Origin Server). Save it as `/opt/tomu/certs/origin.pem` and the key as `/opt/tomu/certs/origin-key.pem`. Set the SSL mode of the zone to "Full (strict)".
 7. Turn on Authenticated Origin Pulls for the zone (SSL/TLS, Origin Server, "Authenticated Origin Pulls", zone-level). Download Cloudflare's origin-pull CA certificate (linked there as `authenticated_origin_pull_ca.pem`) and save it as `/opt/tomu/certs/cloudflare-origin-pull-ca.pem`. Caddy then rejects every TLS connection that does not come from Cloudflare. This matters: the server trusts the `cf-connecting-ip` header for its per-IP limits, and without this check anyone connecting to the VPS directly could forge it.
@@ -23,7 +31,7 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
 
 ## Logs
 
-Neither the app nor Caddy logs IP addresses or URLs (Caddy's global `log` filter deletes them). Docker keeps at most 3 �, 10 MB per container (`daemon.json`).
+Neither the app nor Caddy logs IP addresses or URLs (Caddy's global `log` filter deletes them). Docker keeps at most 3 x 10 MB per container (`daemon.json`).
 
 ## Update
 

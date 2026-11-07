@@ -191,7 +191,7 @@ test("openLink: invalid links give null, known lists from a label become origin 
   expect(t.lists).toEqual([{ id: known, title: "Von Lisa", labelIds: [], folderId: null, origin: "label" }]);
   expect(await t.openLink("hello")).toBeNull();
   expect(await t.openLink("https://example.com/abc#def")).toBeNull();
-  expect(await t.openLink(`https://link.tomu.foo/${known}#short`)).toBeNull();
+  expect(await t.openLink(`https://app.tomu.foo/share/${known}#short`)).toBeNull();
 
   expect(await t.openLink(` ${buildLink(known, knownKey)} `)).toEqual({ id: known });
   expect(t.lists[0]!.origin).toBe("link");
