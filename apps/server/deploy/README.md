@@ -33,7 +33,7 @@ Two containers: `cloudflared` (Cloudflare Tunnel) and `app` (the Bun server). `c
 
    Then log in as `tomu` for the remaining steps. Copy `compose.yaml` from this folder into `/opt/tomu`.
 
-5. Create the tunnel in the Cloudflare dashboard (Zero Trust, Networks, Tunnels, "Create a tunnel", type Cloudflared). Copy the token from the install command it shows (the long string after `--token`). Under "Public hostname", add `api.tomu.foo` with service `HTTP` and URL `app:3000`. Cloudflare then creates the proxied DNS record for `api.tomu.foo` itself; delete any older A or AAAA record for that name first.
+5. Create the tunnel in the Cloudflare dashboard (Zero Trust, Networking, Tunnels, "Create a tunnel", type Cloudflared). Copy the token from the install command it shows (the long string after `--token`). Under "Public hostname", add `api.tomu.foo` with service `HTTP` and URL `app:3000`. Cloudflare then creates the proxied DNS record for `api.tomu.foo` itself; delete any older A or AAAA record for that name first.
 6. Create `/opt/tomu/.env`:
 
    ```sh
