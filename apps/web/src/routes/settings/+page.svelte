@@ -223,8 +223,8 @@
       <h2>{m.settings_about_heading()}</h2>
       <p>{m.settings_about_text()}</p>
       <p class="legal">
-        <a href={legal.imprint} target="_blank">{m.settings_imprint()}</a>
-        <a href={legal.privacy} target="_blank">{m.settings_privacy()}</a>
+        <a href={legal.imprint}>{m.settings_imprint()}</a>
+        <a href={legal.privacy}>{m.settings_privacy()}</a>
       </p>
     </section>
   </Sheet>

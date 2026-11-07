@@ -107,7 +107,7 @@ test("language switch changes texts", async () => {
   expect(document.documentElement.lang).toBe("en");
 });
 
-test("about shows the hosting note and links to legal pages", async () => {
+test("about links to the legal pages", async () => {
   const t = await start();
   renderWithTomu(Page, {}, t);
   expect(screen.getByRole("link", { name: m.settings_imprint() }).getAttribute("href")).toBe("https://tomu.foo/impressum");
