@@ -91,6 +91,7 @@ test("rename validates and saves", async () => {
   await fireEvent.click(screen.getByRole("button", { name: m.menu_rename() }));
   const input = screen.getByLabelText(m.new_list_title_field()) as HTMLInputElement;
   expect(input.value).toBe("Einkauf");
+  expect(input.maxLength).toBe(200);
   await fireEvent.input(input, { target: { value: "  " } });
   expect((screen.getByRole("button", { name: m.new_list_save() }) as HTMLButtonElement).disabled).toBe(true);
   await fireEvent.input(input, { target: { value: "Wocheneinkauf" } });

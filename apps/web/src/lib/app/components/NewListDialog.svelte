@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MAX_TITLE } from "@tomu/shared";
   import { goto } from "$app/navigation";
   import { getTomu } from "#lib/app/context.ts";
   import { m } from "#lib/paraglide/messages.js";
@@ -42,7 +43,7 @@
   <form onsubmit={save}>
     <label class="field">
       <span>{m.new_list_title_field()}</span>
-      <input type="text" bind:value={title} maxlength="120" autocomplete="off" />
+      <input type="text" bind:value={title} maxlength={MAX_TITLE} autocomplete="off" />
     </label>
     <LabelPicker selected={labelIds} existingList={false} onChange={(ids) => (labelIds = ids)} />
     <FolderPicker selected={folderId} onChange={(id) => (folderId = id)} />

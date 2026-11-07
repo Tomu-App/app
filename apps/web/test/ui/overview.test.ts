@@ -50,6 +50,7 @@ test("new list dialog requires a title and creates the list", async () => {
   const t = await start();
   renderWithTomu(Page, {}, t);
   await fireEvent.click(screen.getByRole("button", { name: "Neue Liste" }));
+  expect((screen.getByLabelText(m.new_list_title_field()) as HTMLInputElement).maxLength).toBe(200);
   const save = screen.getByRole("button", { name: m.new_list_save() }) as HTMLButtonElement;
   expect(save.disabled).toBe(true);
   await fireEvent.input(screen.getByLabelText(m.new_list_title_field()), { target: { value: "Grillen" } });

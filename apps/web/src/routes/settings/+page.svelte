@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MAX_LABEL_NAME, MAX_OWNER } from "@tomu/shared";
   import { tick } from "svelte";
   import Board from "#lib/app/components/Board.svelte";
   import ConfirmDialog from "#lib/app/components/ConfirmDialog.svelte";
@@ -13,8 +14,6 @@
 
   const tomu = getTomu();
   const SITE = "https://tomu.foo";
-  const MAX_NAME = 50;
-  const MAX_LABEL = 100;
 
   // Messages are plain functions: the locale state re-renders the page after a switch.
   let locale = $state(getLocale());
@@ -137,7 +136,7 @@
           aria-label={m.settings_name_field()}
           placeholder={m.settings_name_field()}
           bind:value={name}
-          maxlength={MAX_NAME}
+          maxlength={MAX_OWNER}
           autocomplete="given-name"
         />
         <button type="submit">{m.item_save()}</button>
@@ -208,7 +207,7 @@
           aria-label={m.settings_label_new_field()}
           placeholder={m.settings_label_new_field()}
           bind:value={newLabel}
-          maxlength={MAX_LABEL}
+          maxlength={MAX_LABEL_NAME}
         />
         <button type="submit" disabled={newLabel.trim().length === 0}>{m.settings_add()}</button>
       </form>
@@ -251,7 +250,7 @@
           aria-label={m.settings_folder_new_field()}
           placeholder={m.settings_folder_new_field()}
           bind:value={newFolder}
-          maxlength={MAX_LABEL}
+          maxlength={MAX_LABEL_NAME}
         />
         <button type="submit" disabled={newFolder.trim().length === 0}>{m.settings_add()}</button>
       </form>
@@ -300,7 +299,7 @@
     <form class="dform" onsubmit={saveRename}>
       <label class="field">
         <span>{m.settings_rename_name_field()}</span>
-        <input type="text" bind:value={renameValue} maxlength={MAX_LABEL} />
+        <input type="text" bind:value={renameValue} maxlength={MAX_LABEL_NAME} />
       </label>
       <div class="dactions">
         <button type="button" class="ghost" onclick={() => (renameOpen = false)}>{m.confirm_cancel()}</button>

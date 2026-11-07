@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MAX_OWNER } from "@tomu/shared";
   import { untrack } from "svelte";
   import { page } from "$app/state";
   import Board from "#lib/app/components/Board.svelte";
@@ -99,7 +100,7 @@
           type="text"
           aria-label={m.share_name_field()}
           bind:value={name}
-          maxlength="50"
+          maxlength={MAX_OWNER}
           autocomplete="given-name"
         />
       </label>
