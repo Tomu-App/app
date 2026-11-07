@@ -123,3 +123,37 @@ test("blocked tab keeps the fragment", async () => {
   expect(replace).not.toHaveBeenCalled();
   expect(location.hash).not.toBe("");
 });
+
+test("reload of /share/<id> without the key keeps a stored document (waiting sheet offline)", async () => {
+  const id = id22("listD");
+  const key = newDocKey();
+  const t = await withDoc(listDoc(id, "link", key));
+  history.replaceState(null, "", `/share/${id}`);
+  route.id = id;
+  const open = vi.spyOn(t, "openLink");
+  renderWithTomu(Page, {}, t);
+  expect(await screen.findByText(m.list_waiting_offline())).toBeTruthy();
+  expect(screen.queryByText(m.link_not_found())).toBeNull();
+  expect(open).not.toHaveBeenCalled();
+});
+
+test("reload of /share/<id> without the key goes on to the list once it has loaded", async () => {
+  const id = id22("listE");
+  const key = newDocKey();
+  const list = listDoc(id, "link", key);
+  applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  const t = await withDoc(list);
+  history.replaceState(null, "", `/share/${id}`);
+  route.id = id;
+  renderWithTomu(Page, {}, t);
+  await waitFor(() => expect(nav.goto).toHaveBeenCalledWith(`/list/${id}`, { replaceState: true }));
+});
+
+test("without the key and without a stored document the link is gone", async () => {
+  const t = await offlineTomu();
+  started.push(t);
+  history.replaceState(null, "", `/share/${id22("listF")}`);
+  route.id = id22("listF");
+  renderWithTomu(Page, {}, t);
+  expect(await screen.findByText(m.link_not_found())).toBeTruthy();
+});

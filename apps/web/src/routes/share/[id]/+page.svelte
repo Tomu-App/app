@@ -3,6 +3,7 @@
   import { dev } from "$app/env";
   import { PUBLIC_LINK_REWRITE } from "$app/env/public";
   import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import Board from "#lib/app/components/Board.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
@@ -18,6 +19,12 @@
   let navigated = false;
 
   async function run(): Promise<void> {
+    // After the key left the address bar (reload, restored tab) the document is already stored here: go on with it.
+    const id = page.params.id;
+    if (id && !location.hash && tomu.docStatus(id) !== "missing") {
+      openedId = id;
+      return;
+    }
     try {
       const opened = await tomu.openLink(
         normalizeShareUrl(location.href, dev || PUBLIC_LINK_REWRITE === "1"),
