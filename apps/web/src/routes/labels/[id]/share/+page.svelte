@@ -67,7 +67,7 @@
 
 <Board>
   {#snippet start()}
-    <a class="back" href="/">
+    <a class="back" href="/labels">
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"

@@ -27,7 +27,7 @@
   "new_list_cancel": "Abbrechen",
   "dialog_close": "Schließen",
   "back_to_lists": "Alle Listen",
-  "add_placeholder": "Milch, Brot, Eier …",
+  "add_placeholder": "Neuer Eintrag …",
   "add_button": "Hinzufügen",
   "open_label": "offen",
   "done_count": "{count} abgehakt",
@@ -104,5 +104,8 @@
   "install_text": "Tomu auf dein Handy legen, dann startet es wie eine App.",
   "install_button": "Installieren",
   "install_close": "Hinweis schließen",
-  "install_ios": "Tippe unten auf Teilen und dann auf „Zum Home-Bildschirm“."
+  "install_ios": "Tippe unten auf Teilen und dann auf „Zum Home-Bildschirm“.",
+  "labels_share_button": "Labels teilen",
+  "labels_share_explain": "Wähle ein Label. Wer den Link hat, sieht alle Listen mit diesem Label.",
+  "labels_none_hint": "Labels legst du in den Einstellungen an."
 }

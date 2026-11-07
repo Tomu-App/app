@@ -174,3 +174,10 @@ test("unknown list shows the calm notice, no link", async () => {
   expect(screen.getByText(m.list_missing())).toBeTruthy();
   expect(container.querySelector("svg[role='img']")).toBeNull();
 });
+
+test("label share page goes back to the labels page", async () => {
+  const t = await start();
+  route.id = await t.createLabel("Familie");
+  renderWithTomu(LabelSharePage, {}, t);
+  expect(screen.getByRole("link", { name: m.menu_back() }).getAttribute("href")).toBe("/labels");
+});

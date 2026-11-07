@@ -88,3 +88,10 @@ test("label picker reports the chosen ids", async () => {
   expect(onChange).toHaveBeenCalledWith([id]);
   expect(screen.queryByText(m.label_share_warning())).toBeNull();
 });
+
+test("header has icon links to share labels and to settings", async () => {
+  const t = await start();
+  renderWithTomu(Page, {}, t);
+  expect(screen.getByRole("link", { name: m.labels_share_button() }).getAttribute("href")).toBe("/labels");
+  expect(screen.getByRole("link", { name: m.settings_button() }).getAttribute("href")).toBe("/settings");
+});

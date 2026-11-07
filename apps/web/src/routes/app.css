@@ -58,6 +58,17 @@ html.large {
   font-size: 150%;
 }
 
+/* Icons are drawn at 24 or 28 px for the default 18px root. CSS beats the width/height attributes,
+   so these rem sizes keep them in step with the root and the large view grows them by a third too. */
+svg[width="24"] {
+  width: 1.3333rem;
+  height: 1.3333rem;
+}
+svg[width="28"] {
+  width: 1.5556rem;
+  height: 1.5556rem;
+}
+
 body {
   margin: 0;
   min-height: 100dvh;

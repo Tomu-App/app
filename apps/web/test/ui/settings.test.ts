@@ -50,7 +50,7 @@ test("large view switch calls setLargeView", async () => {
   await waitFor(() => expect(t.largeView).toBe(false));
 });
 
-test("own labels can be renamed and shared, foreign labels cannot be renamed", async () => {
+test("own labels can be renamed, foreign labels cannot, and neither is shared here", async () => {
   const opts = offlineOpts();
   const A = id22("labelA");
   const L = id22("listL");
@@ -68,7 +68,7 @@ test("own labels can be renamed and shared, foreign labels cannot be renamed", a
   const own = await t.createLabel("Arbeit");
   renderWithTomu(Page, {}, t);
 
-  // Foreign: share only.
+  // Foreign: no rename, no delete.
   expect(screen.getByText(/Lisa \/ Familie/)).toBeTruthy();
   expect(
     screen.queryByRole("button", { name: m.settings_rename_item({ name: "Lisa / Familie" }) }),
@@ -76,16 +76,11 @@ test("own labels can be renamed and shared, foreign labels cannot be renamed", a
   expect(
     screen.queryByRole("button", { name: m.settings_delete_item({ name: "Lisa / Familie" }) }),
   ).toBeNull();
-  expect(
-    screen
-      .getByRole("link", { name: m.settings_share_item({ name: "Lisa / Familie" }) })
-      .getAttribute("href"),
-  ).toBe(`/labels/${A}/share`);
+  // Sharing lives on the labels page, not in settings.
+  expect(screen.queryByRole("link", { name: m.settings_share_item({ name: "Lisa / Familie" }) })).toBeNull();
 
-  // Own private: rename, delete, share.
-  expect(
-    screen.getByRole("link", { name: m.settings_share_item({ name: "Arbeit" }) }).getAttribute("href"),
-  ).toBe(`/labels/${own}/share`);
+  // Own private: rename and delete.
+  expect(screen.queryByRole("link", { name: m.settings_share_item({ name: "Arbeit" }) })).toBeNull();
   await fireEvent.click(screen.getByRole("button", { name: m.settings_rename_item({ name: "Arbeit" }) }));
   const dialog = screen.getByRole("dialog");
   const input = within(dialog).getByLabelText(m.settings_rename_name_field()) as HTMLInputElement;

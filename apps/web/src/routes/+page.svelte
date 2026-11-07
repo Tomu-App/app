@@ -19,7 +19,53 @@
   {#snippet start()}<Logo />{/snippet}
   {#snippet end()}
     <StatusBadge status={tomu.status} />
-    <a class="settings" href="/settings">{m.settings_button()}</a>
+    <a class="icon" href="/labels" aria-label={m.labels_share_button()}>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="m8.59 13.51 6.83 3.98" />
+        <path d="m15.41 6.51-6.82 3.98" />
+      </svg>
+    </a>
+    <a class="icon" href="/settings" aria-label={m.settings_button()}>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M11 10.27 7 3.34" />
+        <path d="m11 13.73-4 6.93" />
+        <path d="M12 22v-2" />
+        <path d="M12 2v2" />
+        <path d="M14 12h8" />
+        <path d="m17 20.66-1-1.73" />
+        <path d="m17 3.34-1 1.73" />
+        <path d="M2 12h2" />
+        <path d="m20.66 17-1.73-1" />
+        <path d="m20.66 7-1.73 1" />
+        <path d="m3.34 17 1.73-1" />
+        <path d="m3.34 7 1.73 1" />
+        <circle cx="12" cy="12" r="2" />
+        <circle cx="12" cy="12" r="8" />
+      </svg>
+    </a>
   {/snippet}
 </Board>
 
@@ -41,16 +87,16 @@
 <NewListDialog bind:open={creating} />
 
 <style>
-  .settings {
+  .icon {
     display: inline-flex;
     align-items: center;
-    min-height: var(--tap);
-    padding: 0 1rem;
+    justify-content: center;
+    flex: none;
+    width: var(--tap);
+    height: var(--tap);
     border: 3px solid currentColor;
     border-radius: var(--radius);
     color: inherit;
-    font-weight: 700;
-    text-decoration: none;
   }
   .empty {
     margin: 2rem 0;

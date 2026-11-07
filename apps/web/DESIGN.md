@@ -35,12 +35,6 @@ typography:
     fontWeight: 900
     lineHeight: 1
     fontVariation: "font-stretch 70%"
-  wordmark:
-    fontFamily: "Archivo Variable, Arial Narrow, sans-serif"
-    fontSize: "1.75rem"
-    fontWeight: 900
-    letterSpacing: "0.02em"
-    fontVariation: "font-stretch 70%"
   title:
     fontFamily: "Atkinson Hyperlegible Next Variable, system-ui, sans-serif"
     fontSize: "2rem"
@@ -112,6 +106,11 @@ components:
   board-bar:
     backgroundColor: "{colors.board}"
     textColor: "{colors.board-ink}"
+  board-icon-button:
+    backgroundColor: "transparent"
+    textColor: "{colors.board-ink}"
+    rounded: "{rounded.base}"
+    size: "{spacing.tap}"
   sheet:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
@@ -170,7 +169,7 @@ components:
 
 Every list is today's calendar sheet. A white sheet sits on a blue cardboard backing. The sheet carries one huge condensed number (how many entries are still open), big plain rows, and a dashed perforation. Ticked entries sink below the perforation and are torn off with one button. The product is built for an older person on a phone first, so everything is large, thick-lined, and fixed in place: label, title and count always sit in the same spots on every sheet.
 
-The type is two voices only. A tall, narrow, extra-bold face carries numbers and the wordmark. A large, very legible grotesque carries everything else. State is always readable from shape as well as colour: ticked means struck through and below the perforation, offline means a dashed sheet edge and a hollow dot, a switch is on when its knob sits to the right.
+The type is two voices only. A tall, narrow, extra-bold face carries numbers. A large, very legible grotesque carries everything else. State is always readable from shape as well as colour: ticked means struck through and below the perforation, offline means a dashed sheet edge and a hollow dot, a switch is on when its knob sits to the right.
 
 Colour is rationed. One red exists and it means "open right now". Everything else is ink, grey, white and one board blue. The large view (a switch in settings) raises the root size from 18px to 24px, so all rem-based type and targets grow by a third.
 
@@ -224,7 +223,6 @@ A blue board, a white sheet, near-black ink, and one calendar red. Greys do the 
 
 - **Count** (900, clamp(5rem, 28vw, 7rem), 0.8, -0.02em): the open number on the list sheet, right of the title; drops above the title when the head is narrower than 18rem.
 - **Row count** (900, 3rem, 1): the open number on each list row.
-- **Wordmark** (900, 1.75rem, +0.02em): the placeholder "Tomu" in the Logo component, replaceable in one place.
 - **Title** (700, 2rem, 1.1): list and page headings; settings section headings are 1.35rem.
 - **Row title** (700, 1.5rem, 1.15): list names in the overview; also dialog titles (1.5rem, 1.2) and empty-state sentences (1.5rem, 1.3).
 - **Item** (400, 1.35rem, 1.25): entry text in the list. Add field text is 1.2rem.
@@ -234,13 +232,15 @@ A blue board, a white sheet, near-black ink, and one calendar red. Greys do the 
 
 ### Named Rules
 
-**The Two Voices Rule.** The condensed face is for numbers and the wordmark. Never set sentences in it.
+**The Two Voices Rule.** The condensed face is for numbers. Never set sentences in it.
 
 **The Large View Rule.** Sizes are rem so they follow the root: 112.5% (18px) by default, 150% (24px) with the large view. Do not use px for type or targets.
 
 ## Layout
 
 One column. The blue board runs full width; the sheet is centred, at most 40rem wide, with 1.25rem inner padding and a 3px edge. The app bar content aligns to the sheet's inner edge (a minimum 1rem inset, at least 6.1rem tall). The sheet fills the remaining height, so blue shows above and beside it, never below.
+
+The app bar carries the Tomu logo: the site's line-drawn SVG (cloud, check, dot and two rules), inlined in the Logo component at 3rem tall with width set by its viewBox. It strokes in currentColor, so on the board it takes the white board ink; the site's red (#CF3427) is not used here because it clashes with the blue. The Logo component is the one place to swap it.
 
 Spacing is a rem rhythm built from 0.25, 0.5, 0.75, 1, 1.25 and 2rem steps. Rows are tall: 4rem per entry, 4.5rem per list. Every interactive target is at least 3rem (`--tap`); add field and add button are 3.75rem; text inputs are 3.5rem. Input and button share a row while the input keeps 14rem, otherwise the button drops below.
 
@@ -297,7 +297,15 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 
 ### Navigation
 
-- The app bar is the board: back link ("‹ All lists") at left, status and settings at right, white text on blue. Back link is bold 1.15rem with a 3rem target. Settings uses a 3px currentColor outline button.
+- The app bar is the board: white text on blue. The overview shows the logo at left; every other page shows the back link there. The status badge and the board icon buttons sit at right.
+- **Back link:** a 24px line chevron (3px stroke, square caps) plus the bold 1.15rem link text, with a 3rem target.
+- **Routes:** the overview's share button leads to the label-sharing page, which lists every label as its tag with a ghost "Teilen" link to that label's share page; with no labels it shows a hint and a solid link to settings. The label share page links back to the label-sharing page. Settings manages labels but carries no share links.
+
+### Board icon button
+
+- A 3rem (`--tap`) square on the board with a 3px currentColor border and 6px radius, transparent fill, so it takes the white board ink. It holds a 24px line icon (Lucide geometry: 2px stroke, round caps and joins) and carries an aria-label instead of visible text.
+- Used for share (to the label-sharing page) and settings (gear) on the overview, and for the list menu trigger on a list sheet.
+- **Focus:** the white board focus outline.
 
 ### Status badge
 
@@ -345,4 +353,4 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 - **Don't** shrink a tap target below 3rem or a divider below 2px.
 - **Don't** add motion beyond the flip and the tear; honour reduced motion.
 
-**Not canonized (defects the build carries):** label colours from the product brief are not rendered anywhere (tags use only the shared/private treatment), and the placeholder wordmark is not a final logo.
+**Not canonized (defects the build carries):** label colours from the product brief are not rendered anywhere (tags use only the shared/private treatment). The row dividers on the settings page and the label-sharing page are 1px dashed perforation grey, below the 2px divider floor; they are drift, not a second divider style.

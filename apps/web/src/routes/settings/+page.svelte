@@ -191,11 +191,6 @@
                     {m.item_delete()}
                   </button>
                 {/if}
-                <a
-                  class="btn ghost"
-                  href="/labels/{label.id}/share"
-                  aria-label={m.settings_share_item({ name: text })}>{m.menu_share()}</a
-                >
               </span>
             </li>
           {/each}
@@ -354,8 +349,7 @@
     color: var(--ink);
     font-weight: 700;
   }
-  button,
-  .btn {
+  button {
     display: inline-flex;
     align-items: center;
     justify-content: center;

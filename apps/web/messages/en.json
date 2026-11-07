@@ -27,7 +27,7 @@
   "new_list_cancel": "Cancel",
   "dialog_close": "Close",
   "back_to_lists": "All lists",
-  "add_placeholder": "Milk, bread, eggs …",
+  "add_placeholder": "New entry …",
   "add_button": "Add",
   "open_label": "open",
   "done_count": "{count} done",
@@ -104,5 +104,8 @@
   "install_text": "Put Tomu on your phone and it opens like an app.",
   "install_button": "Install",
   "install_close": "Close hint",
-  "install_ios": "Tap Share at the bottom, then “Add to Home Screen”."
+  "install_ios": "Tap Share at the bottom, then “Add to Home Screen”.",
+  "labels_share_button": "Share labels",
+  "labels_share_explain": "Pick a label. Anyone with the link sees all lists with this label.",
+  "labels_none_hint": "You create labels in the settings."
 }
