@@ -38,6 +38,19 @@
   "undo_button": "Rückgängig",
   "item_too_long": "Ein Eintrag darf höchstens 900 Zeichen lang sein.",
   "list_missing": "Diese Liste gibt es nicht mehr.",
-  "list_gone_hint": "Jemand hat diese Liste gelöscht.",
-  "add_label": "Neuer Eintrag"
+  "add_label": "Neuer Eintrag",
+  "list_gone": "Jemand hat diese Liste gelöscht.",
+  "menu_open": "Menü",
+  "menu_title": "Liste",
+  "menu_share": "Teilen",
+  "menu_rename": "Umbenennen",
+  "menu_labels": "Labels",
+  "menu_folder": "Ordner",
+  "menu_delete": "Liste löschen",
+  "menu_back": "Zurück",
+  "rename_title": "Liste umbenennen",
+  "delete_list_title": "Liste löschen?",
+  "delete_list_body": "Die Liste und alle ihre Einträge werden gelöscht, auch bei allen, mit denen du sie teilst. Das kannst du nicht rückgängig machen.",
+  "delete_list_confirm": "Löschen",
+  "confirm_cancel": "Abbrechen"
 }

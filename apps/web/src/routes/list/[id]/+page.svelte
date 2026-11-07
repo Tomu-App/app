@@ -5,6 +5,7 @@
   import AddField from "#lib/app/components/AddField.svelte";
   import Board from "#lib/app/components/Board.svelte";
   import ItemDialog from "#lib/app/components/ItemDialog.svelte";
+  import ListMenu from "#lib/app/components/ListMenu.svelte";
   import ItemRow from "#lib/app/components/ItemRow.svelte";
   import LabelTag from "#lib/app/components/LabelTag.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
@@ -42,6 +43,11 @@
   // Sliding below the perforation is the only motion on this screen; reduced motion shows the end state.
   const reduceMotion = (): boolean =>
     typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // A list deleted elsewhere takes its waiting undo with it.
+  $effect(() => {
+    if (status === "gone") pending.drop(id);
+  });
 
   let editId = $state<string | null>(null);
   let editOpen = $state(false);
@@ -96,6 +102,7 @@
   {/snippet}
   {#snippet end()}
     <StatusBadge status={tomu.status} />
+    {#if info}<ListMenu listId={id} />{/if}
   {/snippet}
 </Board>
 
@@ -137,7 +144,7 @@
   {:else if status === "loading"}
     <p class="note">{m.list_loading()}</p>
   {:else}
-    <p class="note">{status === "gone" ? m.list_gone_hint() : m.list_missing()}</p>
+    <p class="note">{status === "gone" ? m.list_gone() : m.list_missing()}</p>
   {/if}
 </Sheet>
 

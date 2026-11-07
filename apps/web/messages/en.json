@@ -38,6 +38,19 @@
   "undo_button": "Undo",
   "item_too_long": "An entry can have 900 characters at most.",
   "list_missing": "This list is gone.",
-  "list_gone_hint": "Someone deleted this list.",
-  "add_label": "New entry"
+  "add_label": "New entry",
+  "list_gone": "Someone deleted this list.",
+  "menu_open": "Menu",
+  "menu_title": "List",
+  "menu_share": "Share",
+  "menu_rename": "Rename",
+  "menu_labels": "Labels",
+  "menu_folder": "Folder",
+  "menu_delete": "Delete list",
+  "menu_back": "Back",
+  "rename_title": "Rename list",
+  "delete_list_title": "Delete list?",
+  "delete_list_body": "The list and all its entries will be deleted, also for everyone you share it with. You cannot undo this.",
+  "delete_list_confirm": "Delete",
+  "confirm_cancel": "Cancel"
 }
