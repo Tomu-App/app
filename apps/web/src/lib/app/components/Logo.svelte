@@ -2,13 +2,7 @@
   The Tomu logo (from the site's logo.svg). This is the one place to swap the logo.
   Stroke uses currentColor so it takes the header ink (--board-ink) on the blue board.
 -->
-<svg
-  class="logo"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 1932 1932"
-  role="img"
-  aria-label="Tomu"
->
+<svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1932 1932" role="img" aria-label="Tomu">
   <title>Tomu</title>
   <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
     <path
