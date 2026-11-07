@@ -56,7 +56,15 @@ pnpm --filter @tomu/web test
 
 `PUBLIC_API_URL` (default `http://localhost:3000`) is the server origin; it is also allowed in the CSP `connect-src`. For local settings copy `apps/web/.env.example` to `apps/web/.env`; that file is local only and not committed.
 
-Tests run with Vitest and `fake-indexeddb`. The integration tests in `test/integration` start the real server as a Bun child process (in-memory DB, random port, one server per test file), so Bun must be installed.
+### Routes and features
+
+- `/` overview of all lists; `/list/[id]` one list; `/list/[id]/share` and `/labels/[id]/share` share a list or a label (link plus QR code); `/share/[id]` opens a received link; `/settings` language, large view and install.
+- Languages: German and English via Paraglide (`apps/web/messages`). The choice is stored in `localStorage`; without one the browser language is used. There is no URL prefix, so share links stay language neutral.
+- Large view: a setting that raises the root font size to 24px.
+- PWA: the app can be installed and starts offline from the cached shell. Changes made offline sync when the connection returns.
+- `PUBLIC_LINK_REWRITE=1` rewrites share links to `https://app.tomu.foo` in preview builds. `pnpm dev` always rewrites; production builds never need it.
+
+Tests run with Vitest and `fake-indexeddb`. On a low-memory Windows machine the default worker count can run out of heap; `pnpm --filter @tomu/web exec vitest run --maxWorkers=2` passes. The integration tests in `test/integration` start the real server as a Bun child process (in-memory DB, random port, one server per test file), so Bun must be installed.
 
 ## License
 
