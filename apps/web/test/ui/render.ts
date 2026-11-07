@@ -1,6 +1,7 @@
 import { render, type RenderResult } from "@testing-library/svelte";
 import type { Component, ComponentProps } from "svelte";
-import { PENDING_KEY, TOMU_KEY } from "#lib/app/context.ts";
+import { INSTALL_KEY, PENDING_KEY, TOMU_KEY } from "#lib/app/context.ts";
+import { InstallHint } from "#lib/app/install.svelte.ts";
 import { PendingDeletes } from "#lib/app/undo.svelte.ts";
 import type { Tomu } from "#lib/tomu/index.js";
 
@@ -19,5 +20,6 @@ export const renderWithTomu = <C extends Component<any>>(
     context: new Map<symbol, unknown>([
       [TOMU_KEY, tomu],
       [PENDING_KEY, pending],
+      [INSTALL_KEY, new InstallHint()],
     ]),
   }) as RenderResult<C>;

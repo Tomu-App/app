@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { InstallHint } from "#lib/app/install.svelte.ts";
+  import { getInstall } from "#lib/app/context.ts";
   import { m } from "#lib/paraglide/messages.js";
 
-  const hint = new InstallHint();
-  $effect(() => () => hint.destroy());
+  const hint = getInstall();
 </script>
 
 {#if hint.visible}

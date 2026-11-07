@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { setPending, setTomu } from "#lib/app/context.ts";
+  import { setInstall, setPending, setTomu } from "#lib/app/context.ts";
+  import { InstallHint } from "#lib/app/install.svelte.ts";
   import { PendingDeletes } from "#lib/app/undo.svelte.ts";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -10,12 +11,19 @@
 
   let { tomu, children }: { tomu: Tomu; children?: Snippet } = $props();
 
-  // The layout keys this component on the instance, so the value never changes while mounted.
+  // The layout mounts this once, after the start succeeded (a retry only happens before that),
+  // so the value never changes while mounted.
   // svelte-ignore state_referenced_locally
   setTomu(tomu);
 
   const pending = new PendingDeletes();
   setPending(pending);
+
+  // Created here, not on the list page: the browser fires `beforeinstallprompt` once per page load,
+  // usually while the overview is showing.
+  const install = new InstallHint();
+  setInstall(install);
+  $effect(() => () => install.destroy());
 
   // Closing the app inside the undo window deletes nothing.
   $effect(() => {

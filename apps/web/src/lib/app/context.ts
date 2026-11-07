@@ -1,5 +1,6 @@
 import { getContext, setContext } from "svelte";
 import type { Tomu } from "#lib/tomu/index.js";
+import type { InstallHint } from "./install.svelte.ts";
 import type { PendingDeletes } from "./undo.svelte.ts";
 
 export const TOMU_KEY = Symbol("tomu");
@@ -24,4 +25,16 @@ export const getPending = (): PendingDeletes => {
   const pending = getContext<PendingDeletes | undefined>(PENDING_KEY);
   if (!pending) throw new Error("Pending context missing: call getPending() below the shell");
   return pending;
+};
+
+export const INSTALL_KEY = Symbol("install-hint");
+
+/** Called once by the shell, so the install prompt is caught from app start. */
+export const setInstall = (hint: InstallHint): void => void setContext(INSTALL_KEY, hint);
+
+/** The install hint of this tab; throws when called outside the shell. */
+export const getInstall = (): InstallHint => {
+  const hint = getContext<InstallHint | undefined>(INSTALL_KEY);
+  if (!hint) throw new Error("Install context missing: call getInstall() below the shell");
+  return hint;
 };
