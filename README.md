@@ -45,6 +45,19 @@ pnpm --filter @tomu/server build      # dist/server.js, the bundle the Docker im
 
 On every push to `main`, CI publishes the image `ghcr.io/tomu-app/server` (`latest` and `sha-<commit>`) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
 
+## Web
+
+`apps/web` (`@tomu/web`): SvelteKit client (static adapter). The sync layer lives in `src/lib/tomu`; the UI imports only from `#lib/tomu/index.js` (a `package.json` `imports` alias), which exports `startTomu`, `Tomu` and the public types.
+
+```sh
+pnpm --filter @tomu/web dev    # http://localhost:5173, needs the server on port 3000
+pnpm --filter @tomu/web test
+```
+
+`PUBLIC_API_URL` (default `http://localhost:3000`) is the server origin; it is also allowed in the CSP `connect-src`. For local settings copy `apps/web/.env.example` to `apps/web/.env`; that file is local only and not committed.
+
+Tests run with Vitest and `fake-indexeddb`. The integration tests in `test/integration` start the real server as a Bun child process (in-memory DB, random port, one server per test file), so Bun must be installed.
+
 ## License
 
 [Elastic License 2.0](LICENSE)
