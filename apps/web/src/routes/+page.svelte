@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PUBLIC_API_URL } from "$app/env/public";
-  import { startTomu, type Tomu } from "../lib/tomu/index.ts";
+  import { startTomu, type Tomu } from "#lib/tomu/index.js";
 
   let tomu = $state.raw<Tomu | null>(null);
 

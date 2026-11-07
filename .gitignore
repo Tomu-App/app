@@ -13,3 +13,8 @@ dist/
 # web client
 .svelte-kit/
 apps/web/build/
+
+# local env (see apps/web/.env.example)
+.env
+.env.*
+!.env.example
