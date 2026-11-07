@@ -7,7 +7,7 @@ import Shell from "#lib/app/components/Shell.svelte";
 import { m } from "#lib/paraglide/messages.js";
 import type { Tomu } from "#lib/tomu/index.js";
 import { fakeLocks, offlineTomu } from "../helpers.ts";
-import { renderWithTomu } from "./render.ts";
+import ShellFixture from "./ShellFixture.svelte";
 
 const started: Tomu[] = [];
 const start = async (locks: LockManager | null = null): Promise<Tomu> => {
@@ -38,10 +38,19 @@ test("blocked instance shows the other-tab notice instead of the app", async () 
   await start(locks);
   const blocked = await start(locks);
   expect(blocked.status).toBe("blocked");
-  const { container } = renderWithTomu(Shell, { tomu: blocked }, blocked);
+  const { container } = render(ShellFixture, { props: { tomu: blocked } });
   expect(screen.getByText(m.blocked_title())).toBeTruthy();
   expect(m.blocked_title()).toBe("Tomu ist schon in einem anderen Tab geöffnet");
   expect(container.querySelector("[data-board]")).toBeNull();
+  expect(screen.queryByText("app content")).toBeNull();
+});
+
+test("running instance shows the app with its board", async () => {
+  const t = await start(fakeLocks());
+  const { container } = render(ShellFixture, { props: { tomu: t } });
+  expect(container.querySelector("[data-board]")).not.toBeNull();
+  expect(screen.getByText("app content")).toBeTruthy();
+  expect(screen.queryByText(m.blocked_title())).toBeNull();
 });
 
 test("large view toggles html.large", async () => {
