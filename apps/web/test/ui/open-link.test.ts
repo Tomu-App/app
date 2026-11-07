@@ -86,6 +86,17 @@ test("invalid link shows the calm not-found page and keeps nothing", async () =>
   expect(t.lists).toEqual([]);
 });
 
+test("the not-found page has a button back to the overview", async () => {
+  const t = await offlineTomu();
+  started.push(t);
+  at("short", "bad");
+  renderWithTomu(Page, {}, t);
+  await screen.findByText(m.link_not_found());
+  const links = screen.getAllByRole("link", { name: m.back_to_lists() });
+  expect(links.length).toBeGreaterThanOrEqual(2); // board and sheet
+  expect(links.every((l) => l.getAttribute("href") === "/")).toBe(true);
+});
+
 test("a link to a list this device deleted shows the not-found page", async () => {
   const t = await offlineTomu();
   started.push(t);

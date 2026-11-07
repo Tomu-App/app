@@ -24,10 +24,10 @@
 </Board>
 
 <Sheet offline={tomu.status === "offline"}>
+  <h1 class="sr">{m.overview_title()}</h1>
   {#if groups.length === 0}
     <p class="empty">{m.overview_empty()}</p>
   {:else}
-    <h1 class="sr">{m.overview_title()}</h1>
     {#each groups as group (group.folder?.id ?? "")}
       <section>
         {#if group.folder}<h2>{group.folder.name}</h2>{/if}

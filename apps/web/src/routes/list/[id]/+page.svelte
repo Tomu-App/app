@@ -162,6 +162,7 @@
     <p class="note">{tomu.status === "offline" ? m.list_waiting_offline() : m.list_loading()}</p>
   {:else}
     <p class="note">{status === "gone" ? m.list_gone() : m.list_missing()}</p>
+    <a class="home" href="/">{m.back_to_lists()}</a>
   {/if}
 </Sheet>
 
@@ -284,6 +285,18 @@
     font: inherit;
     font-weight: 700;
     cursor: pointer;
+  }
+  .home {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 1.25rem;
+    border: 3px solid var(--rule);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-decoration: none;
   }
   .note {
     margin: 2rem 0;

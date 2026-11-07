@@ -176,7 +176,9 @@ test("a list that is not there says so and links back", async () => {
   route.id = id22("nolist");
   renderWithTomu(Page, {}, t);
   expect(screen.getByText(m.list_missing())).toBeTruthy();
-  expect(screen.getByRole("link", { name: new RegExp(m.back_to_lists()) }).getAttribute("href")).toBe("/");
+  const back = screen.getAllByRole("link", { name: new RegExp(m.back_to_lists()) });
+  expect(back).toHaveLength(2); // board and the button on the sheet
+  expect(back.every((l) => l.getAttribute("href") === "/")).toBe(true);
 });
 
 test("an entry that arrives from elsewhere carries the neu mark", async () => {

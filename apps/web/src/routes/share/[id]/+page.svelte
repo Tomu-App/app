@@ -78,6 +78,7 @@
   {#if notFound}
     <h1 class="note">{m.link_not_found()}</h1>
     <p class="hint">{m.link_not_found_hint()}</p>
+    <a class="home" href="/">{m.back_to_lists()}</a>
   {:else if tomu.status === "offline"}
     <p class="note">{m.list_waiting_offline()}</p>
   {:else}
@@ -100,6 +101,19 @@
     font-size: 1.5rem;
     line-height: 1.3;
     font-weight: 400;
+  }
+  .home {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    margin-top: 1.25rem;
+    padding: 0 1.25rem;
+    border: 3px solid var(--rule);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-decoration: none;
   }
   .hint {
     margin: 0;

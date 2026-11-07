@@ -42,6 +42,7 @@ test("overview shows each list with label and open count", async () => {
 test("empty overview explains and offers Neue Liste", async () => {
   const t = await start();
   renderWithTomu(Page, {}, t);
+  expect(screen.getByRole("heading", { level: 1, name: m.overview_title() })).toBeTruthy();
   expect(screen.getByText(m.overview_empty())).toBeTruthy();
   expect(screen.getByRole("button", { name: "Neue Liste" })).toBeTruthy();
 });

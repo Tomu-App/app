@@ -172,7 +172,9 @@ test("list deleted elsewhere shows a notice, goes back and drops the waiting und
   expect(pending.current).not.toBeNull();
   await t.deleteList(id); // same effect as a drop arriving from another device
   await waitFor(() => expect(screen.getByText(m.list_gone())).toBeTruthy());
-  expect(screen.getByRole("link", { name: m.back_to_lists() }).getAttribute("href")).toBe("/");
+  const back = screen.getAllByRole("link", { name: m.back_to_lists() });
+  expect(back).toHaveLength(2); // board and the notice on the sheet
+  expect(back.every((l) => l.getAttribute("href") === "/")).toBe(true);
   expect(drop).toHaveBeenCalledWith(id);
   expect(pending.current).toBeNull();
 });
