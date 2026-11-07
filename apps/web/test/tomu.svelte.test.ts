@@ -331,3 +331,26 @@ test("deleteList of a list the server never had clears its outbox and still tomb
   expect(t.status).toBe("offline");
   await t.stop();
 });
+
+test("deleteList of a created list keeps the drop in the outbox after the record is gone", async () => {
+  const opts = offlineOpts();
+  const id = id22("created");
+  const key = newDocKey();
+  const rec = listDoc(id, "own", key);
+  applyToDoc(rec, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  applyToDoc(rec, id22("i2"), op({ t: "title", text: "A" }, 2));
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [rec] });
+  store.close();
+  const t = await startTomu(opts);
+  await t.deleteList(id);
+  expect(t.lists).toEqual([]);
+  expect(t.docStatus(id)).toBe("gone");
+  expect(types(await outboxOf(opts.dbName!, { [id]: key }))).toEqual(["drop"]);
+  const check = await LocalStore.open(opts.dbName!);
+  const snap = await check.load();
+  check.close();
+  expect(snap.docs.find((d) => d.id === id)).toBeUndefined();
+  expect(snap.tombstones.has(id)).toBe(true);
+  await t.stop();
+});
