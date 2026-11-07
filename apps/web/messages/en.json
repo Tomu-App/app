@@ -94,5 +94,9 @@
   "settings_about_text": "Tomu is a small app for shared lists.",
   "settings_hosting": "Hosted by Venocix",
   "settings_imprint": "Legal notice",
-  "settings_privacy": "Privacy"
+  "settings_privacy": "Privacy",
+  "install_text": "Put Tomu on your phone and it opens like an app.",
+  "install_button": "Install",
+  "install_close": "Close hint",
+  "install_ios": "Tap Share at the bottom, then “Add to Home Screen”."
 }

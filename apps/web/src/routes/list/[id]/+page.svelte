@@ -4,6 +4,7 @@
   import { cubicIn } from "svelte/easing";
   import AddField from "#lib/app/components/AddField.svelte";
   import Board from "#lib/app/components/Board.svelte";
+  import InstallHint from "#lib/app/components/InstallHint.svelte";
   import ItemDialog from "#lib/app/components/ItemDialog.svelte";
   import ListMenu from "#lib/app/components/ListMenu.svelte";
   import ItemRow from "#lib/app/components/ItemRow.svelte";
@@ -120,6 +121,7 @@
     </div>
     <div class="rule"></div>
     <AddField listId={id} {fresh} />
+    <InstallHint />
     <ul>
       {#each items as item, i (item.id)}
         <li animate:flip={{ duration: reduceMotion() ? 0 : 250 }} out:tear={{ duration: motion.tearing ? tearDuration : 0 }}>

@@ -41,6 +41,8 @@ export default defineConfig(({ mode }) => {
             "style-src": ["self", "unsafe-inline"],
             "img-src": ["self", "data:"],
             "connect-src": ["self", api, ws],
+            "manifest-src": ["self"],
+            "worker-src": ["self"],
             "object-src": ["none"],
             "base-uri": ["self"],
             "form-action": ["self"],
