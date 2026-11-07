@@ -28,8 +28,8 @@
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.75rem;
-    padding-left: 0.75rem;
-    border-left: 4px solid var(--rule);
+    padding-top: 0.5rem;
+    border-top: 3px solid var(--rule);
     color: var(--ink-soft);
   }
   .text {
