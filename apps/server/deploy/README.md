@@ -11,9 +11,25 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
 ## One-time setup
 
 1. Install Docker with the Compose plugin.
-2. Copy `daemon.json` to `/etc/docker/daemon.json` (log rotation: 10 MB, 3 files), then `sudo systemctl restart docker`.
+2. Copy `daemon.json` to `/etc/docker/daemon.json` (log rotation: 10 MB, 3 files), then `sudo systemctl restart docker`. The file stays owned by root:
+
+   ```sh
+   sudo chown root:root /etc/docker/daemon.json
+   sudo chmod 644 /etc/docker/daemon.json
+   ```
+
 3. Firewall: allow only 80, 443 and SSH. SSH only with a key (`PasswordAuthentication no`).
-4. Copy `compose.yaml` and `Caddyfile` from this folder into a directory on the VPS, for example `/opt/tomu`.
+4. Create a `tomu` user that runs everything below. Members of the `docker` group can control Docker, which is root-equivalent, so use this user for nothing else and give it key-only SSH login:
+
+   ```sh
+   sudo useradd --create-home --shell /bin/bash tomu
+   sudo usermod -aG docker tomu
+   sudo install -d -m 700 -o tomu -g tomu /home/tomu/.ssh
+   sudo install -m 600 -o tomu -g tomu ~/.ssh/authorized_keys /home/tomu/.ssh/authorized_keys
+   sudo install -d -m 750 -o tomu -g tomu /opt/tomu /opt/tomu/certs
+   ```
+
+   Then log in as `tomu` for the remaining steps. Copy `compose.yaml` and `Caddyfile` from this folder into `/opt/tomu`.
 5. Create `/opt/tomu/.env`:
 
    ```sh
@@ -25,6 +41,15 @@ Two containers: `caddy` (TLS, ports 80 and 443) and `app` (the Bun server, only 
 
 6. In the Cloudflare dashboard, create an origin certificate for `api.tomu.foo` (SSL/TLS, Origin Server). Save it as `/opt/tomu/certs/origin.pem` and the key as `/opt/tomu/certs/origin-key.pem`. Set the SSL mode of the zone to "Full (strict)".
 7. Turn on Authenticated Origin Pulls for the zone (SSL/TLS, Origin Server, "Authenticated Origin Pulls", zone-level). Download Cloudflare's origin-pull CA certificate (linked there as `authenticated_origin_pull_ca.pem`) and save it as `/opt/tomu/certs/cloudflare-origin-pull-ca.pem`. Caddy then rejects every TLS connection that does not come from Cloudflare. This matters: the server trusts the `cf-connecting-ip` header for its per-IP limits, and without this check anyone connecting to the VPS directly could forge it.
+   Lock down the files. Caddy reads `certs/` through a read-only mount as root inside its container, so the host owner can keep the key private:
+
+   ```sh
+   chmod 600 /opt/tomu/.env /opt/tomu/certs/origin-key.pem
+   chmod 644 /opt/tomu/certs/origin.pem /opt/tomu/certs/cloudflare-origin-pull-ca.pem
+   ```
+
+   If you created any of these files as root, fix them first: `sudo chown -R tomu:tomu /opt/tomu`.
+
 8. DNS: `api.tomu.foo` as a proxied record (orange cloud) pointing at the VPS. WebSockets are allowed through the proxy by default.
 9. If the GHCR package is private: `docker login ghcr.io` with a token that can read packages.
 10. `docker compose up -d`, then check `curl https://api.tomu.foo/api/health` returns `{"ok":true}`. A direct request to the VPS (`curl -k --resolve api.tomu.foo:443:<vps-ip> https://api.tomu.foo/api/health`) must fail the TLS handshake.
