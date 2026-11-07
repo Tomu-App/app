@@ -112,6 +112,9 @@ test("closing the app inside the undo window deletes nothing", async () => {
   await fireEvent.click(tearBtn());
   expect(screen.queryByText("Milch")).toBeNull();
   window.dispatchEvent(new Event("pagehide"));
+  await tick();
+  expect(bar().textContent).toBe(""); // the pending delete was discarded by the listener, not by stop()
+  expect(screen.getByText("Milch")).toBeTruthy();
   await t.stop();
   await vi.advanceTimersByTimeAsync(10_000);
   const again = await start(db);
@@ -181,4 +184,16 @@ test("with motion the torn part leaves after the tear animation", async () => {
   await fireEvent.click(tearBtn());
   await vi.waitFor(() => expect(screen.queryByText("Milch")).toBeNull(), { timeout: 2000 });
   expect(t.list(id)!.items).toHaveLength(3);
+});
+
+test("leaving the page inside the window still deletes from the original list", async () => {
+  const pending = new PendingDeletes();
+  const { t, id } = await setup(pending);
+  await fireEvent.click(screen.getByRole("button", { name: new RegExp(`${m.item_edit()}: Eier`) }));
+  await fireEvent.click(screen.getByRole("button", { name: m.item_delete() }));
+  route.id = "";
+  cleanup();
+  expect(pending.current).toEqual({ listId: id, count: 1 });
+  await vi.advanceTimersByTimeAsync(6100);
+  await vi.waitFor(() => expect(itemTexts(t, id)).toEqual(["Brot", "Milch"]));
 });

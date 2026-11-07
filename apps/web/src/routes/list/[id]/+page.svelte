@@ -55,7 +55,10 @@
   };
 
   // The one place that removes a single entry: it waits in the undo bar first.
-  const removeItem = (itemId: string): void => pending.schedule(id, [itemId], (ids) => deleteAll(id, ids));
+  const removeItem = (itemId: string): void => {
+    const listId = id; // the page may be left before the window ends
+    pending.schedule(listId, [itemId], (ids) => deleteAll(listId, ids));
+  };
 
   // The ticked part leaves by tearing off below the perforation; reduced motion removes it at once.
   const motion = { tearing: false };
