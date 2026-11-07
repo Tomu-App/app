@@ -39,7 +39,7 @@
 <h1 class="title">{title}</h1>
 <p class="explain">{explain}</p>
 <div class="qr"><QrCode value={link} /></div>
-<p class="link">{link}</p>
+<p class="link selectable">{link}</p>
 <div class="actions">
   <button type="button" onclick={copy}>{m.share_copy()}</button>
   {#if canShare}
