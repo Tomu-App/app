@@ -10,6 +10,7 @@ pnpm workspace (`apps/*`, `packages/*`), Node version in `.node-version`, Bun ve
 pnpm install
 pnpm test    # all packages
 pnpm check   # TypeScript
+pnpm lint    # Prettier check (pnpm format to fix)
 ```
 
 ## Packages

@@ -5,6 +5,12 @@
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "test": "pnpm -r test",
-    "check": "pnpm -r check"
+    "check": "pnpm -r check",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "prettier-plugin-svelte": "^4.1.0"
   }
 }

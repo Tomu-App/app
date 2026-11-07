@@ -1,0 +1,18 @@
+# Package managers
+pnpm-lock.yaml
+
+# Build outputs
+build/
+.svelte-kit/
+dist/
+coverage/
+
+# Generated
+apps/web/src/lib/paraglide/
+apps/web/project.inlang/cache/
+apps/server/drizzle/
+apps/web/static/
+
+# Local tooling
+.superpowers/
+.impeccable/
