@@ -81,7 +81,7 @@
     border: 2px solid var(--open);
     border-radius: 4px;
     color: var(--open);
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 700;
   }
   .done .tick {
