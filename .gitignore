@@ -9,3 +9,7 @@ dist/
 *.db
 *.db-wal
 *.db-shm
+
+# web client
+.svelte-kit/
+apps/web/build/
