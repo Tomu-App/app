@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { buildLink, MAX_ITEM_TEXT, MAX_TITLE, newDocId, newDocKey, parseLink } from "@tomu/shared";
 import { flushSync } from "svelte";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
 import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
 import { DisplayNameRequiredError, startTomu, type Tomu } from "../src/lib/tomu/tomu.svelte.ts";
-import { fakeLocks, fakeSocket, id22, listDoc, offlineOpts, op, outboxOf } from "./helpers.ts";
+import { fakeLocks, fakeSocket, id22, labelDoc, listDoc, offlineOpts, op, outboxOf } from "./helpers.ts";
 
 const keyOf = (t: Tomu, listId: string): string => parseLink(t.shareList(listId))!.key;
 const types = (entries: { op: { t: string } }[]): string[] => entries.map((e) => e.op.t);
@@ -351,6 +351,46 @@ test("deleteList of a created list keeps the drop in the outbox after the record
   const snap = await check.load();
   check.close();
   expect(snap.docs.find((d) => d.id === id)).toBeUndefined();
+  expect(snap.tombstones.has(id)).toBe(true);
+  await t.stop();
+});
+
+test("setListLabels removing the only shared label of a label-only list makes the list disappear", async () => {
+  const opts = offlineOpts();
+  const A = id22("labelA");
+  const L = id22("listL");
+  const KL = newDocKey();
+  const list = listDoc(L, "label", KL);
+  applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [labelDoc(A, [[L, KL]], "link", newDocKey()), list] });
+  store.close();
+  const t = await startTomu(opts);
+  expect(t.lists.map((l) => l.id)).toEqual([L]);
+  await t.setListLabels(L, []);
+  await vi.waitFor(() => expect(t.lists).toEqual([]));
+  expect(t.docStatus(L)).not.toBe("list");
+  await t.stop();
+});
+
+test("deleteList works for a full list: no drop op, removed with a tombstone", async () => {
+  const opts = offlineOpts();
+  const id = id22("fulllist");
+  const key = newDocKey();
+  const rec = listDoc(id, "own", key);
+  applyToDoc(rec, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  rec.full = true;
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [rec] });
+  store.close();
+  const t = await startTomu(opts);
+  await t.deleteList(id);
+  expect(t.lists).toEqual([]);
+  expect(t.docStatus(id)).toBe("gone");
+  expect(await outboxOf(opts.dbName!, { [id]: key })).toEqual([]);
+  const check = await LocalStore.open(opts.dbName!);
+  const snap = await check.load();
+  check.close();
   expect(snap.tombstones.has(id)).toBe(true);
   await t.stop();
 });

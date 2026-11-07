@@ -268,3 +268,67 @@ test("old-socket page queued when the new socket opens does not leave the new ca
     spy.mockRestore();
   }
 });
+
+type OpMsg = Extract<ClientMessage, { type: "op" }>;
+const opMsgs = (ws: FakeWs): OpMsg[] => ws.sent.filter((m): m is OpMsg => m.type === "op");
+
+test("reconcile remove keeps the outbox: an unsent offline edit still reaches the server", async () => {
+  const { engine, store, ws } = await startEngine({
+    docs: [labelDoc(A, [[L, KL]], "link", KA), listDoc(L, "label", KL)],
+    backoff: { baseMs: 1, maxMs: 1 },
+  });
+  ws().receive(nothing(A));
+  ws().receive(nothing(L));
+  await engine.localOps(L, [title("Milch")]);
+  const sentId = opMsgs(ws())[0]!.op.id;
+  // Lisa removes the label link: the list disappears locally, the outbox entry stays.
+  ws().receive(await live(A, KA, o1, op({ t: "unlink", list: L, seen: [id22("link0")] }, 9), 1));
+  await vi.waitFor(() => expect(engine.docs.has(L)).toBe(false));
+  await engine.flush();
+  expect((await store.load()).outbox.map((e) => e.env.id)).toEqual([sentId]);
+  // After a reconnect the entry of the record-less doc is sent again, and its ack clears it.
+  const first = ws();
+  first.drop();
+  await vi.waitFor(() => expect(ws()).not.toBe(first));
+  ws().open();
+  await engine.flush();
+  await vi.waitFor(() => expect(opMsgs(ws()).map((m) => m.op.id)).toEqual([sentId]));
+  ws().receive({ type: "ack", doc: L, id: sentId, seq: 1 });
+  await engine.flush();
+  expect((await store.load()).outbox).toEqual([]);
+});
+
+test("local unlink removes a label-only list at once, unsubscribes it and keeps its outbox", async () => {
+  const { engine, store, ws } = await startEngine({
+    docs: [labelDoc(A, [[L, KL]], "link", KA), listDoc(L, "label", KL)],
+  });
+  ws().receive(nothing(A));
+  ws().receive(nothing(L));
+  await engine.localOps(L, [title("Milch")]);
+  await engine.localOps(A, [op({ t: "unlink", list: L, seen: [id22("link0")] }, 9)]);
+  await engine.flush();
+  expect(engine.docs.has(L)).toBe(false);
+  expect(ws().sent).toContainEqual({ type: "unsubscribe", docs: [L] });
+  const outbox = (await store.load()).outbox;
+  expect(outbox.filter((e) => e.doc === L).length).toBe(1);
+  expect(outbox.filter((e) => e.doc === A).length).toBe(1);
+});
+
+test("a throwing onStatus does not stall the message queue", async () => {
+  let armed = false;
+  let threw = false;
+  const { engine, ws } = await startEngine({
+    docs: [listDoc(D, "link", K)],
+    onStatus: () => {
+      if (armed && !threw) {
+        threw = true;
+        throw new Error("boom");
+      }
+    },
+  });
+  armed = true;
+  ws().receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")]]), head: 2 });
+  ws().receive(await live(D, K, o3, title("b", 3), 3));
+  await vi.waitFor(() => expect(engine.docs.get(D)!.state).toMatchObject({ title: "b" }));
+  expect(threw).toBe(true);
+});

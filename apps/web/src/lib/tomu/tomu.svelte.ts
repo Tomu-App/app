@@ -196,16 +196,18 @@ export class Tomu {
 
   async deleteList(id: string): Promise<void> {
     const eng = this.#eng();
-    this.#list(id);
+    const list = this.#list(id);
     const unlinks: { label: string; op: Op }[] = [];
     for (const rec of eng.docs.values()) {
       if (rec.kind !== "label" || !labelMembers(rec.state).has(id)) continue;
       unlinks.push({ label: rec.id, op: this.#op({ t: "unlink", list: id, seen: liveLinkIds(rec.state, id) }) });
     }
-    const drop = this.#op({ t: "drop" });
-    checkOps([drop, ...unlinks.map((u) => u.op)]);
+    // A full list accepts no more ops (not even a drop): it is only unlinked and removed locally.
+    const drop = list.full ? null : this.#op({ t: "drop" });
+    checkOps([...(drop ? [drop] : []), ...unlinks.map((u) => u.op)]);
+    // Drop first: the last unlink can make a label-only list vanish locally (reconcile), which must not precede the drop.
+    if (drop) await eng.localOps(id, [drop]);
     for (const u of unlinks) await eng.localOps(u.label, [u.op]);
-    await eng.localOps(id, [drop]);
     await eng.removeDoc(id, { tombstone: true });
   }
 

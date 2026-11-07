@@ -280,6 +280,15 @@ export class SyncEngine {
     }
     this.opts.onChange(new Set([docId]));
     this.pump();
+    if (rec.kind === "label") {
+      // A local link or unlink changes which lists exist: check again, through the queue so the catch-up gate applies.
+      this.reconcileDue = true;
+      this.run(async () => {
+        const changed = new Set<string>();
+        await this.maybeReconcile(changed);
+        if (changed.size > 0) this.opts.onChange(changed);
+      });
+    }
   }
 
   /**
@@ -364,7 +373,8 @@ export class SyncEngine {
     this.inbox = this.inbox
       .then(fn)
       .catch(() => console.warn("failed to process message"))
-      .then(() => this.emitStatus());
+      .then(() => this.emitStatus())
+      .catch(() => console.warn("status callback failed"));
   }
 
   private async handle(msg: ServerMessage): Promise<void> {
@@ -518,8 +528,9 @@ export class SyncEngine {
     }
     for (const id of remove) {
       const rec = this.docs.get(id);
-      // The list disappears together with its local data (spec), so the outbox goes too.
-      if (rec) await this.dispose(rec, false, changed, false);
+      // The list disappears locally (spec), but unsent edits stay in the outbox: pump sends entries of docs
+      // without a record, so e.g. an offline edit still reaches the other members. Acks remove them.
+      if (rec) await this.dispose(rec, false, changed, true);
     }
   }
 
