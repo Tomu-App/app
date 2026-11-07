@@ -145,3 +145,10 @@ test("catch-up larger than the socket buffer arrives complete", async () => {
   expect(await mike.next("pong")).toEqual({ type: "pong" });
   mike.ws.close();
 }, 30_000);
+
+test("REST doc creation limit is keyed by the client IP through the real server", async () => {
+  const codes: number[] = [];
+  for (let i = 0; i < 31; i++) codes.push((await fetch(`${url}/api/docs/${newDocId()}`, { method: "POST" })).status);
+  expect(codes.filter((c) => c === 201).length).toBe(30);
+  expect(codes.at(-1)).toBe(429);
+});

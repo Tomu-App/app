@@ -7,18 +7,21 @@ import type { Store } from "./store.ts";
 
 export const PAGE_LIMIT = 500;
 
+/** `ip`: the client's limit key, set by the server per request. */
+export type AppEnv = { Bindings: { ip: string } };
+
 export type AppDeps = {
   store: Store;
   config: Config;
   docLimit: WindowCounter;
-  ipOf: (c: Context) => string;
+  ipOf: (c: Context<AppEnv>) => string;
 };
 
 const NON_NEG_INT = /^\d+$/;
 
 /** REST api: create docs, page through their ops, health. */
-export function createApp({ store, config, docLimit, ipOf }: AppDeps): Hono {
-  const app = new Hono();
+export function createApp({ store, config, docLimit, ipOf }: AppDeps): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
   app.use(
     "/api/*",
     cors({

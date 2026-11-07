@@ -1,4 +1,3 @@
-import { getConnInfo } from "hono/bun";
 import { createApp } from "./app.ts";
 import type { Config } from "./config.ts";
 import { openDb } from "./db/open.ts";
@@ -27,20 +26,20 @@ export function startServer(config: Config) {
     store,
     config,
     docLimit,
-    ipOf: (c) => keyOf(c.req.raw.headers, getConnInfo(c).remote.address ?? null),
+    ipOf: (c) => c.env.ip,
   });
 
   const server = Bun.serve<WsData>({
     port: config.port,
     fetch(req, server) {
-      if (new URL(req.url).pathname !== "/api/ws") return app.fetch(req, server);
+      const ip = keyOf(req.headers, server.requestIP(req)?.address ?? null);
+      if (new URL(req.url).pathname !== "/api/ws") return app.fetch(req, { ip });
       if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") return new Response(null, { status: 426 });
       const origin = req.headers.get("origin");
       if (origin === null || !config.allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
-      const key = keyOf(req.headers, server.requestIP(req)?.address ?? null);
-      if (!conns.acquire(key)) return new Response(null, { status: 429 });
-      if (server.upgrade(req, { data: { key } })) return undefined;
-      conns.release(key);
+      if (!conns.acquire(ip)) return new Response(null, { status: 429 });
+      if (server.upgrade(req, { data: { key: ip } })) return undefined;
+      conns.release(ip);
       return new Response(null, { status: 400 });
     },
     websocket: {
