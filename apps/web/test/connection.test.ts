@@ -211,3 +211,23 @@ test("stop while waiting for backoff cancels the reconnect", () => {
   vi.advanceTimersByTime(60_000);
   expect(f.sockets.length).toBe(1);
 });
+
+test("pong timeout on a half-open socket reports close and reconnects without waiting for onclose", () => {
+  const f = fakeSocket({ silentClose: true });
+  const on = { open: vi.fn(), message: vi.fn(), close: vi.fn() };
+  const c = new Connection({ url: U, connect: f.connect, random: () => 0.5 }, on);
+  c.start();
+  const old = f.last();
+  old.open();
+  vi.advanceTimersByTime(40_000);
+  expect(old.closed).toBe(true);
+  expect(on.close).toHaveBeenCalledTimes(1);
+  expect(c.isOpen).toBe(false);
+  vi.advanceTimersByTime(1_000);
+  expect(f.sockets.length).toBe(2);
+  // late onclose from the old socket must do nothing
+  old.drop();
+  expect(on.close).toHaveBeenCalledTimes(1);
+  vi.advanceTimersByTime(60_000);
+  expect(f.sockets.length).toBe(2);
+});

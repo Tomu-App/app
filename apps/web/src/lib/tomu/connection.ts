@@ -100,13 +100,24 @@ export class Connection {
     };
     ws.onclose = () => {
       if (this.ws !== ws) return;
-      const wasOpen = this.opened;
-      this.ws = null;
-      this.opened = false;
-      this.clearTimers();
-      if (wasOpen) this.on.close();
-      if (!this.stopped) this.scheduleRetry();
+      this.dropSocket(ws);
     };
+  }
+
+  /** Local close path: used for server close events and for pong timeouts (a half-open socket may never fire onclose). */
+  private dropSocket(ws: WebSocket): void {
+    const wasOpen = this.opened;
+    ws.onopen = ws.onmessage = ws.onclose = null;
+    this.ws = null;
+    this.opened = false;
+    this.clearTimers();
+    try {
+      ws.close();
+    } catch {
+      // already closed
+    }
+    if (wasOpen) this.on.close();
+    if (!this.stopped) this.scheduleRetry();
   }
 
   private scheduleRetry(): void {
@@ -126,7 +137,7 @@ export class Connection {
       if (!this.send({ type: "ping" })) return;
       this.pongTimer = setTimeout(() => {
         this.pongTimer = null;
-        this.ws?.close();
+        if (this.ws) this.dropSocket(this.ws);
       }, PONG_TIMEOUT_MS);
       this.schedulePing();
     }, PING_INTERVAL_MS);

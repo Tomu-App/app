@@ -59,6 +59,8 @@ export const env = (seed: string): Envelope => {
 export class FakeWs {
   readyState = 0;
   closed = false;
+  /** When true, close() does not fire onclose (half-open socket). */
+  silentClose = false;
   sent: ClientMessage[] = [];
   onopen: (() => void) | null = null;
   onmessage: ((ev: { data: unknown }) => void) | null = null;
@@ -69,6 +71,10 @@ export class FakeWs {
   }
   /** Client-initiated close. */
   close(): void {
+    if (this.silentClose) {
+      this.closed = true;
+      return;
+    }
     this.shut();
   }
   /** Test: connection established. */
@@ -85,7 +91,6 @@ export class FakeWs {
     this.shut();
   }
   private shut(): void {
-    if (this.closed) return;
     this.closed = true;
     this.readyState = 3;
     this.onclose?.();
@@ -94,12 +99,13 @@ export class FakeWs {
 
 export type FakeSocket = { connect: Connect; sockets: FakeWs[]; last(): FakeWs };
 
-export const fakeSocket = (): FakeSocket => {
+export const fakeSocket = (opts: { silentClose?: boolean } = {}): FakeSocket => {
   const sockets: FakeWs[] = [];
   return {
     sockets,
     connect: () => {
       const ws = new FakeWs();
+      ws.silentClose = opts.silentClose ?? false;
       sockets.push(ws);
       return ws as unknown as WebSocket;
     },
