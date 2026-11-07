@@ -1,4 +1,5 @@
-import { emptyListState, newDocKey, toBase64Url, type Envelope, type Op } from "@tomu/shared";
+import { emptyListState, newDocKey, toBase64Url, type ClientMessage, type Envelope, type Op } from "@tomu/shared";
+import type { Connect } from "../src/lib/tomu/connection.ts";
 import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
 import type { DocRecord, Origin } from "../src/lib/tomu/types.ts";
 
@@ -52,4 +53,65 @@ export const labelDoc = (
 export const env = (seed: string): Envelope => {
   const id = toBase64Url(new TextEncoder().encode(seed.padEnd(16, "_").slice(0, 16)));
   return { id, n: "A".repeat(16), c: "A".repeat(22) };
+};
+
+/** Minimal stand-in for the browser WebSocket: the subset Connection uses. */
+export class FakeWs {
+  readyState = 0;
+  closed = false;
+  sent: ClientMessage[] = [];
+  onopen: (() => void) | null = null;
+  onmessage: ((ev: { data: unknown }) => void) | null = null;
+  onclose: (() => void) | null = null;
+
+  send(data: string): void {
+    this.sent.push(JSON.parse(data) as ClientMessage);
+  }
+  /** Client-initiated close. */
+  close(): void {
+    this.shut();
+  }
+  /** Test: connection established. */
+  open(): void {
+    this.readyState = 1;
+    this.onopen?.();
+  }
+  /** Test: server sends a message (objects are JSON-encoded, strings go through as-is). */
+  receive(msg: unknown): void {
+    this.onmessage?.({ data: typeof msg === "string" ? msg : JSON.stringify(msg) });
+  }
+  /** Test: server closes the connection. */
+  drop(): void {
+    this.shut();
+  }
+  private shut(): void {
+    if (this.closed) return;
+    this.closed = true;
+    this.readyState = 3;
+    this.onclose?.();
+  }
+}
+
+export type FakeSocket = { connect: Connect; sockets: FakeWs[]; last(): FakeWs };
+
+export const fakeSocket = (): FakeSocket => {
+  const sockets: FakeWs[] = [];
+  return {
+    sockets,
+    connect: () => {
+      const ws = new FakeWs();
+      sockets.push(ws);
+      return ws as unknown as WebSocket;
+    },
+    last: () => {
+      const ws = sockets.at(-1);
+      if (!ws) throw new Error("no socket yet");
+      return ws;
+    },
+  };
+};
+
+export const fakeClock = (start: number): { now(): number; advance(ms: number): void } => {
+  let t = start;
+  return { now: () => t, advance: (ms) => void (t += ms) };
 };
