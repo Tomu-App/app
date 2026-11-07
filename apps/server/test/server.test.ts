@@ -84,6 +84,18 @@ test("upgrade from a foreign origin is rejected with 403", async () => {
   expect(res.status).toBe(403);
 });
 
+test("upgrade without an Origin header is rejected with 403", async () => {
+  const res = await fetch(`${url}/api/ws`, {
+    headers: {
+      Upgrade: "websocket",
+      Connection: "Upgrade",
+      "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+      "Sec-WebSocket-Version": "13",
+    },
+  });
+  expect(res.status).toBe(403);
+});
+
 test(`connection ${CONNS_PER_IP + 1} from one IP is rejected, closing one frees a slot`, async () => {
   const open = await Promise.all(Array.from({ length: CONNS_PER_IP }, () => openWs()));
   await expect(openWs()).rejects.toThrow();

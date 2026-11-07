@@ -4,3 +4,8 @@ coverage/
 *.log
 .superpowers/
 dist/
+
+# local SQLite databases (pnpm --filter @tomu/server start)
+*.db
+*.db-wal
+*.db-shm

@@ -35,9 +35,8 @@ export function startServer(config: Config) {
     fetch(req, server) {
       if (new URL(req.url).pathname !== "/api/ws") return app.fetch(req, server);
       if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") return new Response(null, { status: 426 });
-      // Browsers always send Origin; native clients may not, and Origin cannot stop them anyway.
       const origin = req.headers.get("origin");
-      if (origin !== null && !config.allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
+      if (origin === null || !config.allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
       const key = keyOf(req.headers, server.requestIP(req)?.address ?? null);
       if (!conns.acquire(key)) return new Response(null, { status: 429 });
       if (server.upgrade(req, { data: { key } })) return undefined;
