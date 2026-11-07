@@ -123,7 +123,8 @@ test("edit dialog deletes the item", async () => {
   const id = await open(t, "Einkauf", "Milch");
   await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
   await fireEvent.click(screen.getByRole("button", { name: m.item_delete() }));
-  await waitFor(() => expect(t.list(id)!.items).toHaveLength(0));
+  await waitFor(() => expect(screen.queryByText("Milch")).toBeNull());
+  expect(t.list(id)!.items).toHaveLength(1); // removed for good only after the undo window (see undo.test.ts)
 });
 
 test("long title and item wrap without horizontal overflow", async () => {

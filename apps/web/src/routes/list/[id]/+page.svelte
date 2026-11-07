@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { flip } from "svelte/animate";
+  import { cubicIn } from "svelte/easing";
   import AddField from "#lib/app/components/AddField.svelte";
   import Board from "#lib/app/components/Board.svelte";
   import ItemDialog from "#lib/app/components/ItemDialog.svelte";
@@ -8,19 +9,22 @@
   import LabelTag from "#lib/app/components/LabelTag.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
-  import { getTomu } from "#lib/app/context.ts";
+  import { getPending, getTomu } from "#lib/app/context.ts";
   import { FreshItems } from "#lib/app/fresh.svelte.ts";
-  import { openCount } from "#lib/app/lists.ts";
   import { m } from "#lib/paraglide/messages.js";
 
   const tomu = getTomu();
   const id = $derived(page.params.id ?? "");
+  const pending = getPending();
   const view = $derived(tomu.list(id));
   const status = $derived(tomu.docStatus(id));
   const info = $derived(tomu.lists.find((l) => l.id === id));
   const labels = $derived(info ? tomu.labels.filter((l) => info.labelIds.includes(l.id)) : []);
-  const count = $derived(openCount(view));
-  const doneCount = $derived((view?.items.length ?? 0) - count);
+  // Entries waiting for their undo window are not shown.
+  const hidden = $derived(pending.hidden(id));
+  const items = $derived((view?.items ?? []).filter((i) => !hidden.has(i.id)));
+  const count = $derived(items.filter((i) => !i.checked).length);
+  const doneCount = $derived(items.length - count);
 
   // One marker per opened list.
   const fresh = $derived.by(() => {
@@ -46,8 +50,36 @@
     if (editOpen && !editing) editOpen = false;
   });
 
-  // The one place that removes an entry.
-  const removeItem = (itemId: string): Promise<void> => tomu.deleteItem(id, itemId);
+  const deleteAll = async (listId: string, ids: string[]): Promise<void> => {
+    for (const itemId of ids) await tomu.deleteItem(listId, itemId);
+  };
+
+  // The one place that removes a single entry: it waits in the undo bar first.
+  const removeItem = (itemId: string): void => pending.schedule(id, [itemId], (ids) => deleteAll(id, ids));
+
+  // The ticked part leaves by tearing off below the perforation; reduced motion removes it at once.
+  const motion = { tearing: false };
+  const tearDuration = 450;
+  const tear = (_node: Element, { duration }: { duration: number }) => ({
+    duration,
+    easing: cubicIn,
+    css: (t: number, u: number) => `transform: translateY(${u * 2.5}rem) rotate(${u * 3}deg); opacity: ${t}; transform-origin: 0 0;`,
+  });
+
+  // Only entries ticked right now go; one that someone unticked before the window ended stays.
+  function tearOff(): void {
+    const ids = items.filter((i) => i.checked).map((i) => i.id);
+    if (ids.length === 0) return;
+    const listId = id;
+    motion.tearing = !reduceMotion();
+    setTimeout(() => (motion.tearing = false), tearDuration + 100);
+    pending.schedule(listId, ids, (all) =>
+      deleteAll(
+        listId,
+        all.filter((itemId) => tomu.list(listId)?.items.some((i) => i.id === itemId && i.checked)),
+      ),
+    );
+  }
 </script>
 
 <Board>
@@ -79,8 +111,8 @@
     <div class="rule"></div>
     <AddField listId={id} {fresh} />
     <ul>
-      {#each view.items as item, i (item.id)}
-        <li animate:flip={{ duration: reduceMotion() ? 0 : 250 }}>
+      {#each items as item, i (item.id)}
+        <li animate:flip={{ duration: reduceMotion() ? 0 : 250 }} out:tear={{ duration: motion.tearing ? tearDuration : 0 }}>
           {#if item.checked && i === count}
             <div class="perf"><span>{m.done_count({ count: doneCount })}</span></div>
           {/if}
@@ -96,6 +128,9 @@
         </li>
       {/each}
     </ul>
+    {#if doneCount > 0}
+      <button type="button" class="tear" onclick={tearOff}>{m.tear_off()}</button>
+    {/if}
   {:else if status === "loading"}
     <p class="note">{m.list_loading()}</p>
   {:else}
@@ -191,6 +226,19 @@
   }
   .perf + :global(*) {
     margin-top: 0.6rem;
+  }
+  .tear {
+    display: block;
+    min-height: var(--tap);
+    margin: 1rem 0 0 auto;
+    padding: 0 1.25rem;
+    border: 3px solid var(--rule);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
   }
   .note {
     margin: 2rem 0;

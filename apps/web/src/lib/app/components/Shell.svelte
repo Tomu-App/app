@@ -1,16 +1,31 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { setTomu } from "#lib/app/context.ts";
+  import { setPending, setTomu } from "#lib/app/context.ts";
+  import { PendingDeletes } from "#lib/app/undo.svelte.ts";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { Tomu } from "#lib/tomu/index.js";
   import Sheet from "./Sheet.svelte";
+  import UndoBar from "./UndoBar.svelte";
 
   let { tomu, children }: { tomu: Tomu; children?: Snippet } = $props();
 
   // The layout keys this component on the instance, so the value never changes while mounted.
   // svelte-ignore state_referenced_locally
   setTomu(tomu);
+
+  const pending = new PendingDeletes();
+  setPending(pending);
+
+  // Closing the app inside the undo window deletes nothing.
+  $effect(() => {
+    const discard = (): void => pending.undo();
+    window.addEventListener("pagehide", discard);
+    return () => {
+      window.removeEventListener("pagehide", discard);
+      discard();
+    };
+  });
 
   $effect(() => {
     document.documentElement.classList.toggle("large", tomu.largeView);
@@ -27,6 +42,7 @@
   </Sheet>
 {:else}
   {@render children?.()}
+  <UndoBar />
 {/if}
 
 <style>
