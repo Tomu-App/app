@@ -178,6 +178,7 @@ test("reconnect resubscribes with the stored lastSeq", async () => {
   first.drop();
   await vi.waitFor(() => expect(ws()).not.toBe(first));
   ws().open();
+  await engine.flush();
   expect(subs(ws())).toEqual([{ type: "subscribe", docs: [{ doc: D, since: 3 }] }]);
 });
 
@@ -212,4 +213,58 @@ test("docStatus reports loading, list, label, missing and gone", async () => {
   expect(e.docStatus(L1)).toBe("missing");
   expect(e.docStatus(id22("unknown"))).toBe("missing");
   expect(e.docStatus(L2)).toBe("gone");
+});
+
+const pageThenAck = async () => {
+  const s = await startEngine({ docs: [listDoc(D, "link", K)], backoff: { baseMs: 1, maxMs: 1 } });
+  const all = await encrypted(D, K, [
+    [o1, init("list")],
+    [o2, title("a")],
+    [o3, title("b", 3)],
+    [o4, title("c", 4)],
+    [o5, title("d", 5)],
+  ]);
+  s.ws().receive({ type: "ops", doc: D, ops: all.slice(0, 2), head: 5 });
+  s.ws().receive({ type: "ack", doc: D, id: id22("own1"), seq: 6 });
+  return s;
+};
+
+test("socket drop right after page and ack does not let the ack move lastSeq", async () => {
+  const { engine, ws } = await pageThenAck();
+  const first = ws();
+  first.drop();
+  await engine.flush();
+  expect(engine.docs.get(D)!.lastSeq).toBe(2);
+  await vi.waitFor(() => expect(ws()).not.toBe(first));
+  ws().open();
+  await engine.flush();
+  expect(subs(ws())).toEqual([{ type: "subscribe", docs: [{ doc: D, since: 2 }] }]);
+});
+
+test("stop right after page and ack persists lastSeq 2", async () => {
+  const { engine, store } = await pageThenAck();
+  await engine.stop();
+  expect((await store.load()).docs[0]!.lastSeq).toBe(2);
+});
+
+test("old-socket page queued when the new socket opens does not leave the new catch-up", async () => {
+  const orig = crypto.subtle.decrypt.bind(crypto.subtle);
+  const spy = vi.spyOn(crypto.subtle, "decrypt").mockImplementation(async (...a: Parameters<typeof orig>) => {
+    await new Promise((r) => setTimeout(r, 40));
+    return orig(...a);
+  });
+  try {
+    const { engine, ws } = await startEngine({ docs: [listDoc(D, "link", K)], backoff: { baseMs: 1, maxMs: 1 } });
+    const first = ws();
+    // Page would finish catch-up (last seq >= head), but is still decrypting when the socket changes.
+    first.receive({ type: "ops", doc: D, ops: await encrypted(D, K, [[o1, init("list")], [o2, title("a")]]), head: 2 });
+    first.drop();
+    await vi.waitFor(() => expect(ws()).not.toBe(first));
+    ws().open();
+    ws().receive({ type: "ack", doc: D, id: id22("own1"), seq: 9 });
+    await engine.flush();
+    expect(engine.docs.get(D)!.lastSeq).toBe(2);
+  } finally {
+    spy.mockRestore();
+  }
 });

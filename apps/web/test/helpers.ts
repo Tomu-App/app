@@ -175,5 +175,6 @@ export const startEngine = async (
   });
   await engine.start();
   sock.last().open();
+  await engine.flush(); // lets the queued open handler subscribe
   return { engine, store, ws: () => sock.last(), changes };
 };

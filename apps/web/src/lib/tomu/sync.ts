@@ -67,9 +67,9 @@ export class SyncEngine {
         backoff: opts.backoff,
       },
       {
-        open: () => this.onOpen(),
+        open: () => this.run(() => this.onOpen()),
         message: (msg) => this.enqueue(msg),
-        close: () => this.onClose(),
+        close: () => this.run(() => this.onClose()),
       },
     );
   }
@@ -85,7 +85,8 @@ export class SyncEngine {
   async stop(): Promise<void> {
     this.started = false;
     this.conn.stop();
-    this.catchingUp.clear();
+    // Cleared in queue order: messages already queued must still see the catch-up state they arrived under.
+    this.run(() => this.catchingUp.clear());
     await this.flush();
     this.opts.onStatus("offline");
   }
@@ -141,7 +142,12 @@ export class SyncEngine {
   // ---- receiving ----
 
   private enqueue(msg: ServerMessage): void {
-    this.inbox = this.inbox.then(() => this.handle(msg)).catch(() => console.warn("failed to process message"));
+    this.run(() => this.handle(msg));
+  }
+
+  /** Open, close, stop and messages share one serial queue, so `catchingUp` changes in arrival order. */
+  private run(fn: () => void | Promise<void>): void {
+    this.inbox = this.inbox.then(fn).catch(() => console.warn("failed to process message"));
   }
 
   private async handle(msg: ServerMessage): Promise<void> {
@@ -231,6 +237,7 @@ export class SyncEngine {
     }
     for (const id of remove) {
       const rec = this.docs.get(id);
+      // The list disappears together with its local data (spec), so the outbox goes too.
       if (rec) await this.removeDoc(rec, false, changed);
     }
   }
