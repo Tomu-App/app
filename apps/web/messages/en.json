@@ -52,5 +52,19 @@
   "delete_list_title": "Delete list?",
   "delete_list_body": "The list and all its entries will be deleted, also for everyone you share it with. You cannot undo this.",
   "delete_list_confirm": "Delete",
-  "confirm_cancel": "Cancel"
+  "confirm_cancel": "Cancel",
+  "share_title": "Share list",
+  "share_label_title": "Share label",
+  "share_explain": "Anyone with the link can see and change the list.",
+  "share_explain_label": "Anyone with the link can see and change all lists with this label.",
+  "share_qr_alt": "QR code to scan with the camera",
+  "share_copy": "Copy link",
+  "share_copied": "Copied",
+  "share_native": "Share …",
+  "share_name_prompt": "What is your name? The others see it next to the label.",
+  "share_name_field": "Your name",
+  "share_name_save": "Continue",
+  "link_not_found": "This link does not exist any more.",
+  "link_not_found_hint": "Ask the person to send it to you again.",
+  "list_waiting_offline": "You are offline. The list shows up as soon as you are back online."
 }

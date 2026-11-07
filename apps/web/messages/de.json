@@ -52,5 +52,19 @@
   "delete_list_title": "Liste löschen?",
   "delete_list_body": "Die Liste und alle ihre Einträge werden gelöscht, auch bei allen, mit denen du sie teilst. Das kannst du nicht rückgängig machen.",
   "delete_list_confirm": "Löschen",
-  "confirm_cancel": "Abbrechen"
+  "confirm_cancel": "Abbrechen",
+  "share_title": "Liste teilen",
+  "share_label_title": "Label teilen",
+  "share_explain": "Wer den Link hat, kann die Liste sehen und ändern.",
+  "share_explain_label": "Wer den Link hat, kann alle Listen mit diesem Label sehen und ändern.",
+  "share_qr_alt": "QR-Code zum Scannen mit der Kamera",
+  "share_copy": "Link kopieren",
+  "share_copied": "Kopiert",
+  "share_native": "Teilen …",
+  "share_name_prompt": "Wie heißt du? Die anderen sehen deinen Namen beim Label.",
+  "share_name_field": "Dein Name",
+  "share_name_save": "Weiter",
+  "link_not_found": "Diesen Link gibt es nicht mehr.",
+  "link_not_found_hint": "Frag, ob dir jemand den Link noch einmal schickt.",
+  "list_waiting_offline": "Du bist offline. Die Liste erscheint, sobald du wieder Internet hast."
 }
