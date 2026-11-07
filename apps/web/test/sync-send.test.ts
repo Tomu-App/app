@@ -243,6 +243,17 @@ test("too_large marks the doc full and drops its outbox entries", async () => {
   await engine.stop();
 });
 
+test("localOps throws for a full doc and changes nothing", async () => {
+  const { engine, store, ws } = await startEngine({ docs: [listDoc(D, "own", K)] });
+  await engine.localOps(D, [title("a")]);
+  ws().receive({ type: "error", doc: D, code: "too_large", message: "full" });
+  await engine.flush();
+  await expect(engine.localOps(D, [title("b")])).rejects.toThrow(/full/);
+  expect((await store.load()).outbox).toEqual([]);
+  expect(engine.docs.get(D)!.state).toMatchObject({ title: "a" });
+  await engine.stop();
+});
+
 test("sending is paced: 400 at once, then 40 per second", async () => {
   fakeTimers();
   const { engine, ws } = await startEngine({ docs: [listDoc(D, "own", K)], autoOpen: false });

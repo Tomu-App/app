@@ -1,4 +1,5 @@
 import {
+  decryptOp,
   emptyListState,
   encryptOp,
   importDocKey,
@@ -12,6 +13,7 @@ import type { Connect } from "../src/lib/tomu/connection.ts";
 import { LocalStore } from "../src/lib/tomu/db.ts";
 import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
 import { SyncEngine, type EngineOptions } from "../src/lib/tomu/sync.ts";
+import { startTomu, type Tomu, type TomuOptions } from "../src/lib/tomu/tomu.svelte.ts";
 import type { DocRecord, Origin } from "../src/lib/tomu/types.ts";
 
 export const TEST_KEY = newDocKey();
@@ -203,4 +205,55 @@ export const startEngine = async (
     await engine.flush(); // lets the queued open handler subscribe
   }
   return { engine, store, ws: () => sock.last(), sock, changes };
+};
+
+/** Options for a Tomu that never reaches a server: its socket never opens, no lock, no online events. */
+export const offlineOpts = (opts: Partial<TomuOptions> = {}): TomuOptions => ({
+  apiUrl: "http://example.test",
+  dbName: freshDbName(),
+  connect: fakeSocket().connect,
+  fetch: () => Promise.reject(new Error("no network in tests")),
+  locks: null,
+  online: null,
+  ...opts,
+});
+
+/** Tomu on a fresh database whose socket never opens. */
+export const offlineTomu = (opts: Partial<TomuOptions> = {}): Promise<Tomu> => startTomu(offlineOpts(opts));
+
+/** `navigator.locks` stand-in: a held name makes `request(name, { ifAvailable: true }, cb)` call `cb(null)`. */
+export const fakeLocks = (): LockManager => {
+  const held = new Set<string>();
+  const request = async (name: string, _options: unknown, cb: (lock: unknown) => unknown): Promise<unknown> => {
+    if (held.has(name)) return cb(null);
+    held.add(name);
+    try {
+      return await cb({ name });
+    } finally {
+      held.delete(name);
+    }
+  };
+  return { request } as unknown as LockManager;
+};
+
+/** All outbox entries of a database, decrypted: [docId, opId, op] in send order. Opens its own connection. */
+export const outboxOf = async (
+  dbName: string,
+  keys: Record<string, string>,
+): Promise<{ doc: string; opId: string; op: Op }[]> => {
+  const store = await LocalStore.open(dbName);
+  try {
+    const snap = await store.load();
+    const out: { doc: string; opId: string; op: Op }[] = [];
+    for (const e of snap.outbox) {
+      const key = keys[e.doc] ?? snap.docs.find((d) => d.id === e.doc)?.key;
+      if (!key) throw new Error(`no key for ${e.doc}`);
+      const plain = await decryptOp(e.doc, await importDocKey(key), e.env);
+      if (!plain) throw new Error("undecryptable outbox entry");
+      out.push({ doc: e.doc, opId: plain.opId, op: plain.op });
+    }
+    return out;
+  } finally {
+    store.close();
+  }
 };

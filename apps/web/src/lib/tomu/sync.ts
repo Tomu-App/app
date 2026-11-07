@@ -256,6 +256,7 @@ export class SyncEngine {
   async localOps(docId: string, ops: Op[], extra?: Change): Promise<void> {
     const rec = this.docs.get(docId);
     if (!rec) throw new Error(`unknown document ${docId}`);
+    if (rec.full) throw new Error(`document ${docId} is full`);
     const key = await this.keyFor(rec);
     if (!key) throw new Error(`document ${docId} has no usable key`);
     const envs: Envelope[] = [];
@@ -316,6 +317,11 @@ export class SyncEngine {
   /** Commits local-only data (folders, labels, settings) that does not touch docs or the outbox. */
   async commitLocal(change: Change): Promise<void> {
     await this.opts.store.commit(change);
+  }
+
+  /** Skips a pending reconnect wait (the browser came back online). */
+  nudge(): void {
+    this.conn.nudge();
   }
 
   // ---- connection ----
