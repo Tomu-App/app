@@ -40,7 +40,7 @@ Confirmed scope of Plan 3b: the MVP column of the spec plus PWA install.
 
 - Lists: create (title, labels, folder), rename, delete for everyone.
 - Items: add via text field, Enter adds, several at once by comma or newline (pasted WhatsApp lists); tap to tick, ticked items move down; edit text; delete single items; "remove ticked" as a bulk action.
-- Labels: private and shared labels, each with its own colour; shared labels from others show as "Lisa / Familie"; recipients can create lists with a shared label.
+- Labels: private and shared labels, shown in two styles (shared: filled board blue, private: grey outline; per `docs/spec.md`, "eigene Farbe" means one colour per kind, not per label); shared labels from others show as "Lisa / Familie"; recipients can create lists with a shared label.
 - Sharing: a label or a single list; copy link, show QR code, device share sheet. Sharing a label needs a display name first.
 - Folders: local only, never shared.
 - Display name: local per device, prefix of shared labels.
@@ -55,14 +55,13 @@ Confirmed scope of Plan 3b: the MVP column of the spec plus PWA install.
 
 Undecided:
 
-- How the app picks its language (browser setting, in-app switch, or both).
 - Final logo (a cloud, per the site); must stay replaceable in one place.
 
 ## Brand Commitments
 
 - Name: Tomu.
 - Voice: plain, short, friendly sentences; informal "du" in German; no crypto terms, keys or URLs in user-facing copy (carried over from the site, confirmed there).
-- Languages: German (default) and English, all UI text through Paraglide (confirmed by the user).
+- Languages: German (default) and English, all UI text through Paraglide (confirmed by the user). The app follows the browser language (German, else English) and can be switched in Settings; the choice is stored on the device.
 - Logo: placeholder until the final cloud logo; keep it in one component.
 - The site's visual world (`../../../site/DESIGN.md`) is the existing brand authority; whether the app adopts it is a design decision, not recorded here.
 
