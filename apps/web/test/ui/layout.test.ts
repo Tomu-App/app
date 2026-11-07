@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { flushSync } from "svelte";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import StatusBadge from "#lib/app/components/StatusBadge.svelte";
 import Shell from "#lib/app/components/Shell.svelte";
 import { m } from "#lib/paraglide/messages.js";
@@ -43,6 +43,18 @@ test("blocked instance shows the other-tab notice instead of the app", async () 
   expect(m.blocked_title()).toBe("Tomu ist schon in einem anderen Tab geöffnet");
   expect(container.querySelector("[data-board]")).toBeNull();
   expect(screen.queryByText("app content")).toBeNull();
+});
+
+test("blocked notice asks to close the other window and offers a reload button", async () => {
+  const locks = fakeLocks();
+  await start(locks);
+  const blocked = await start(locks);
+  const reload = vi.fn();
+  render(ShellFixture, { props: { tomu: blocked, reload } });
+  expect(screen.getByText(m.blocked_hint())).toBeTruthy();
+  expect(m.blocked_hint()).toBe("Schließe das andere Tomu-Fenster und lade diese Seite dann neu.");
+  await fireEvent.click(screen.getByRole("button", { name: m.blocked_reload() }));
+  expect(reload).toHaveBeenCalledOnce();
 });
 
 test("running instance shows the app with its board", async () => {

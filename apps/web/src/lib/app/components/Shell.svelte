@@ -9,7 +9,11 @@
   import Sheet from "./Sheet.svelte";
   import UndoBar from "./UndoBar.svelte";
 
-  let { tomu, children }: { tomu: Tomu; children?: Snippet } = $props();
+  let {
+    tomu,
+    children,
+    reload = () => location.reload(),
+  }: { tomu: Tomu; children?: Snippet; reload?: () => void } = $props();
 
   // The layout mounts this once, after the start succeeded (a retry only happens before that),
   // so the value never changes while mounted.
@@ -47,6 +51,7 @@
   <Sheet>
     <h1 class="blocked">{m.blocked_title()}</h1>
     <p>{m.blocked_hint()}</p>
+    <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
 {:else}
   {@render children?.()}
@@ -61,5 +66,18 @@
   }
   p {
     font-size: 1.25rem;
+  }
+  .reload {
+    min-width: var(--tap);
+    min-height: var(--tap);
+    padding: 0 1.25rem;
+    border: 3px solid var(--rule);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
   }
 </style>
