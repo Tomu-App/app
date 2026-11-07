@@ -1,0 +1,15 @@
+{
+  // Static-assets-only Worker: serves the SvelteKit build (adapter-static) on app.tomu.foo.
+  // Build first with PUBLIC_API_URL=https://api.tomu.foo, then `wrangler deploy` (CI does both).
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tomu-app",
+  "compatibility_date": "2026-11-06",
+  "assets": {
+    "directory": "./build",
+    // Unknown paths (e.g. /share/<docId>) get index.html; the client router takes over.
+    "not_found_handling": "single-page-application",
+  },
+  "routes": [{ "pattern": "app.tomu.foo", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+}

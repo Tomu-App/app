@@ -5,12 +5,14 @@ import { self } from "$app/service-worker";
 
 const CACHE = `tomu-${version}`;
 // Manifest paths are relative to the base path; resolving them gives the pathnames the fetch handler sees.
-// The worker itself must never end up in its own cache.
+// The worker itself must never end up in its own cache, and `_headers` is config for the host (wrangler.jsonc),
+// not a file it serves.
 // Build files are not routes, so the typed `resolve` does not accept them: the cast only satisfies the types.
 const pathOf = (file: string): string => resolve(file as "/");
+const NOT_CACHED = [pathOf("service-worker.js"), pathOf("_headers")];
 const ASSETS: string[] = [...immutable, ...assets]
   .map((a) => pathOf(a.path))
-  .filter((path) => path !== pathOf("service-worker.js"));
+  .filter((path) => !NOT_CACHED.includes(path));
 // The single page app shell; the static host answers "/" with index.html.
 const SHELL = "/";
 
