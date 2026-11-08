@@ -5,6 +5,24 @@ allowBuilds:
   workerd: true
   esbuild: true
 engineStrict: true
-# Paraglide 3.2.1 fixes the duplicate runtime on Windows (opral/paraglide-js#877); drop this once it is older than the cutoff.
+# Packages must be out for 7 days before install, so a hijacked release has time to be caught.
+minimumReleaseAge: 10080
+# Versions already locked when the 7-day rule came in (2026-11-08), plus Paraglide 3.2.1 for the Windows
+# duplicate-runtime fix (opral/paraglide-js#877). All pass the rule on their own by 2026-11-15; remove the list then.
 minimumReleaseAgeExclude:
   - "@inlang/paraglide-js@3.2.1"
+  - "@babel/runtime@7.29.13"
+  - "@cloudflare/workerd-darwin-64@1.20261103.1"
+  - "@cloudflare/workerd-darwin-arm64@1.20261103.1"
+  - "@cloudflare/workerd-linux-64@1.20261103.1"
+  - "@cloudflare/workerd-linux-arm64@1.20261103.1"
+  - "@cloudflare/workerd-windows-64@1.20261103.1"
+  - "@inlang/sdk@4.2.0"
+  - "@napi-rs/wasm-runtime@1.2.7"
+  - "@vitest/mocker@5.1.0"
+  - "@vitest/spy@5.1.0"
+  - "miniflare@5.20261103.0-beta"
+  - "semver@7.8.6"
+  - "vitest@5.1.0"
+  - "workerd@1.20261103.1"
+  - "wrangler@4.157.0"
