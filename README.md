@@ -48,7 +48,7 @@ pnpm --filter @tomu/server build      # dist/server.js, the bundle the Docker im
 | `TRUST_CLOUDFLARE`  | unset                   | `1`: take the client IP from `cf-connecting-ip` (only behind Cloudflare) |
 | `MIGRATIONS_FOLDER` | `apps/server/drizzle`   | Where the migrations are (the image sets `/app/drizzle`)                 |
 
-On every push to `main`, CI publishes the image `ghcr.io/tomu-app/server` (`latest` and `sha-<commit>`) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
+On a push to `main` that changes the server image (server or shared code, lockfile, toolchain, CI workflow) and on every version tag `vX.Y.Z`, CI publishes the image `ghcr.io/tomu-app/server` (`latest`, `sha-<commit>`, and `X.Y.Z` for a tag) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
 
 ### Web
 
