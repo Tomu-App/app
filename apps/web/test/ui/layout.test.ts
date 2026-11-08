@@ -59,6 +59,7 @@ test("blocked notice asks to close the other window and offers a reload button",
 
 test("running instance shows the app with its board", async () => {
   const t = await start(fakeLocks());
+  await t.completeOnboarding();
   const { container } = render(ShellFixture, { props: { tomu: t } });
   expect(container.querySelector("[data-board]")).not.toBeNull();
   expect(screen.getByText("app content")).toBeTruthy();
@@ -75,4 +76,50 @@ test("large view toggles html.large", async () => {
   await t.setLargeView(false);
   flushSync();
   expect(document.documentElement.classList.contains("large")).toBe(false);
+});
+
+test("a fresh instance shows onboarding instead of the app", async () => {
+  const t = await start();
+  render(ShellFixture, { props: { tomu: t } });
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+  expect(screen.queryByText("app content")).toBeNull();
+});
+
+test("a share route shows the page and onboarding comes on the next path", async () => {
+  const t = await start();
+  const { rerender } = render(ShellFixture, { props: { tomu: t, path: "/share/x" } });
+  expect(screen.getByText("app content")).toBeTruthy();
+  expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
+  await rerender({ path: "/" });
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+  expect(screen.queryByText("app content")).toBeNull();
+});
+
+test("finishing onboarding shows the app", async () => {
+  const t = await start();
+  render(ShellFixture, { props: { tomu: t } });
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+  await t.completeOnboarding();
+  flushSync();
+  expect(screen.getByText("app content")).toBeTruthy();
+  expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
+});
+
+test("large view from onboarding applies before done", async () => {
+  const t = await start();
+  render(ShellFixture, { props: { tomu: t } });
+  await t.setLargeView(true);
+  flushSync();
+  expect(document.documentElement.classList.contains("large")).toBe(true);
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+});
+
+test("blocked wins over onboarding", async () => {
+  const locks = fakeLocks();
+  await start(locks);
+  const blocked = await start(locks);
+  expect(blocked.onboarded).toBe(false);
+  render(ShellFixture, { props: { tomu: blocked } });
+  expect(screen.getByText(m.blocked_title())).toBeTruthy();
+  expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
 });

@@ -2,6 +2,7 @@
   import "./app.css";
   import type { Snippet } from "svelte";
   import { PUBLIC_API_URL } from "$app/env/public";
+  import { page } from "$app/state";
   import Shell from "#lib/app/components/Shell.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
   import { m } from "#lib/paraglide/messages.js";
@@ -35,7 +36,7 @@
 </script>
 
 {#if tomu}
-  <Shell {tomu} {children} />
+  <Shell {tomu} path={page.url.pathname} {children} />
 {:else if failed}
   <Sheet>
     <p class="failed">{m.start_failed()}</p>

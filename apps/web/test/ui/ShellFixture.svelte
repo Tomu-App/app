@@ -3,10 +3,10 @@
   import Shell from "#lib/app/components/Shell.svelte";
   import type { Tomu } from "#lib/tomu/index.js";
 
-  let { tomu, reload }: { tomu: Tomu; reload?: () => void } = $props();
+  let { tomu, reload, path }: { tomu: Tomu; reload?: () => void; path?: string } = $props();
 </script>
 
-<Shell {tomu} {reload}>
+<Shell {tomu} {reload} {path}>
   <Board />
   <p>app content</p>
 </Shell>

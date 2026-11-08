@@ -6,6 +6,7 @@
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { Tomu } from "#lib/tomu/index.js";
+  import Onboarding from "./Onboarding.svelte";
   import Sheet from "./Sheet.svelte";
   import UndoBar from "./UndoBar.svelte";
 
@@ -13,7 +14,8 @@
     tomu,
     children,
     reload = () => location.reload(),
-  }: { tomu: Tomu; children?: Snippet; reload?: () => void } = $props();
+    path = "/",
+  }: { tomu: Tomu; children?: Snippet; reload?: () => void; path?: string } = $props();
 
   // The layout mounts this once, after the start succeeded (a retry only happens before that),
   // so the value never changes while mounted.
@@ -53,6 +55,9 @@
     <p>{m.blocked_hint()}</p>
     <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
+{:else if !tomu.onboarded && !path.startsWith("/share/")}
+  <!-- A share link opens straight away; onboarding waits for the first path outside /share/. -->
+  <Onboarding {tomu} />
 {:else}
   {@render children?.()}
   <UndoBar />

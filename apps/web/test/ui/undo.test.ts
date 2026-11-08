@@ -23,6 +23,8 @@ const started: Tomu[] = [];
 const start = async (dbName?: string): Promise<Tomu> => {
   const t = dbName ? await startTomu(offlineOpts({ dbName })) : await offlineTomu();
   started.push(t);
+  // The shell shows onboarding until it is done; these tests need the app behind it.
+  await t.completeOnboarding();
   return t;
 };
 
