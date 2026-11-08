@@ -268,6 +268,6 @@ export const outboxOf = async (
     }
     return out;
   } finally {
-    store.close();
+    await store.close();
   }
 };

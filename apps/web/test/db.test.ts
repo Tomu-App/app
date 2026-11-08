@@ -7,7 +7,7 @@ test("first open creates settings with a client id that survives reopening", asy
   const name = freshDbName();
   const a = await LocalStore.open(name);
   const s1 = (await a.load()).settings;
-  a.close();
+  await a.close();
   const b = await LocalStore.open(name);
   const s2 = (await b.load()).settings;
   expect(s1).toEqual({
@@ -15,8 +15,55 @@ test("first open creates settings with a client id that survives reopening", asy
     displayName: "",
     largeView: false,
     clockLast: 0,
+    onboarded: false,
   });
   expect(s2.clientId).toBe(s1.clientId);
+});
+
+test("close waits for a pending commit", async () => {
+  const name = freshDbName();
+  const a = await LocalStore.open(name);
+  const write = a.commit({ settings: { largeView: true } });
+  await a.close();
+  await expect(write).resolves.toBeUndefined();
+  const b = await LocalStore.open(name);
+  expect((await b.load()).settings.largeView).toBe(true);
+});
+
+test("a stored record without onboarded counts as onboarded when it has a display name", async () => {
+  const s = await LocalStore.open(freshDbName());
+  // Old record: the field is missing.
+  await s.commit({ settings: { displayName: "Lisa", onboarded: undefined } });
+  expect((await s.load()).settings.onboarded).toBe(true);
+});
+
+test("a stored record without onboarded and without a name is not onboarded", async () => {
+  const s = await LocalStore.open(freshDbName());
+  await s.commit({ settings: { onboarded: undefined } });
+  expect((await s.load()).settings.onboarded).toBe(false);
+});
+
+test("a legacy record without a name stays not onboarded after the name is saved", async () => {
+  const name = freshDbName();
+  const a = await LocalStore.open(name);
+  await a.commit({ settings: { onboarded: undefined } });
+  expect((await a.load()).settings.onboarded).toBe(false);
+  // Onboarding step 2 saves the name, then the person reloads before pressing Done.
+  await a.commit({ settings: { displayName: "Lena" } });
+  await a.close();
+  const b = await LocalStore.open(name);
+  expect((await b.load()).settings.onboarded).toBe(false);
+});
+
+test("a legacy record with a name stays onboarded after the name changes", async () => {
+  const name = freshDbName();
+  const a = await LocalStore.open(name);
+  await a.commit({ settings: { displayName: "Lisa", onboarded: undefined } });
+  expect((await a.load()).settings.onboarded).toBe(true);
+  await a.commit({ settings: { displayName: "" } });
+  await a.close();
+  const b = await LocalStore.open(name);
+  expect((await b.load()).settings.onboarded).toBe(true);
 });
 
 test("commit writes all stores in one transaction and load reads them back", async () => {

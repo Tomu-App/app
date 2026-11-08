@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { page } from "$app/state";
   import { setInstall, setPending, setTomu } from "#lib/app/context.ts";
   import { InstallHint } from "#lib/app/install.svelte.ts";
   import { PendingDeletes } from "#lib/app/undo.svelte.ts";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { Tomu } from "#lib/tomu/index.js";
+  import Onboarding from "./Onboarding.svelte";
   import Sheet from "./Sheet.svelte";
   import UndoBar from "./UndoBar.svelte";
 
@@ -29,6 +31,17 @@
   setInstall(install);
   $effect(() => () => install.destroy());
 
+  // A share link opens the shared list straight away, so its recipient sees the list first. The share
+  // page moves on to /list/<id>, which stays exempt until the person goes anywhere else (all lists, say);
+  // onboarding shows there, and on the next start.
+  let viaShare = false;
+  const deferOnboarding = $derived.by(() => {
+    const path = page.url.pathname;
+    if (path.startsWith("/share/")) viaShare = true;
+    else if (!path.startsWith("/list/")) viaShare = false;
+    return viaShare;
+  });
+
   // Closing the app inside the undo window deletes nothing.
   $effect(() => {
     const discard = (): void => pending.undo();
@@ -38,14 +51,17 @@
       discard();
     };
   });
-
-  $effect(() => {
-    document.documentElement.classList.toggle("large", tomu.largeView);
-  });
-  $effect(() => {
-    document.documentElement.lang = getLocale();
-  });
 </script>
+
+<!-- Paraglide does not touch <html> in the browser and app.html ships lang="de", so the shell sets both. -->
+<svelte:document
+  {@attach (doc) => {
+    doc.documentElement.classList.toggle("large", tomu.largeView);
+  }}
+  {@attach (doc) => {
+    doc.documentElement.lang = getLocale();
+  }}
+/>
 
 {#if tomu.status === "blocked"}
   <Sheet>
@@ -53,6 +69,8 @@
     <p>{m.blocked_hint()}</p>
     <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
+{:else if !tomu.onboarded && !deferOnboarding}
+  <Onboarding {tomu} />
 {:else}
   {@render children?.()}
   <UndoBar />

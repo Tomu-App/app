@@ -8,34 +8,48 @@
   import Sheet from "#lib/app/components/Sheet.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
+  import { legalLinks } from "#lib/app/legal.ts";
   import { canRename, labelText } from "#lib/app/lists.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
 
   const tomu = getTomu();
-  const SITE = "https://tomu.foo";
 
   // Messages are plain functions: the locale state re-renders the page after a switch.
   let locale = $state(getLocale());
-  const legal = $derived(
-    locale === "en"
-      ? { imprint: `${SITE}/en/legal-notice`, privacy: `${SITE}/en/privacy` }
-      : { imprint: `${SITE}/impressum`, privacy: `${SITE}/datenschutz` },
-  );
+  const legal = $derived(legalLinks(locale));
 
   // display name
   // svelte-ignore state_referenced_locally
   let name = $state(tomu.displayName);
   let nameError = $state(false);
   let nameSaved = $state(false);
+  let nameFailed = $state(false);
   async function saveName(e: SubmitEvent): Promise<void> {
     e.preventDefault();
     nameSaved = false;
+    nameFailed = false;
     nameError = name.trim().length === 0;
     if (nameError) return;
-    await tomu.setDisplayName(name);
+    try {
+      await tomu.setDisplayName(name);
+    } catch {
+      nameFailed = true;
+      return;
+    }
     name = tomu.displayName;
     nameSaved = true;
+  }
+
+  // large view; Tomu rolls the value back itself when the save fails
+  let largeFailed = $state(false);
+  async function toggleLargeView(): Promise<void> {
+    try {
+      await tomu.setLargeView(!tomu.largeView);
+      largeFailed = false;
+    } catch {
+      largeFailed = true;
+    }
   }
 
   // new label and folder
@@ -142,6 +156,7 @@
         <button type="submit">{m.item_save()}</button>
       </form>
       {#if nameError}<p class="note" role="alert">{m.settings_name_empty()}</p>{/if}
+      {#if nameFailed}<p class="note" role="alert">{m.save_failed()}</p>{/if}
       {#if nameSaved}<p class="note" role="status">{m.settings_name_saved()}</p>{/if}
     </section>
 
@@ -153,11 +168,12 @@
         role="switch"
         aria-checked={tomu.largeView}
         aria-label={m.settings_large_label()}
-        onclick={() => tomu.setLargeView(!tomu.largeView)}
+        onclick={toggleLargeView}
       >
         <span class="track" aria-hidden="true"><span class="knob"></span></span>
         <span aria-hidden="true">{m.settings_large_label()}</span>
       </button>
+      {#if largeFailed}<p class="note" role="alert">{m.save_failed()}</p>{/if}
     </section>
 
     <section>

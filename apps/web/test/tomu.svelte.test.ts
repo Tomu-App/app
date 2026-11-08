@@ -185,7 +185,7 @@ test("openLink: invalid links give null, known lists from a label become origin 
   applyToDoc(rec, id22("i2"), op({ t: "title", text: "Von Lisa" }, 2));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [rec] });
-  store.close();
+  await store.close();
 
   const t = await startTomu(opts);
   expect(t.lists).toEqual([{ id: known, title: "Von Lisa", labelIds: [], folderId: null, origin: "label" }]);
@@ -235,6 +235,8 @@ test("settings and data survive a restart", async () => {
   await t.setLargeView(true);
   expect(t.displayName).toBe("Lisa");
   expect(t.largeView).toBe(true);
+  expect(t.onboarded).toBe(false);
+  await t.completeOnboarding();
   const label = await t.createLabel("Familie");
   const f = await t.createFolder("Küche");
   const id = await t.createList("Einkauf", [label], f);
@@ -246,10 +248,26 @@ test("settings and data survive a restart", async () => {
   const again = await startTomu(opts);
   expect(again.displayName).toBe("Lisa");
   expect(again.largeView).toBe(true);
+  expect(again.onboarded).toBe(true);
   expect(again.lists).toEqual(lists);
   expect(again.list(id)).toEqual(view);
   expect(again.labels).toEqual([{ id: label, name: "Familie", shared: false, owner: null }]);
   expect(again.folders).toEqual([{ id: f, name: "Küche" }]);
+  await again.stop();
+});
+
+test("two quick large view toggles both count and persist", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  void t.setLargeView(!t.largeView);
+  expect(t.largeView).toBe(true);
+  const second = t.setLargeView(!t.largeView);
+  expect(t.largeView).toBe(false);
+  await second;
+  expect(t.largeView).toBe(false);
+  await t.stop();
+  const again = await startTomu(opts);
+  expect(again.largeView).toBe(false);
   await again.stop();
 });
 
@@ -339,7 +357,7 @@ test("shareLabel resumes a share that was interrupted after the label doc was st
     putDocs: [newDocRecord(labelId, newDocKey(), "own", "label")],
     putLabels: [{ id: labelId, name: "Familie" }],
   });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   await t.setDisplayName("Lisa");
   const link = await t.shareLabel(labelId);
@@ -372,7 +390,7 @@ test("deleteList of a created list keeps the drop in the outbox after the record
   applyToDoc(rec, id22("i2"), op({ t: "title", text: "A" }, 2));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [rec] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   await t.deleteList(id);
   expect(t.lists).toEqual([]);
@@ -380,7 +398,7 @@ test("deleteList of a created list keeps the drop in the outbox after the record
   expect(types(await outboxOf(opts.dbName!, { [id]: key }))).toEqual(["drop"]);
   const check = await LocalStore.open(opts.dbName!);
   const snap = await check.load();
-  check.close();
+  await check.close();
   expect(snap.docs.find((d) => d.id === id)).toBeUndefined();
   expect(snap.tombstones.has(id)).toBe(true);
   await t.stop();
@@ -395,7 +413,7 @@ test("setListLabels removing the only shared label of a label-only list makes th
   applyToDoc(list, id22("i1"), op({ t: "init", kind: "list" }, 1));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [labelDoc(A, [[L, KL]], "link", newDocKey()), list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   expect(t.lists.map((l) => l.id)).toEqual([L]);
   await t.setListLabels(L, []);
@@ -413,7 +431,7 @@ test("deleteList works for a full list: no drop op, removed with a tombstone", a
   rec.full = true;
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [rec] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   await t.deleteList(id);
   expect(t.lists).toEqual([]);
@@ -421,7 +439,7 @@ test("deleteList works for a full list: no drop op, removed with a tombstone", a
   expect(await outboxOf(opts.dbName!, { [id]: key })).toEqual([]);
   const check = await LocalStore.open(opts.dbName!);
   const snap = await check.load();
-  check.close();
+  await check.close();
   expect(snap.tombstones.has(id)).toBe(true);
   await t.stop();
 });
@@ -440,7 +458,7 @@ test("setListLabels moving a label-only list from shared label A to B keeps it (
   applyToDoc(labelB, id22("metaB"), op({ t: "meta", name: "B", owner: "Max" }, 2));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [labelDoc(A, [[L, KL]], "link", KA), labelB, list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   const folder = await t.createFolder("Haus");
   await t.setListFolder(L, folder);
@@ -473,7 +491,7 @@ test("deleteList skips full labels: no unlink is queued there, the list is still
   label.full = true;
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [label, list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   await t.deleteList(L);
   expect(t.docStatus(L)).toBe("gone");
@@ -494,7 +512,7 @@ test("setListLabels refuses to link or unlink at a full label before changing an
   label.full = true;
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [label, list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   const priv = await t.createLabel("Privat");
   await expect(t.setListLabels(L, [priv])).rejects.toThrow(/full/);

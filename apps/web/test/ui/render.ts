@@ -7,19 +7,20 @@ import type { Tomu } from "#lib/tomu/index.js";
 
 /**
  * Renders a component with `tomu` and `pending` provided through the app context, as the shell does.
- * Without a `pending`, a fresh one is used.
+ * Without a `pending` or `install`, fresh ones are used.
  */
 export const renderWithTomu = <C extends Component<any>>(
   component: C,
   props: ComponentProps<C>,
   tomu: Tomu,
   pending: PendingDeletes = new PendingDeletes(),
+  install: InstallHint = new InstallHint(),
 ): RenderResult<C> =>
   render(component as never, {
     props,
     context: new Map<symbol, unknown>([
       [TOMU_KEY, tomu],
       [PENDING_KEY, pending],
-      [INSTALL_KEY, new InstallHint()],
+      [INSTALL_KEY, install],
     ]),
   }) as RenderResult<C>;

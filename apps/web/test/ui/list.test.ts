@@ -162,7 +162,7 @@ test("foreign shared label shows as Lisa / Familie on the sheet", async () => {
   applyToDoc(label, id22("m1"), op({ t: "meta", name: "Familie", owner: "Lisa" }, 9));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [label, list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   started.push(t);
   route.id = L;

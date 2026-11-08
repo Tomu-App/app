@@ -46,7 +46,7 @@ const withDoc = async (doc: ReturnType<typeof listDoc>): Promise<Tomu> => {
   const opts = offlineOpts();
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [doc] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   started.push(t);
   return t;

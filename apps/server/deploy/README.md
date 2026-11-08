@@ -72,7 +72,7 @@ The app does not log IP addresses or URLs. `cloudflared` runs with `--loglevel f
 
 ## Update
 
-CI publishes `ghcr.io/tomu-app/server:latest` on every push to `main` (when the repository variable `DEPLOY_ENABLED` is `true`). On the VPS:
+CI publishes `ghcr.io/tomu-app/server:latest` on pushes to `main` that change the image, and `ghcr.io/tomu-app/server:X.Y.Z` on version tags `vX.Y.Z` (when the repository variable `DEPLOY_ENABLED` is `true`). On the VPS:
 
 ```sh
 cd /opt/tomu

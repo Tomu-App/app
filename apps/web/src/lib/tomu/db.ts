@@ -44,7 +44,13 @@ export class LocalStore {
     });
     const tx = db.transaction("settings", "readwrite");
     if ((await tx.store.get(SETTINGS_KEY)) === undefined) {
-      const fresh: Settings = { clientId: newClientId(), displayName: "", largeView: false, clockLast: 0 };
+      const fresh: Settings = {
+        clientId: newClientId(),
+        displayName: "",
+        largeView: false,
+        clockLast: 0,
+        onboarded: false,
+      };
       await tx.store.put(fresh, SETTINGS_KEY);
     }
     await tx.done;
@@ -63,7 +69,18 @@ export class LocalStore {
     ]);
     await tx.done;
     if (!settings) throw new Error("settings missing");
-    return { docs, outbox, tombstones: new Set(tombstones), labels, folders, settings };
+    // Records from before onboarding existed lack the field: a set name means the person already uses the app.
+    const onboarded = settings.onboarded ?? settings.displayName !== "";
+    // Store the derived value so a later name change cannot flip it.
+    if (settings.onboarded === undefined) await this.commit({ settings: { onboarded } });
+    return {
+      docs,
+      outbox,
+      tombstones: new Set(tombstones),
+      labels,
+      folders,
+      settings: { ...settings, onboarded },
+    };
   }
 
   /** Applies all parts of the change atomically; calls are serialized in call order. */
@@ -73,7 +90,9 @@ export class LocalStore {
     return run;
   }
 
-  close(): void {
+  /** Closes after the queued commits ran, so a write started just before stop still lands. */
+  async close(): Promise<void> {
+    await this.queue;
     this.db.close();
   }
 

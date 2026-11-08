@@ -21,6 +21,7 @@ const promptEvent = () => {
 test("an install prompt fired before any list is open is still offered on a list", async () => {
   const t = await offlineTomu();
   started.push(t);
+  await t.completeOnboarding();
   render(InstallPage, { props: { tomu: t } });
   // The browser fires it once, while the overview (no hint mounted) is showing.
   window.dispatchEvent(promptEvent());

@@ -13,6 +13,7 @@ import UndoPage from "./UndoPage.svelte";
 const route = vi.hoisted(() => ({ id: "" }));
 vi.mock("$app/state", () => ({
   page: {
+    url: new URL("http://localhost/"),
     get params() {
       return { id: route.id };
     },
@@ -23,6 +24,8 @@ const started: Tomu[] = [];
 const start = async (dbName?: string): Promise<Tomu> => {
   const t = dbName ? await startTomu(offlineOpts({ dbName })) : await offlineTomu();
   started.push(t);
+  // The shell shows onboarding until it is done; these tests need the app behind it.
+  await t.completeOnboarding();
   return t;
 };
 

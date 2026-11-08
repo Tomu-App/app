@@ -15,6 +15,7 @@ import { renderWithTomu } from "./render.ts";
 const route = vi.hoisted(() => ({ id: "" }));
 vi.mock("$app/state", () => ({
   page: {
+    url: new URL("http://localhost/"),
     get params() {
       return { id: route.id };
     },
@@ -62,7 +63,7 @@ test("menu offers delete only for own lists", async () => {
   applyToDoc(list, id22("i2"), op({ t: "title", text: "Von Lisa" }, 2));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [list] });
-  store.close();
+  await store.close();
   const t2 = await startTomu(opts);
   started.push(t2);
   route.id = L;

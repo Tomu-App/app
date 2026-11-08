@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { newDocKey } from "@tomu/shared";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/svelte";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { m } from "#lib/paraglide/messages.js";
 import { setLocale } from "#lib/paraglide/runtime.js";
 import { LocalStore } from "../../src/lib/tomu/db.ts";
@@ -50,6 +50,32 @@ test("large view switch calls setLargeView", async () => {
   await waitFor(() => expect(t.largeView).toBe(false));
 });
 
+test("a failed large view switch shows an error and a later success clears it", async () => {
+  const t = await start();
+  vi.spyOn(t, "setLargeView").mockRejectedValueOnce(new Error("write failed"));
+  renderWithTomu(Page, {}, t);
+  const sw = screen.getByRole("switch", { name: m.settings_large_label() });
+  await fireEvent.click(sw);
+  expect(await screen.findByText(m.save_failed())).toBeTruthy();
+  await fireEvent.click(sw);
+  await waitFor(() => expect(t.largeView).toBe(true));
+  await waitFor(() => expect(screen.queryByText(m.save_failed())).toBeNull());
+});
+
+test("a failed name save shows an error and no saved note", async () => {
+  const t = await start();
+  vi.spyOn(t, "setDisplayName").mockRejectedValueOnce(new Error("write failed"));
+  renderWithTomu(Page, {}, t);
+  await fireEvent.input(screen.getByLabelText(m.settings_name_field()), { target: { value: "Lena" } });
+  await fireEvent.click(screen.getByRole("button", { name: m.item_save() }));
+  expect(await screen.findByText(m.save_failed())).toBeTruthy();
+  expect(screen.queryByText(m.settings_name_saved())).toBeNull();
+  await fireEvent.click(screen.getByRole("button", { name: m.item_save() }));
+  await waitFor(() => expect(t.displayName).toBe("Lena"));
+  await waitFor(() => expect(screen.queryByText(m.save_failed())).toBeNull());
+  expect(screen.getByText(m.settings_name_saved())).toBeTruthy();
+});
+
 test("own labels can be renamed, foreign labels cannot, and neither is shared here", async () => {
   const opts = offlineOpts();
   const A = id22("labelA");
@@ -62,7 +88,7 @@ test("own labels can be renamed, foreign labels cannot, and neither is shared he
   applyToDoc(label, id22("m1"), op({ t: "meta", name: "Familie", owner: "Lisa" }, 9));
   const store = await LocalStore.open(opts.dbName!);
   await store.commit({ putDocs: [label, list] });
-  store.close();
+  await store.close();
   const t = await startTomu(opts);
   started.push(t);
   const own = await t.createLabel("Arbeit");
