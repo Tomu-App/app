@@ -40,14 +40,17 @@
       discard();
     };
   });
-
-  $effect(() => {
-    document.documentElement.classList.toggle("large", tomu.largeView);
-  });
-  $effect(() => {
-    document.documentElement.lang = getLocale();
-  });
 </script>
+
+<!-- Paraglide does not touch <html> in the browser and app.html ships lang="de", so the shell sets both. -->
+<svelte:document
+  {@attach (doc) => {
+    doc.documentElement.classList.toggle("large", tomu.largeView);
+  }}
+  {@attach (doc) => {
+    doc.documentElement.lang = getLocale();
+  }}
+/>
 
 {#if tomu.status === "blocked"}
   <Sheet>
