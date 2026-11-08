@@ -71,6 +71,8 @@ export class LocalStore {
     if (!settings) throw new Error("settings missing");
     // Records from before onboarding existed lack the field: a set name means the person already uses the app.
     const onboarded = settings.onboarded ?? settings.displayName !== "";
+    // Store the derived value so a later name change cannot flip it.
+    if (settings.onboarded === undefined) await this.commit({ settings: { onboarded } });
     return {
       docs,
       outbox,
