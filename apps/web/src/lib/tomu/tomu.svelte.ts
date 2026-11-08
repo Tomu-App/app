@@ -492,8 +492,16 @@ export class Tomu {
   }
 
   async setLargeView(on: boolean): Promise<void> {
-    await this.#eng().commitLocal({ settings: { largeView: on } });
+    const eng = this.#eng();
+    const before = this.#largeView;
+    // Flip at once so a quick second tap reads the new value; commits stay in call order.
     this.#largeView = on;
+    try {
+      await eng.commitLocal({ settings: { largeView: on } });
+    } catch (err) {
+      if (this.#largeView === on) this.#largeView = before;
+      throw err;
+    }
   }
 
   async completeOnboarding(): Promise<void> {

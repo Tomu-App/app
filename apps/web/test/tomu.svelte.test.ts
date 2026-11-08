@@ -256,6 +256,21 @@ test("settings and data survive a restart", async () => {
   await again.stop();
 });
 
+test("two quick large view toggles both count and persist", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  void t.setLargeView(!t.largeView);
+  expect(t.largeView).toBe(true);
+  const second = t.setLargeView(!t.largeView);
+  expect(t.largeView).toBe(false);
+  await second;
+  expect(t.largeView).toBe(false);
+  await t.stop();
+  const again = await startTomu(opts);
+  expect(again.largeView).toBe(false);
+  await again.stop();
+});
+
 test("second instance is blocked by the lock", async () => {
   const locks = fakeLocks();
   const opts = offlineOpts({ locks });
