@@ -1,0 +1,15 @@
+# Run the CI checks only when this push updates main. Other branches get CI on their PR.
+pushes_main=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    *[!0]*) [ "$remote_ref" = "refs/heads/main" ] && pushes_main=true ;;
+  esac
+done
+
+[ "$pushes_main" = true ] || exit 0
+
+echo "pre-push: pushing to main, running lint, check, test and web build"
+pnpm lint
+pnpm check
+pnpm test
+PUBLIC_API_URL=http://localhost:3000 pnpm --filter @tomu/web build

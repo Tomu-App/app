@@ -6,10 +6,6 @@ Every user-facing change adds an entry under `[Unreleased]` in the matching cate
 
 ## [Unreleased]
 
-### Added
-
-- Contributing guidelines, PR template, security policy and code of conduct.
-
 ## [0.1.0] - 2026-11-08
 
 First public release, live at `app.tomu.foo`.
@@ -20,6 +16,8 @@ First public release, live at `app.tomu.foo`.
 - Sync server (`@tomu/server`) on Bun: REST, multiplexed WebSocket `/api/ws`, SQLite via Drizzle. Stores and numbers encrypted ops without seeing plaintext. Published as the image `ghcr.io/tomu-app/server`.
 - Web app (`@tomu/web`): list overview, lists, sharing of lists and labels by link and QR code, opening received links, settings (language, large view, install).
 - German and English UI, offline start as an installable PWA, sync of offline changes when the connection returns.
+- Contributing guidelines, PR template, security policy and code of conduct.
+- Git hooks via husky: Conventional Commit check on `commit-msg`, CI checks on `pre-push` to `main`.
 
 [Unreleased]: https://github.com/Tomu-App/app/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Tomu-App/app/releases/tag/v0.1.0
