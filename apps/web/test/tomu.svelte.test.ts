@@ -235,6 +235,8 @@ test("settings and data survive a restart", async () => {
   await t.setLargeView(true);
   expect(t.displayName).toBe("Lisa");
   expect(t.largeView).toBe(true);
+  expect(t.onboarded).toBe(false);
+  await t.completeOnboarding();
   const label = await t.createLabel("Familie");
   const f = await t.createFolder("Küche");
   const id = await t.createList("Einkauf", [label], f);
@@ -246,6 +248,7 @@ test("settings and data survive a restart", async () => {
   const again = await startTomu(opts);
   expect(again.displayName).toBe("Lisa");
   expect(again.largeView).toBe(true);
+  expect(again.onboarded).toBe(true);
   expect(again.lists).toEqual(lists);
   expect(again.list(id)).toEqual(view);
   expect(again.labels).toEqual([{ id: label, name: "Familie", shared: false, owner: null }]);

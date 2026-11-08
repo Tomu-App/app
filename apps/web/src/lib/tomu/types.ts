@@ -29,7 +29,7 @@ export type OutboxEntry = { n: number; doc: string; env: Envelope };
 /** Private label; id from newDocId(). */
 export type LocalLabel = { id: string; name: string };
 export type Folder = { id: string; name: string };
-export type Settings = { clientId: string; displayName: string; largeView: boolean; clockLast: number };
+export type Settings = { clientId: string; displayName: string; largeView: boolean; clockLast: number; onboarded: boolean };
 
 export type Change = {
   putDocs?: DocRecord[];

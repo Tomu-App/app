@@ -85,6 +85,7 @@ export class Tomu {
   #status = $state.raw<SyncStatus>("offline");
   #displayName = $state.raw("");
   #largeView = $state.raw(false);
+  #onboarded = $state.raw(false);
   #lists = $state.raw<ListInfo[]>([]);
   #labels = $state.raw<LabelInfo[]>([]);
   #folders = $state.raw<Folder[]>([]);
@@ -113,6 +114,7 @@ export class Tomu {
     const { snapshot, opts, store } = parts;
     this.#displayName = snapshot.settings.displayName;
     this.#largeView = snapshot.settings.largeView;
+    this.#onboarded = snapshot.settings.onboarded;
     this.#privLabels = [...snapshot.labels];
     this.#folders = [...snapshot.folders];
     this.#engine = new SyncEngine({
@@ -167,6 +169,9 @@ export class Tomu {
   }
   get largeView(): boolean {
     return this.#largeView;
+  }
+  get onboarded(): boolean {
+    return this.#onboarded;
   }
   get lists(): ListInfo[] {
     return this.#lists;
@@ -489,6 +494,11 @@ export class Tomu {
   async setLargeView(on: boolean): Promise<void> {
     await this.#eng().commitLocal({ settings: { largeView: on } });
     this.#largeView = on;
+  }
+
+  async completeOnboarding(): Promise<void> {
+    await this.#eng().commitLocal({ settings: { onboarded: true } });
+    this.#onboarded = true;
   }
 
   /** Stops syncing, writes pending state, closes the database and gives up the lock. */

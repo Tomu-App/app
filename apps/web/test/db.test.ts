@@ -15,8 +15,22 @@ test("first open creates settings with a client id that survives reopening", asy
     displayName: "",
     largeView: false,
     clockLast: 0,
+    onboarded: false,
   });
   expect(s2.clientId).toBe(s1.clientId);
+});
+
+test("a stored record without onboarded counts as onboarded when it has a display name", async () => {
+  const s = await LocalStore.open(freshDbName());
+  // Old record: the field is missing.
+  await s.commit({ settings: { displayName: "Lisa", onboarded: undefined } });
+  expect((await s.load()).settings.onboarded).toBe(true);
+});
+
+test("a stored record without onboarded and without a name is not onboarded", async () => {
+  const s = await LocalStore.open(freshDbName());
+  await s.commit({ settings: { onboarded: undefined } });
+  expect((await s.load()).settings.onboarded).toBe(false);
 });
 
 test("commit writes all stores in one transaction and load reads them back", async () => {
