@@ -6,6 +6,7 @@ import StatusBadge from "#lib/app/components/StatusBadge.svelte";
 import Shell from "#lib/app/components/Shell.svelte";
 import { m } from "#lib/paraglide/messages.js";
 import type { Tomu } from "#lib/tomu/index.js";
+import { page } from "../app-state.svelte.ts";
 import { fakeLocks, offlineTomu } from "../helpers.ts";
 import ShellFixture from "./ShellFixture.svelte";
 
@@ -19,6 +20,7 @@ const start = async (locks: LockManager | null = null): Promise<Tomu> => {
 afterEach(async () => {
   cleanup();
   document.documentElement.className = "";
+  page.url = new URL("http://localhost/");
   await Promise.all(started.splice(0).map((t) => t.stop()));
 });
 
@@ -87,10 +89,12 @@ test("a fresh instance shows onboarding instead of the app", async () => {
 
 test("a share route shows the page and onboarding comes on the next path", async () => {
   const t = await start();
-  const { rerender } = render(ShellFixture, { props: { tomu: t, path: "/share/x" } });
+  page.url = new URL("http://localhost/share/x");
+  render(ShellFixture, { props: { tomu: t } });
   expect(screen.getByText("app content")).toBeTruthy();
   expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
-  await rerender({ path: "/" });
+  page.url = new URL("http://localhost/");
+  flushSync();
   expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
   expect(screen.queryByText("app content")).toBeNull();
 });

@@ -13,6 +13,7 @@ import UndoPage from "./UndoPage.svelte";
 const route = vi.hoisted(() => ({ id: "" }));
 vi.mock("$app/state", () => ({
   page: {
+    url: new URL("http://localhost/"),
     get params() {
       return { id: route.id };
     },

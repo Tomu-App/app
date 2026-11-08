@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { page } from "$app/state";
   import { setInstall, setPending, setTomu } from "#lib/app/context.ts";
   import { InstallHint } from "#lib/app/install.svelte.ts";
   import { PendingDeletes } from "#lib/app/undo.svelte.ts";
@@ -14,8 +15,7 @@
     tomu,
     children,
     reload = () => location.reload(),
-    path = "/",
-  }: { tomu: Tomu; children?: Snippet; reload?: () => void; path?: string } = $props();
+  }: { tomu: Tomu; children?: Snippet; reload?: () => void } = $props();
 
   // The layout mounts this once, after the start succeeded (a retry only happens before that),
   // so the value never changes while mounted.
@@ -55,7 +55,7 @@
     <p>{m.blocked_hint()}</p>
     <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
-{:else if !tomu.onboarded && !path.startsWith("/share/")}
+{:else if !tomu.onboarded && !page.url.pathname.startsWith("/share/")}
   <!-- A share link opens straight away; onboarding waits for the first path outside /share/. -->
   <Onboarding {tomu} />
 {:else}

@@ -15,6 +15,7 @@ import { renderWithTomu } from "./render.ts";
 const route = vi.hoisted(() => ({ id: "" }));
 vi.mock("$app/state", () => ({
   page: {
+    url: new URL("http://localhost/"),
     get params() {
       return { id: route.id };
     },
