@@ -96,6 +96,37 @@ test("privacy link points to the policy for the locale", async () => {
   expect(link.href).toBe(legalLinks("de").privacy);
 });
 
+test("privacy link opens in a new tab so the unsaved step stays", async () => {
+  const t = await start();
+  show(t);
+  await toStep3(t);
+  const link = screen.getByRole("link", { name: m.settings_privacy() });
+  expect(link.getAttribute("target")).toBe("_blank");
+  expect(link.getAttribute("rel")).toContain("noopener");
+});
+
+test("the step heading is described by the progress text and the progress is not a live region", async () => {
+  const t = await start();
+  show(t);
+  await next();
+  const heading = await screen.findByRole("heading", { name: m.settings_name_heading() });
+  await waitFor(() => expect(document.activeElement).toBe(heading));
+  const id = heading.getAttribute("aria-describedby");
+  expect(id).toBeTruthy();
+  const progress = document.getElementById(id!);
+  expect(progress?.textContent).toBe(m.onboarding_step({ current: 2, total: 3 }));
+  expect(progress?.hasAttribute("aria-live")).toBe(false);
+});
+
+test("the language radios sit in a group named by the language heading", async () => {
+  const t = await start();
+  show(t);
+  const group = screen.getByRole("group", { name: m.settings_language_heading() });
+  expect(group.tagName).toBe("FIELDSET");
+  expect(group.contains(screen.getByRole("radio", { name: "Deutsch" }))).toBe(true);
+  expect(group.contains(screen.getByRole("radio", { name: "English" }))).toBe(true);
+});
+
 test("done marks onboarding complete", async () => {
   const t = await start();
   show(t);

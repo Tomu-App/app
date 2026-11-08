@@ -83,7 +83,7 @@
     {#if step === total}
       <p class="privacy">
         {m.onboarding_privacy()}
-        <a href={legal.privacy}>{m.settings_privacy()}</a>
+        <a href={legal.privacy} target="_blank" rel="noopener">{m.settings_privacy()}</a>
       </p>
     {/if}
     <!-- Back on the left, forward on the right, as the reading direction goes. -->
@@ -105,12 +105,15 @@
 {#key locale}
   <Sheet offline={tomu.status === "offline"}>
     <h1>{m.onboarding_welcome()}</h1>
-    <p class="progress" aria-live="polite">{m.onboarding_step({ current: step, total })}</p>
+    <p class="progress" id="onboarding-progress">{m.onboarding_step({ current: step, total })}</p>
 
     {#if step === 1}
       <section>
-        <h2 bind:this={heading} tabindex="-1">{m.settings_language_heading()}</h2>
-        <div class="langs" role="radiogroup" aria-label={m.settings_language_heading()}>
+        <h2 bind:this={heading} tabindex="-1" aria-describedby="onboarding-progress">
+          {m.settings_language_heading()}
+        </h2>
+        <fieldset class="langs">
+          <legend class="visually-hidden">{m.settings_language_heading()}</legend>
           <label class="opt">
             <input
               id="onboarding-lang-de"
@@ -131,13 +134,15 @@
             />
             <span>English</span>
           </label>
-        </div>
+        </fieldset>
       </section>
       {@render nav(false)}
     {:else if step === 2}
       <form onsubmit={saveName}>
         <section>
-          <h2 bind:this={heading} tabindex="-1">{m.settings_name_heading()}</h2>
+          <h2 bind:this={heading} tabindex="-1" aria-describedby="onboarding-progress">
+            {m.settings_name_heading()}
+          </h2>
           <p class="hint">{m.settings_name_hint()}</p>
           <input
             type="text"
@@ -153,7 +158,9 @@
       </form>
     {:else if step === 3}
       <section>
-        <h2 bind:this={heading} tabindex="-1">{m.settings_large_heading()}</h2>
+        <h2 bind:this={heading} tabindex="-1" aria-describedby="onboarding-progress">
+          {m.settings_large_heading()}
+        </h2>
         <button
           type="button"
           class="switch"
@@ -169,7 +176,9 @@
       {@render nav(false)}
     {:else}
       <section>
-        <h2 bind:this={heading} tabindex="-1">{m.onboarding_install_heading()}</h2>
+        <h2 bind:this={heading} tabindex="-1" aria-describedby="onboarding-progress">
+          {m.onboarding_install_heading()}
+        </h2>
         {#if install.kind === "ios"}
           <p>{m.install_ios()}</p>
         {:else}
@@ -299,6 +308,22 @@
   .langs {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  /* The heading above already shows the group name; the legend is for screen readers only. */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
   .opt {
     display: flex;

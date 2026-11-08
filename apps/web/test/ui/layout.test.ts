@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
 import { flushSync } from "svelte";
 import { afterEach, expect, test, vi } from "vitest";
 import StatusBadge from "#lib/app/components/StatusBadge.svelte";
@@ -140,6 +140,17 @@ test("large view from onboarding applies before done", async () => {
   flushSync();
   expect(document.documentElement.classList.contains("large")).toBe(true);
   expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+});
+
+test("the large view switch in onboarding sets html.large", async () => {
+  const t = await start();
+  render(ShellFixture, { props: { tomu: t } });
+  await fireEvent.click(screen.getByRole("button", { name: m.onboarding_next() }));
+  await fireEvent.input(screen.getByLabelText(m.settings_name_field()), { target: { value: "Lena" } });
+  await fireEvent.click(screen.getByRole("button", { name: m.onboarding_next() }));
+  await screen.findByRole("heading", { name: m.settings_large_heading() });
+  await fireEvent.click(screen.getByRole("switch", { name: m.settings_large_label() }));
+  await waitFor(() => expect(document.documentElement.classList.contains("large")).toBe(true));
 });
 
 test("blocked wins over onboarding", async () => {
