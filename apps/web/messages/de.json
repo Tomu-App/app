@@ -115,5 +115,6 @@
   "onboarding_back": "Zurück",
   "onboarding_done": "Fertig",
   "onboarding_privacy": "Deine Listen sind Ende-zu-Ende verschlüsselt.",
-  "onboarding_install_heading": "Tomu aufs Handy"
+  "onboarding_install_heading": "Tomu aufs Handy",
+  "onboarding_save_failed": "Das hat nicht geklappt. Versuche es noch einmal."
 }

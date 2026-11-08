@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/svelte";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import Onboarding from "#lib/app/components/Onboarding.svelte";
 import { InstallHint } from "#lib/app/install.svelte.ts";
 import { legalLinks } from "#lib/app/legal.ts";
@@ -177,4 +177,51 @@ test("done after the install step dismisses the list hint", async () => {
   await fireEvent.click(await screen.findByRole("button", { name: m.onboarding_done() }));
   await waitFor(() => expect(t.onboarded).toBe(true));
   expect(install.visible).toBe(false);
+});
+
+test("a failed name save shows an error and keeps the step", async () => {
+  const t = await start();
+  vi.spyOn(t, "setDisplayName").mockRejectedValueOnce(new Error("write failed"));
+  show(t);
+  await next();
+  await fireEvent.input(screen.getByLabelText(m.settings_name_field()), { target: { value: "Lena" } });
+  await next();
+  expect(await screen.findByText(m.onboarding_save_failed())).toBeTruthy();
+  expect(screen.getByText(m.onboarding_step({ current: 2, total: 3 }))).toBeTruthy();
+});
+
+test("a failed done shows an error and keeps the step", async () => {
+  const t = await start();
+  show(t);
+  await toStep3(t);
+  vi.spyOn(t, "completeOnboarding").mockRejectedValueOnce(new Error("write failed"));
+  await fireEvent.click(screen.getByRole("button", { name: m.onboarding_done() }));
+  expect(await screen.findByText(m.onboarding_save_failed())).toBeTruthy();
+  expect(t.onboarded).toBe(false);
+  expect(screen.getByRole("button", { name: m.onboarding_done() })).toBeTruthy();
+});
+
+test("a second submit while the name is saving does not save twice", async () => {
+  const t = await start();
+  const save = vi.spyOn(t, "setDisplayName");
+  show(t);
+  await next();
+  await fireEvent.input(screen.getByLabelText(m.settings_name_field()), { target: { value: "Lena" } });
+  const button = screen.getByRole("button", { name: m.onboarding_next() });
+  void fireEvent.click(button);
+  void fireEvent.click(button);
+  await waitFor(() => expect(t.displayName).toBe("Lena"));
+  expect(save).toHaveBeenCalledOnce();
+});
+
+test("a second click on done while saving completes once", async () => {
+  const t = await start();
+  show(t);
+  await toStep3(t);
+  const done = vi.spyOn(t, "completeOnboarding");
+  const button = screen.getByRole("button", { name: m.onboarding_done() });
+  void fireEvent.click(button);
+  void fireEvent.click(button);
+  await waitFor(() => expect(t.onboarded).toBe(true));
+  expect(done).toHaveBeenCalledOnce();
 });

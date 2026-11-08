@@ -17,6 +17,9 @@
   // svelte-ignore state_referenced_locally
   let name = $state(tomu.displayName);
   let nameError = $state(false);
+  // A save is running: Next and Done ignore further clicks until it ends.
+  let busy = $state(false);
+  let saveFailed = $state(false);
   let heading = $state<HTMLElement>();
 
   // The browser can report install support late, so the count follows `install.visible`. Once the install
@@ -25,6 +28,7 @@
   const legal = $derived(legalLinks(locale));
 
   async function go(next: number): Promise<void> {
+    saveFailed = false;
     step = next;
     await tick();
     heading?.focus();
@@ -38,24 +42,44 @@
     document.getElementById(`onboarding-lang-${next}`)?.focus();
   }
 
+  /** Runs a save once at a time; a failure keeps the step and shows a note instead of leaving the person stuck. */
+  async function save(run: () => Promise<void>): Promise<boolean> {
+    if (busy) return false;
+    busy = true;
+    saveFailed = false;
+    try {
+      await run();
+      return true;
+    } catch {
+      saveFailed = true;
+      return false;
+    } finally {
+      busy = false;
+    }
+  }
+
   async function saveName(e: SubmitEvent): Promise<void> {
     e.preventDefault();
+    if (busy) return;
     nameError = name.trim().length === 0;
     if (nameError) return;
-    await tomu.setDisplayName(name);
+    if (!(await save(() => tomu.setDisplayName(name)))) return;
     name = tomu.displayName;
     await go(3);
   }
 
   async function finish(): Promise<void> {
-    // The person saw the install offer here, so the small hint above the lists does not ask again.
-    if (step === 4) install.dismiss();
-    await tomu.completeOnboarding();
+    await save(async () => {
+      await tomu.completeOnboarding();
+      // The person saw the install offer here, so the small hint above the lists does not ask again.
+      if (step === 4) install.dismiss();
+    });
   }
 </script>
 
 {#snippet nav(submit: boolean)}
   <div class="nav">
+    {#if saveFailed}<p class="note" role="alert">{m.onboarding_save_failed()}</p>{/if}
     {#if step === total}
       <p class="privacy">
         {m.onboarding_privacy()}
