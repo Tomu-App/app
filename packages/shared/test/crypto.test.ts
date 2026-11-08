@@ -78,7 +78,7 @@ type Vector = {
   envelope: Envelope;
 };
 const vectors = JSON.parse(
-  readFileSync(new URL("./vectors/aes-gcm.json", import.meta.url), "utf8"),
+  readFileSync(new URL("./vectors/aes-gcm.js", import.meta.url), "utf8"),
 ) as Vector[];
 
 test("matches the fixed vectors", async () => {

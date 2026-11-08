@@ -1,0 +1,63 @@
+[
+  {
+    docId: "f3K9xQ2mLp7RvT1bN8cZaw",
+    key: "Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ",
+    opId: "Zx9Yw8Vu7Ts6Rq5Po4Nm3L",
+    nonce: "AAECAwQFBgcICQoL",
+    op: {
+      v: 1,
+      t: "add",
+      item: "0b6f3c2e-8a4d-4c1e-9f7a-2d5b6e8c9a10",
+      text: "Brötchen für Tante Ilse",
+      c: "AbCdEfGhIjKlMnOpQrStUv",
+      ts: 1793900000000,
+    },
+    plaintext:
+      '{"v":1,"c":"AbCdEfGhIjKlMnOpQrStUv","ts":1793900000000,"t":"add","item":"0b6f3c2e-8a4d-4c1e-9f7a-2d5b6e8c9a10","text":"Brötchen für Tante Ilse"}',
+    envelope: {
+      id: "Zx9Yw8Vu7Ts6Rq5Po4Nm3L",
+      n: "AAECAwQFBgcICQoL",
+      c: "joKqIpT9l0vvyv_nODK2AbtemANtssgMtbrr36s1yUiv21S3gNH08Ok0CB2AMpuYECdu09Vl06dwpoxMBCkxVGWNW6TUCdPrRBsnvKBVkWL-0KDtLiuDCfa9fP3s0R2ou6-4bJgqDo4r-s76k3OfTMBBSvfCC6vfQ3ubYUptaVoTOcsEMBg0w9myn12L4BGdum3ybKK4KYILMvm4GGp5c9T9",
+    },
+  },
+  {
+    docId: "Lb1Lb1Lb1Lb1Lb1Lb1Lb1A",
+    key: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    opId: "Op2Op2Op2Op2Op2Op2Op2A",
+    nonce: "DA0ODxAREhMUFRYX",
+    op: {
+      v: 1,
+      t: "link",
+      list: "f3K9xQ2mLp7RvT1bN8cZaw",
+      key: "Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ",
+      c: "AbCdEfGhIjKlMnOpQrStUv",
+      ts: 1793900000001,
+    },
+    plaintext:
+      '{"v":1,"c":"AbCdEfGhIjKlMnOpQrStUv","ts":1793900000001,"t":"link","list":"f3K9xQ2mLp7RvT1bN8cZaw","key":"Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ"}',
+    envelope: {
+      id: "Op2Op2Op2Op2Op2Op2Op2A",
+      n: "DA0ODxAREhMUFRYX",
+      c: "49wf-kVH0HFUCHL30OllgxBlqoa_F3DG1sy1kLXSk455gUgJw7FVQyXCOWvdlSrqvGaL4ZnFOJE63UB-1oQk0zkGYqeYwahzz1rRSAs1ctkIRYA3ZoR2YqdPgfN9_kTsl4_8g1hPeJ5L3Eadva5SqAplTky5DBQVJ9On3leYohtYr90UPXfnfSm4WZggiWdV0b5hWbKsy7ENl7M2n9H_Aeb4MI0U1A",
+    },
+  },
+  {
+    docId: "f3K9xQ2mLp7RvT1bN8cZaw",
+    key: "Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ",
+    opId: "Op3Op3Op3Op3Op3Op3Op3A",
+    nonce: "GBkaGxwdHh8gISIj",
+    op: {
+      v: 1,
+      t: "init",
+      kind: "list",
+      c: "AbCdEfGhIjKlMnOpQrStUv",
+      ts: 1793899999999,
+    },
+    plaintext: '{"v":1,"c":"AbCdEfGhIjKlMnOpQrStUv","ts":1793899999999,"t":"init","kind":"list"}',
+    envelope: {
+      id: "Op3Op3Op3Op3Op3Op3Op3A",
+      n: "GBkaGxwdHh8gISIj",
+      c: "Cioi_MkRyjSRgWC0FU2NElLMrs6VXF41G-kLP7tV4LRb9Exu2-2VSzN29ZxlUkLft8An2EVgbs5LMbUD8i3Lc8rrIIpcGbz5wB87zxGrN49_gUYfpGYqKXoSrp2bwmp-",
+    },
+  },
+];
