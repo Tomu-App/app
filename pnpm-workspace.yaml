@@ -5,3 +5,6 @@ allowBuilds:
   workerd: true
   esbuild: true
 engineStrict: true
+# Paraglide 3.2.1 fixes the duplicate runtime on Windows (opral/paraglide-js#877); drop this once it is older than the cutoff.
+minimumReleaseAgeExclude:
+  - "@inlang/paraglide-js@3.2.1"
