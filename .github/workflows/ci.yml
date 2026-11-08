@@ -110,12 +110,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # A version tag v1.2.3 also publishes ghcr.io/tomu-app/server:1.2.3.
+      # "latest" follows main only, so tagging an older commit never moves it back.
+      # A version tag v1.2.3 publishes ghcr.io/tomu-app/server:1.2.3.
       - id: tags
         run: |
           {
             echo "list<<EOF"
-            echo "ghcr.io/tomu-app/server:latest"
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then echo "ghcr.io/tomu-app/server:latest"; fi
             echo "ghcr.io/tomu-app/server:sha-$GITHUB_SHA"
             if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "ghcr.io/tomu-app/server:${GITHUB_REF_NAME#v}"; fi
             echo "EOF"
