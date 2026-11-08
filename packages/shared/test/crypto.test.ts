@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { beforeAll, expect, test } from "vitest";
 import { decryptOp, encryptOp, EnvelopeTooLargeError, importDocKey } from "../src/crypto.ts";
 import { fromBase64Url, toBase64Url } from "../src/encoding.ts";
@@ -6,6 +5,7 @@ import { newDocId, newDocKey, newOpId } from "../src/ids.ts";
 import { envelopeSize, type Envelope } from "../src/schemas/envelope.ts";
 import { MAX_ITEM_TEXT, type Op } from "../src/schemas/ops.ts";
 import { addOp } from "./fixtures.ts";
+import { vectors } from "./vectors/aes-gcm.ts";
 
 const docId = newDocId();
 let k: CryptoKey;
@@ -67,19 +67,6 @@ test.each([
 test("EnvelopeTooLargeError is exported for callers", () => {
   expect(new EnvelopeTooLargeError(5000)).toBeInstanceOf(Error);
 });
-
-type Vector = {
-  docId: string;
-  key: string;
-  opId: string;
-  nonce: string;
-  op: Op;
-  plaintext: string;
-  envelope: Envelope;
-};
-const vectors = JSON.parse(
-  readFileSync(new URL("./vectors/aes-gcm.js", import.meta.url), "utf8"),
-) as Vector[];
 
 test("matches the fixed vectors", async () => {
   expect(vectors.length).toBe(3);

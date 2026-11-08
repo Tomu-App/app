@@ -1,4 +1,17 @@
-[
+import type { Envelope } from "../../src/schemas/envelope.ts";
+import type { Op } from "../../src/schemas/ops.ts";
+
+export type Vector = {
+  docId: string;
+  key: string;
+  opId: string;
+  nonce: string;
+  op: Op;
+  plaintext: string;
+  envelope: Envelope;
+};
+
+export const vectors: Vector[] = [
   {
     docId: "f3K9xQ2mLp7RvT1bN8cZaw",
     key: "Qm8T0vXkJ2pLs9aB3cD4eF5gH6iJ7kL8mN9oP0qR1sQ",

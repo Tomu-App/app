@@ -18,7 +18,7 @@ pnpm lint    # Prettier check (pnpm format to fix)
 - `packages/shared` (`@tomu/shared`): protocol core used by server and client. IDs and share links (`https://app.tomu.foo/share/<docId>#<key>`), Zod schemas for ops, envelopes and sync messages, AES-256-GCM encryption of ops (WebCrypto), the logical clock, and the CRDT reducers for list documents (LWW fields, tombstones) and shared label documents (add-wins set).
 - `apps/server` (`@tomu/server`): sync server on Bun. Hono for REST, `Bun.serve` for the multiplexed WebSocket `/api/ws`, SQLite (WAL) via Drizzle. It stores and numbers encrypted ops and never sees plaintext.
 
-`packages/shared/test/vectors/aes-gcm.js` holds fixed encryption test vectors for other implementations (the planned Kotlin app). Each vector has the key, nonce, op id, the exact `plaintext` bytes (UTF-8 JSON), the parsed `op` and the resulting `envelope`. Normative for interop:
+`packages/shared/test/vectors/aes-gcm.ts` holds fixed encryption test vectors for other implementations (the planned Kotlin app). Each vector has the key, nonce, op id, the exact `plaintext` bytes (UTF-8 JSON), the parsed `op` and the resulting `envelope`. Normative for interop:
 
 - Encrypting `plaintext` with `nonce` and AAD `docId + ":" + opId` must give exactly `envelope.c`.
 - Decrypting `envelope` must give `plaintext`, which must parse to `op` and pass the op schema.
