@@ -1,8 +1,10 @@
 # Tomu App
 
-Shared, end-to-end encrypted lists, shared through labels. Specification: `../docs/spec.md` (repo `Tomu-App/docs`).
+**Shared, end-to-end encrypted lists, shared through labels.**
 
-## Workspace
+Specification: `../docs/spec.md` (repo `Tomu-App/docs`).
+
+## Install
 
 pnpm workspace (`apps/*`, `packages/*`), Node version in `.node-version`, Bun version in `.bun-version`.
 
@@ -26,7 +28,9 @@ pnpm lint    # Prettier check (pnpm format to fix)
 
 Never regenerate the file; add new vectors instead.
 
-## Server
+## Usage
+
+### Server
 
 Needs Bun (version in `.bun-version`); tests run with `bun test`.
 
@@ -46,7 +50,7 @@ pnpm --filter @tomu/server build      # dist/server.js, the bundle the Docker im
 
 On every push to `main`, CI publishes the image `ghcr.io/tomu-app/server` (`latest` and `sha-<commit>`) once the repository variable `DEPLOY_ENABLED` is `true`. Running it on the VPS: [`apps/server/deploy/README.md`](apps/server/deploy/README.md).
 
-## Web
+### Web
 
 `apps/web` (`@tomu/web`): SvelteKit client (static adapter). The sync layer lives in `src/lib/tomu`; the UI imports only from `#lib/tomu/index.js` (a `package.json` `imports` alias), which exports `startTomu`, `Tomu` and the public types.
 
@@ -57,7 +61,7 @@ pnpm --filter @tomu/web test
 
 `PUBLIC_API_URL` (default `http://localhost:3000`) is the server origin; it is also allowed in the CSP `connect-src`. For local settings copy `apps/web/.env.example` to `apps/web/.env`; that file is local only and not committed.
 
-### Routes and features
+#### Routes and features
 
 - `/` overview of all lists; `/list/[id]` one list; `/list/[id]/share` and `/labels/[id]/share` share a list or a label (link plus QR code); `/share/[id]` opens a received link; `/settings` language, large view and install.
 - Languages: German and English via Paraglide (`apps/web/messages`). The choice is stored in `localStorage`; without one the browser language is used. There is no URL prefix, so share links stay language neutral.
@@ -67,6 +71,16 @@ pnpm --filter @tomu/web test
 
 Tests run with Vitest and `fake-indexeddb`. On a low-memory Windows machine the default worker count can run out of heap; `pnpm --filter @tomu/web exec vitest run --maxWorkers=2` passes. The integration tests in `test/integration` start the real server as a Bun child process (in-memory DB, random port, one server per test file), so Bun must be installed.
 
+## Caveats
+
+- No tagged release yet. The protocol in `packages/shared` can still change; the test vectors are the fixed point for other implementations.
+- The web app needs the sync server; neither works alone. The server runs only on Bun.
+- Only a web client exists. The Kotlin app is planned, not built.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Everyone taking part agrees to the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues as described in [SECURITY.md](SECURITY.md), not in public issues.
+
 ## License
 
-[Elastic License 2.0](LICENSE)
+[Elastic License 2.0](LICENSE) © Tomu-App
