@@ -217,7 +217,7 @@ test("a failed name save shows an error and keeps the step", async () => {
   await next();
   await fireEvent.input(screen.getByLabelText(m.settings_name_field()), { target: { value: "Lena" } });
   await next();
-  expect(await screen.findByText(m.onboarding_save_failed())).toBeTruthy();
+  expect(await screen.findByText(m.save_failed())).toBeTruthy();
   expect(screen.getByText(m.onboarding_step({ current: 2, total: 3 }))).toBeTruthy();
 });
 
@@ -227,9 +227,22 @@ test("a failed done shows an error and keeps the step", async () => {
   await toStep3(t);
   vi.spyOn(t, "completeOnboarding").mockRejectedValueOnce(new Error("write failed"));
   await fireEvent.click(screen.getByRole("button", { name: m.onboarding_done() }));
-  expect(await screen.findByText(m.onboarding_save_failed())).toBeTruthy();
+  expect(await screen.findByText(m.save_failed())).toBeTruthy();
   expect(t.onboarded).toBe(false);
   expect(screen.getByRole("button", { name: m.onboarding_done() })).toBeTruthy();
+});
+
+test("a failed large view switch shows an error and a later success clears it", async () => {
+  const t = await start();
+  show(t);
+  await toStep3(t);
+  vi.spyOn(t, "setLargeView").mockRejectedValueOnce(new Error("write failed"));
+  const sw = screen.getByRole("switch", { name: m.settings_large_label() });
+  await fireEvent.click(sw);
+  expect(await screen.findByText(m.save_failed())).toBeTruthy();
+  await fireEvent.click(sw);
+  await waitFor(() => expect(t.largeView).toBe(true));
+  await waitFor(() => expect(screen.queryByText(m.save_failed())).toBeNull());
 });
 
 test("a second submit while the name is saving does not save twice", async () => {

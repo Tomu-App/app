@@ -116,5 +116,5 @@
   "onboarding_done": "Done",
   "onboarding_privacy": "Your lists are end-to-end encrypted.",
   "onboarding_install_heading": "Tomu on your phone",
-  "onboarding_save_failed": "That did not work. Please try again."
+  "save_failed": "That did not work. Please try again."
 }

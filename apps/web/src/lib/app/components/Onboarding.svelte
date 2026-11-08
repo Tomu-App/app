@@ -58,6 +58,16 @@
     }
   }
 
+  /** No busy guard: quick taps must keep working. Tomu rolls the value back itself when the save fails. */
+  async function toggleLargeView(): Promise<void> {
+    try {
+      await tomu.setLargeView(!tomu.largeView);
+      saveFailed = false;
+    } catch {
+      saveFailed = true;
+    }
+  }
+
   async function saveName(e: SubmitEvent): Promise<void> {
     e.preventDefault();
     if (busy) return;
@@ -79,7 +89,7 @@
 
 {#snippet nav(submit: boolean)}
   <div class="nav">
-    {#if saveFailed}<p class="note" role="alert">{m.onboarding_save_failed()}</p>{/if}
+    {#if saveFailed}<p class="note" role="alert">{m.save_failed()}</p>{/if}
     {#if step === total}
       <p class="privacy">
         {m.onboarding_privacy()}
@@ -167,7 +177,7 @@
           role="switch"
           aria-checked={tomu.largeView}
           aria-label={m.settings_large_label()}
-          onclick={() => tomu.setLargeView(!tomu.largeView)}
+          onclick={toggleLargeView}
         >
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span aria-hidden="true">{m.settings_large_label()}</span>
