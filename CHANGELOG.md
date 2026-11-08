@@ -6,6 +6,14 @@ Every user-facing change adds an entry under `[Unreleased]` in the matching cate
 
 ## [Unreleased]
 
+### Added
+
+- Onboarding on first start: language, display name (required), large view and, where the browser supports it, install as a web app. People who opened a share link see the shared list first. Existing users with a display name skip it.
+
+### Fixed
+
+- Two quick taps on the large view switch no longer lose the second tap.
+
 ## [0.1.0] - 2026-11-08
 
 First public release, live at `app.tomu.foo`.
