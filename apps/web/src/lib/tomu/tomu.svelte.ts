@@ -518,7 +518,7 @@ export class Tomu {
     if (!parts) return;
     try {
       await this.#engine?.stop();
-      parts.store.close();
+      await parts.store.close();
     } finally {
       await parts.release();
     }
@@ -643,7 +643,7 @@ export async function startTomu(opts: TomuOptions): Promise<Tomu> {
     return tomu;
   } catch (err) {
     tomu?._detach();
-    store?.close();
+    await store?.close();
     await release();
     throw err;
   }

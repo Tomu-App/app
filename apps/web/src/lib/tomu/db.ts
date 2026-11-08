@@ -90,7 +90,9 @@ export class LocalStore {
     return run;
   }
 
-  close(): void {
+  /** Closes after the queued commits ran, so a write started just before stop still lands. */
+  async close(): Promise<void> {
+    await this.queue;
     this.db.close();
   }
 
