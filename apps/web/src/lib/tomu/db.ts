@@ -44,7 +44,13 @@ export class LocalStore {
     });
     const tx = db.transaction("settings", "readwrite");
     if ((await tx.store.get(SETTINGS_KEY)) === undefined) {
-      const fresh: Settings = { clientId: newClientId(), displayName: "", largeView: false, clockLast: 0, onboarded: false };
+      const fresh: Settings = {
+        clientId: newClientId(),
+        displayName: "",
+        largeView: false,
+        clockLast: 0,
+        onboarded: false,
+      };
       await tx.store.put(fresh, SETTINGS_KEY);
     }
     await tx.done;
@@ -65,7 +71,14 @@ export class LocalStore {
     if (!settings) throw new Error("settings missing");
     // Records from before onboarding existed lack the field: a set name means the person already uses the app.
     const onboarded = settings.onboarded ?? settings.displayName !== "";
-    return { docs, outbox, tombstones: new Set(tombstones), labels, folders, settings: { ...settings, onboarded } };
+    return {
+      docs,
+      outbox,
+      tombstones: new Set(tombstones),
+      labels,
+      folders,
+      settings: { ...settings, onboarded },
+    };
   }
 
   /** Applies all parts of the change atomically; calls are serialized in call order. */
