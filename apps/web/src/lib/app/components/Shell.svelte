@@ -31,6 +31,17 @@
   setInstall(install);
   $effect(() => () => install.destroy());
 
+  // A share link opens the shared list straight away, so its recipient sees the list first. The share
+  // page moves on to /list/<id>, which stays exempt until the person goes anywhere else (all lists, say);
+  // onboarding shows there, and on the next start.
+  let viaShare = false;
+  const deferOnboarding = $derived.by(() => {
+    const path = page.url.pathname;
+    if (path.startsWith("/share/")) viaShare = true;
+    else if (!path.startsWith("/list/")) viaShare = false;
+    return viaShare;
+  });
+
   // Closing the app inside the undo window deletes nothing.
   $effect(() => {
     const discard = (): void => pending.undo();
@@ -58,8 +69,7 @@
     <p>{m.blocked_hint()}</p>
     <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
-{:else if !tomu.onboarded && !page.url.pathname.startsWith("/share/")}
-  <!-- A share link opens straight away; onboarding waits for the first path outside /share/. -->
+{:else if !tomu.onboarded && !deferOnboarding}
   <Onboarding {tomu} />
 {:else}
   {@render children?.()}

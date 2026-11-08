@@ -99,6 +99,30 @@ test("a share route shows the page and onboarding comes on the next path", async
   expect(screen.queryByText("app content")).toBeNull();
 });
 
+test("a share link shows the shared list first and onboarding comes on all lists", async () => {
+  const t = await start();
+  page.url = new URL("http://localhost/share/x");
+  render(ShellFixture, { props: { tomu: t } });
+  page.url = new URL("http://localhost/list/abc");
+  flushSync();
+  expect(screen.getByText("app content")).toBeTruthy();
+  expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
+  page.url = new URL("http://localhost/");
+  flushSync();
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+  page.url = new URL("http://localhost/list/abc");
+  flushSync();
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+});
+
+test("a list opened without a share link shows onboarding", async () => {
+  const t = await start();
+  page.url = new URL("http://localhost/list/abc");
+  render(ShellFixture, { props: { tomu: t } });
+  expect(screen.getByText(m.onboarding_welcome())).toBeTruthy();
+  expect(screen.queryByText("app content")).toBeNull();
+});
+
 test("finishing onboarding shows the app", async () => {
   const t = await start();
   render(ShellFixture, { props: { tomu: t } });
