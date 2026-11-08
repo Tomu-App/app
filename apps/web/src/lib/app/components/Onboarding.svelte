@@ -85,15 +85,20 @@
         {m.onboarding_privacy()}
         <a href={legal.privacy}>{m.settings_privacy()}</a>
       </p>
-      <button type="button" class="primary" onclick={finish}>{m.onboarding_done()}</button>
-    {:else if submit}
-      <button type="submit" class="primary">{m.onboarding_next()}</button>
-    {:else}
-      <button type="button" class="primary" onclick={() => go(step + 1)}>{m.onboarding_next()}</button>
     {/if}
-    {#if step > 1}
-      <button type="button" class="ghost" onclick={() => go(step - 1)}>{m.onboarding_back()}</button>
-    {/if}
+    <!-- Back on the left, forward on the right, as the reading direction goes. -->
+    <div class="buttons">
+      {#if step > 1}
+        <button type="button" class="ghost" onclick={() => go(step - 1)}>{m.onboarding_back()}</button>
+      {/if}
+      {#if step === total}
+        <button type="button" class="primary" onclick={finish}>{m.onboarding_done()}</button>
+      {:else if submit}
+        <button type="submit" class="primary">{m.onboarding_next()}</button>
+      {:else}
+        <button type="button" class="primary" onclick={() => go(step + 1)}>{m.onboarding_next()}</button>
+      {/if}
+    </div>
   </div>
 {/snippet}
 
@@ -247,8 +252,12 @@
     gap: 0.75rem;
     padding: 0.5rem 0 1.25rem;
   }
-  .primary {
-    width: 100%;
+  .buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .buttons button {
+    flex: 1 1 0;
     min-height: 3.75rem;
     font-size: 1.15rem;
   }
