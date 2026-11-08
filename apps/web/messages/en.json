@@ -107,5 +107,13 @@
   "install_ios": "Tap Share at the bottom, then “Add to Home Screen”.",
   "labels_share_button": "Share labels",
   "labels_share_explain": "Pick a label. Anyone with the link sees all lists with this label.",
-  "labels_none_hint": "You create labels in the settings."
+  "labels_none_hint": "You create labels in the settings.",
+  "onboarding_welcome": "Welcome to Tomu",
+  "onboarding_step": "Step {current} of {total}",
+  "onboarding_later": "You can change all of this later in settings.",
+  "onboarding_next": "Next",
+  "onboarding_back": "Back",
+  "onboarding_done": "Done",
+  "onboarding_privacy": "Your lists are end-to-end encrypted.",
+  "onboarding_install_heading": "Tomu on your phone"
 }

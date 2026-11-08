@@ -107,5 +107,13 @@
   "install_ios": "Tippe unten auf Teilen und dann auf „Zum Home-Bildschirm“.",
   "labels_share_button": "Labels teilen",
   "labels_share_explain": "Wähle ein Label. Wer den Link hat, sieht alle Listen mit diesem Label.",
-  "labels_none_hint": "Labels legst du in den Einstellungen an."
+  "labels_none_hint": "Labels legst du in den Einstellungen an.",
+  "onboarding_welcome": "Willkommen bei Tomu",
+  "onboarding_step": "Schritt {current} von {total}",
+  "onboarding_later": "Alles lässt sich später in den Einstellungen ändern.",
+  "onboarding_next": "Weiter",
+  "onboarding_back": "Zurück",
+  "onboarding_done": "Fertig",
+  "onboarding_privacy": "Deine Listen sind Ende-zu-Ende verschlüsselt.",
+  "onboarding_install_heading": "Tomu aufs Handy"
 }

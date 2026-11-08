@@ -8,20 +8,16 @@
   import Sheet from "#lib/app/components/Sheet.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
+  import { legalLinks } from "#lib/app/legal.ts";
   import { canRename, labelText } from "#lib/app/lists.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
 
   const tomu = getTomu();
-  const SITE = "https://tomu.foo";
 
   // Messages are plain functions: the locale state re-renders the page after a switch.
   let locale = $state(getLocale());
-  const legal = $derived(
-    locale === "en"
-      ? { imprint: `${SITE}/en/legal-notice`, privacy: `${SITE}/en/privacy` }
-      : { imprint: `${SITE}/impressum`, privacy: `${SITE}/datenschutz` },
-  );
+  const legal = $derived(legalLinks(locale));
 
   // display name
   // svelte-ignore state_referenced_locally
