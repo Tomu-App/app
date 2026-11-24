@@ -3,9 +3,11 @@
   import type { Snippet } from "svelte";
   import { PUBLIC_API_URL } from "$app/env/public";
   import { onNavigate } from "$app/navigation";
+  import DocumentTitle from "#lib/app/components/DocumentTitle.svelte";
   import Shell from "#lib/app/components/Shell.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
   import { viewTransition } from "#lib/app/motion.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { startTomu, type Tomu } from "#lib/tomu/index.js";
 
@@ -42,12 +44,14 @@
 {#if tomu}
   <Shell {tomu} {children} />
 {:else if failed}
+  <DocumentTitle title={pageTitle()} />
   <Sheet>
     <p class="failed">{m.start_failed()}</p>
     <button type="button" class="retry" onclick={() => attempt++}>{m.start_retry()}</button>
   </Sheet>
 {:else}
   <!-- Empty sheet while the local database opens: no spinner. -->
+  <DocumentTitle title={pageTitle()} />
   <Sheet />
 {/if}
 

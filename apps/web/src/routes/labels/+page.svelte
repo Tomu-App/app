@@ -5,10 +5,13 @@
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
   import { labelText } from "#lib/app/lists.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
 
   const tomu = getTomu();
 </script>
+
+<svelte:head><title>{pageTitle(m.labels_share_button())}</title></svelte:head>
 
 <Board>
   {#snippet start()}

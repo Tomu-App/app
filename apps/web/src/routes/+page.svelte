@@ -17,6 +17,7 @@
   import { getTomu } from "#lib/app/context.ts";
   import { groupLists } from "#lib/app/lists.ts";
   import { FLIP_MS, reduceMotion } from "#lib/app/motion.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import type { ListInfo } from "#lib/tomu/index.js";
@@ -86,6 +87,8 @@
       },
     }));
 </script>
+
+<svelte:head><title>{pageTitle()}</title></svelte:head>
 
 <Board>
   {#snippet start()}<Logo />{/snippet}

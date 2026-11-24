@@ -7,6 +7,7 @@
   import ShareView from "#lib/app/components/ShareView.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { DisplayNameRequiredError } from "#lib/tomu/index.js";
 
@@ -64,6 +65,8 @@
     }
   }
 </script>
+
+<svelte:head><title>{pageTitle(label?.name ?? m.share_label_title())}</title></svelte:head>
 
 <Board>
   {#snippet start()}

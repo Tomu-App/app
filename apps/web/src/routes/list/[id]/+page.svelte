@@ -24,6 +24,7 @@
   import { getPending, getTomu } from "#lib/app/context.ts";
   import { FreshItems } from "#lib/app/fresh.svelte.ts";
   import { FLIP_MS, reduceMotion } from "#lib/app/motion.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
 
   const tomu = getTomu();
@@ -202,6 +203,8 @@
     void tick().then(() => (next ? toggleOf(next, false)?.focus() : addField?.focus()));
   }
 </script>
+
+<svelte:head><title>{pageTitle(view?.title ?? m.menu_title())}</title></svelte:head>
 
 <Board>
   {#snippet start()}

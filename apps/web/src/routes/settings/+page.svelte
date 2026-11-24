@@ -10,6 +10,7 @@
   import { getTomu } from "#lib/app/context.ts";
   import { legalLinks } from "#lib/app/legal.ts";
   import { canRename, labelText } from "#lib/app/lists.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
 
@@ -113,6 +114,9 @@
     document.getElementById(`lang-${next}`)?.focus();
   }
 </script>
+
+<!-- Not inside the key block below: the title is read from `locale` so a language switch renames it. -->
+<svelte:head><title>{(void locale, pageTitle(m.settings_title()))}</title></svelte:head>
 
 {#key locale}
   <Board>

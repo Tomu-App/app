@@ -5,6 +5,7 @@
   import ShareView from "#lib/app/components/ShareView.svelte";
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
+  import { pageTitle } from "#lib/app/title.ts";
   import { m } from "#lib/paraglide/messages.js";
 
   const tomu = getTomu();
@@ -13,6 +14,8 @@
   const view = $derived(tomu.list(id));
   const link = $derived(status === "list" && view ? tomu.shareList(id) : null);
 </script>
+
+<svelte:head><title>{pageTitle(view?.title ?? m.share_title())}</title></svelte:head>
 
 <Board>
   {#snippet start()}

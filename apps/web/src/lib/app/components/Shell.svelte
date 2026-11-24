@@ -8,6 +8,7 @@
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { Tomu } from "#lib/tomu/index.js";
+  import DocumentTitle from "./DocumentTitle.svelte";
   import Onboarding from "./Onboarding.svelte";
   import Sheet from "./Sheet.svelte";
   import UndoBar from "./UndoBar.svelte";
@@ -67,12 +68,15 @@
 />
 
 {#if tomu.status === "blocked"}
+  <!-- These two titles already say Tomu, so they stand alone. -->
+  <DocumentTitle title={m.blocked_title()} />
   <Sheet>
     <h1 class="blocked">{m.blocked_title()}</h1>
     <p>{m.blocked_hint()}</p>
     <button type="button" class="reload" onclick={reload}>{m.blocked_reload()}</button>
   </Sheet>
 {:else if !tomu.onboarded && !deferOnboarding}
+  <DocumentTitle title={m.onboarding_welcome()} />
   <Onboarding {tomu} />
 {:else}
   {@render children?.()}
