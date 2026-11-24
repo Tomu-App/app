@@ -1,8 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { dragHandle, dragHandleZone, SOURCES, TRIGGERS, type DndEvent } from "@lukez/svelte-dnd";
   import { tick } from "svelte";
   import { flip } from "svelte/animate";
   import { cubicIn } from "svelte/easing";
+  import { crossfade } from "svelte/transition";
   import AddField from "#lib/app/components/AddField.svelte";
   import Board from "#lib/app/components/Board.svelte";
   import InstallHint from "#lib/app/components/InstallHint.svelte";
@@ -14,6 +16,7 @@
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getPending, getTomu } from "#lib/app/context.ts";
   import { FreshItems } from "#lib/app/fresh.svelte.ts";
+  import { FLIP_MS, reduceMotion } from "#lib/app/motion.ts";
   import { m } from "#lib/paraglide/messages.js";
 
   const tomu = getTomu();
@@ -26,8 +29,10 @@
   // Entries waiting for their undo window are not shown.
   const hidden = $derived(pending.hidden(id));
   const items = $derived((view?.items ?? []).filter((i) => !hidden.has(i.id)));
-  const count = $derived(items.filter((i) => !i.checked).length);
-  const doneCount = $derived(items.length - count);
+  const openItems = $derived(items.filter((i) => !i.checked));
+  const doneItems = $derived(items.filter((i) => i.checked));
+  const count = $derived(openItems.length);
+  const doneCount = $derived(doneItems.length);
 
   // One marker per opened list.
   const fresh = $derived.by(() => {
@@ -42,27 +47,80 @@
     if (view) fresh.see(view.items.map((i) => i.id));
   });
 
-  // Sliding below the perforation is the only motion on this screen; reduced motion shows the end state.
-  const reduceMotion = (): boolean =>
-    typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   // A list deleted elsewhere takes its waiting undo with it.
   $effect(() => {
     if (status === "gone") pending.drop(id);
   });
 
   let addField = $state<AddField>();
-  let listEl = $state<HTMLUListElement>();
+  let openEl = $state<HTMLUListElement>();
+  let doneEl = $state<HTMLUListElement>();
 
   // A moved or removed button loses focus; keyboard and screen reader users must not land on the page body.
-  const toggleOf = (itemId: string): HTMLElement | null =>
-    listEl?.querySelector<HTMLElement>(`[data-item="${CSS.escape(itemId)}"] [role="checkbox"]`) ?? null;
+  // Looked up in the part the entry belongs to now: the copy that slides out of the other part is leaving.
+  const toggleOf = (itemId: string, checked: boolean): HTMLElement | null =>
+    (checked ? doneEl : openEl)?.querySelector<HTMLElement>(
+      `[data-item="${CSS.escape(itemId)}"] [role="checkbox"]`,
+    ) ?? null;
 
   async function setChecked(itemId: string, checked: boolean): Promise<void> {
     await tomu.setChecked(id, itemId, checked);
     await tick();
-    toggleOf(itemId)?.focus();
+    toggleOf(itemId, checked)?.focus();
   }
+
+  // Open and ticked entries are two drag zones of different types, so a drag never ticks anything.
+  type Item = (typeof items)[number];
+  type Zone = "open" | "done";
+  // While a zone is held it shows the library's order; changes from elsewhere reach it after the drop.
+  let held = $state.raw<Record<Zone, Item[] | null>>({ open: null, done: null });
+  const shown = $derived({ open: held.open ?? openItems, done: held.done ?? doneItems });
+  const hold = (zone: Zone, list: Item[] | null): void => {
+    held = { ...held, [zone]: list };
+  };
+
+  // Saved once per drag, with the neighbours inside the zone. Entries that went away during the drag are skipped.
+  async function drop(zone: Zone, e: DndEvent<Item>): Promise<void> {
+    const live = new Set((zone === "open" ? openItems : doneItems).map((i) => i.id));
+    const order = e.items.filter((i) => live.has(i.id));
+    const at = order.findIndex((i) => i.id === e.info.id);
+    try {
+      if (at >= 0 && order.length > 1) {
+        await tomu.moveItem(id, e.info.id, order[at - 1]?.id ?? null, order[at + 1]?.id ?? null);
+      }
+    } finally {
+      hold(zone, null);
+    }
+  }
+
+  // The held entry lifts off the sheet. `scale`, not `transform`: the library moves the element with `transform`.
+  const lift = (el?: HTMLElement): void => {
+    if (!el) return;
+    el.style.boxShadow = "var(--lift)";
+    el.style.background = "var(--sheet)";
+    el.style.scale = "1.02";
+  };
+
+  const zone = (kind: Zone) =>
+    dragHandleZone<Item>(() => ({
+      items: shown[kind],
+      type: kind,
+      flipDurationMs: reduceMotion() ? 0 : FLIP_MS,
+      // The library's hold time for touch: a swipe that starts on the grip still scrolls.
+      delayTouchStart: true,
+      // The default outline is not part of the sheet; the lifted entry shows the drag.
+      dropTargetStyle: {},
+      transformDraggedElement: lift,
+      onconsider: (e) => {
+        hold(kind, [...e.items]);
+        // A keyboard drag moves the entry on every arrow key and ends here.
+        if (e.info.trigger === TRIGGERS.DRAG_STOPPED) void drop(kind, e);
+      },
+      onfinalize: (e) => {
+        hold(kind, [...e.items]);
+        if (e.info.source === SOURCES.POINTER) void drop(kind, e);
+      },
+    }));
 
   let editId = $state<string | null>(null);
   let editOpen = $state(false);
@@ -91,11 +149,22 @@
       `transform: translateY(${u * 2.5}rem) rotate(${u * 3}deg); opacity: ${t}; transform-origin: 0 0;`,
   });
 
+  // An entry that is ticked or unticked slides from one part to the other. Without a counterpart it was
+  // added, deleted or torn off: only tearing off moves.
+  const [send, receive] = crossfade({
+    duration: () => (reduceMotion() ? 0 : FLIP_MS),
+    fallback: (node, _params, intro) => tear(node, { duration: !intro && motion.tearing ? tearDuration : 0 }),
+  });
+  // A pointer drag swaps the entry for a placeholder; that must not animate, or the zone has extra children.
+  type Slide = { key: string; zone: Zone };
+  const leave = (node: Element, p: Slide) => (held[p.zone] ? { duration: 0 } : send(node, p));
+  const arrive = (node: Element, p: Slide) => (held[p.zone] ? { duration: 0 } : receive(node, p));
+
   // Only entries ticked right now go; one that someone unticked before the window ended stays.
   function tearOff(): void {
-    const ids = items.filter((i) => i.checked).map((i) => i.id);
+    const ids = doneItems.map((i) => i.id);
     if (ids.length === 0) return;
-    const next = items.find((i) => !i.checked)?.id;
+    const next = openItems[0]?.id;
     const listId = id;
     motion.tearing = !reduceMotion();
     setTimeout(() => (motion.tearing = false), tearDuration + 100);
@@ -105,7 +174,7 @@
         all.filter((itemId) => tomu.list(listId)?.items.some((i) => i.id === itemId && i.checked)),
       ),
     );
-    void tick().then(() => (next ? toggleOf(next)?.focus() : addField?.focus()));
+    void tick().then(() => (next ? toggleOf(next, false)?.focus() : addField?.focus()));
   }
 </script>
 
@@ -150,28 +219,37 @@
     <div class="rule"></div>
     <AddField bind:this={addField} listId={id} {fresh} />
     <InstallHint />
-    <ul bind:this={listEl}>
-      {#each items as item, i (item.id)}
+    <ul bind:this={openEl} aria-label={m.open_label()} {@attach zone("open")}>
+      {#each shown.open as item (item.id)}
         <li
           data-item={item.id}
-          animate:flip={{ duration: reduceMotion() ? 0 : 250 }}
-          out:tear={{ duration: motion.tearing ? tearDuration : 0 }}
+          aria-label={item.text}
+          animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}
+          in:arrive|global={{ key: item.id, zone: "open" }}
+          out:leave|global={{ key: item.id, zone: "open" }}
         >
-          {#if item.checked && i === count}
-            <div class="perf"><span>{m.done_count({ count: doneCount })}</span></div>
-          {/if}
-          <ItemRow
-            {item}
-            fresh={fresh.isFresh(item.id)}
-            onToggle={() => void setChecked(item.id, !item.checked)}
-            onEdit={() => {
-              editId = item.id;
-              editOpen = true;
-            }}
-          />
+          {@render row(item)}
         </li>
       {/each}
     </ul>
+    {#if shown.done.length > 0}
+      <div class="perf" out:tear={{ duration: motion.tearing ? tearDuration : 0 }}>
+        <span>{m.done_count({ count: doneCount })}</span>
+      </div>
+      <ul bind:this={doneEl} aria-label={m.done_count({ count: doneCount })} {@attach zone("done")}>
+        {#each shown.done as item (item.id)}
+          <li
+            data-item={item.id}
+            aria-label={item.text}
+            animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}
+            in:arrive|global={{ key: item.id, zone: "done" }}
+            out:leave|global={{ key: item.id, zone: "done" }}
+          >
+            {@render row(item)}
+          </li>
+        {/each}
+      </ul>
+    {/if}
     {#if doneCount > 0}
       <button type="button" class="tear" onclick={tearOff}>{m.tear_off()}</button>
     {/if}
@@ -182,6 +260,19 @@
     <a class="home" href="/">{m.back_to_lists()}</a>
   {/if}
 </Sheet>
+
+{#snippet row(item: Item)}
+  <ItemRow
+    {item}
+    fresh={fresh.isFresh(item.id)}
+    onToggle={() => void setChecked(item.id, !item.checked)}
+    onEdit={() => {
+      editId = item.id;
+      editOpen = true;
+    }}
+    handle={dragHandle}
+  />
+{/snippet}
 
 <ItemDialog
   bind:open={editOpen}
@@ -284,7 +375,7 @@
     font-size: 1rem;
     font-weight: 700;
   }
-  .perf + :global(*) {
+  .perf + ul {
     margin-top: 0.6rem;
   }
   .tear {

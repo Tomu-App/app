@@ -33,6 +33,7 @@
   "done_count": "{count} abgehakt",
   "fresh_mark": "neu",
   "item_edit": "Bearbeiten",
+  "item_move": "Verschieben: {text}",
   "item_edit_title": "Eintrag bearbeiten",
   "item_text_field": "Eintrag",
   "item_save": "Speichern",
@@ -116,5 +117,12 @@
   "onboarding_done": "Fertig",
   "onboarding_privacy": "Deine Listen sind Ende-zu-Ende verschlüsselt.",
   "onboarding_install_heading": "Tomu aufs Handy",
-  "save_failed": "Das hat nicht geklappt. Versuche es noch einmal."
+  "save_failed": "Das hat nicht geklappt. Versuche es noch einmal.",
+  "dnd_drag_started": "{item} angefasst. Mit den Pfeiltasten verschieben, mit Leertaste oder Eingabetaste ablegen.",
+  "dnd_moved_to_position": "{item} auf Platz {position} von {count}",
+  "dnd_moved_to_zone_end": "{item} ans Ende von {zone} verschoben",
+  "dnd_moved_to_zone_start": "{item} an den Anfang von {zone} verschoben",
+  "dnd_dropped": "{item} abgelegt auf Platz {position} von {count}",
+  "dnd_zone_active_instruction": "Zum Verschieben mit Tab zum Griff eines Eintrags gehen und Leertaste oder Eingabetaste drücken",
+  "dnd_zone_drag_disabled_instruction": "Verschieben ist hier ausgeschaltet"
 }

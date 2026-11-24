@@ -206,6 +206,9 @@ importers:
       '@fontsource-variable/atkinson-hyperlegible-next':
         specifier: ^5.3.0
         version: 5.3.0
+      '@lukez/svelte-dnd':
+        specifier: 1.1.0
+        version: 1.1.0(svelte@5.57.3)
       '@tomu/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1139,6 +1142,11 @@ packages:
 
   '@lix-js/sdk@0.20.1':
     resolution: {integrity: sha512-oscOFP8Cr1My6Wh2KVYC9+aJ1mHs+d7vnD+7PPJaA4L+Y1FR37Sm99SrFGfvUizaj/XtRi2GlDF2IOFt9iXMNQ==}
+
+  '@lukez/svelte-dnd@1.1.0':
+    resolution: {integrity: sha512-cbjW5J1+izaGK4sW2lC0W6tBKMVTxdJKjLMBj/WcX7ap4NAMVD0SnCEJpSibHoZ2h+YTsJdpL4mCbpig4Suc2w==}
+    peerDependencies:
+      svelte: ^5.32.0
 
   '@napi-rs/wasm-runtime@1.2.7':
     resolution: {integrity: sha512-zJccwplOAbgfZju95IUHazLnx9RAPtPN2YGJXI6UbrgeaR9QfPjGrQL6ERkSAtnVCA4Q+83ApGyaX5zdpCaKkQ==}
@@ -2908,6 +2916,10 @@ snapshots:
       '@bytecodealliance/jco-transpile': 0.13.0
       binaryen: 130.0.0
       fflate: 0.8.3
+
+  '@lukez/svelte-dnd@1.1.0(svelte@5.57.3)':
+    dependencies:
+      svelte: 5.57.3
 
   '@napi-rs/wasm-runtime@1.2.7(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
     dependencies:

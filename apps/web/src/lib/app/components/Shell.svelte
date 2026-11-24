@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import { page } from "$app/state";
   import { setInstall, setPending, setTomu } from "#lib/app/context.ts";
+  import { setupDnd } from "#lib/app/dnd.ts";
   import { InstallHint } from "#lib/app/install.svelte.ts";
   import { PendingDeletes } from "#lib/app/undo.svelte.ts";
   import { getLocale } from "#lib/paraglide/runtime.js";
@@ -21,6 +22,8 @@
   // so the value never changes while mounted.
   // svelte-ignore state_referenced_locally
   setTomu(tomu);
+
+  setupDnd();
 
   const pending = new PendingDeletes();
   setPending(pending);

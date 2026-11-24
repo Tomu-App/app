@@ -4,13 +4,14 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/sv
 import { flushSync } from "svelte";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { FLIP_MS } from "#lib/app/motion.ts";
 import { m } from "#lib/paraglide/messages.js";
 import { LocalStore } from "../../src/lib/tomu/db.ts";
 import { applyToDoc } from "../../src/lib/tomu/docs.ts";
 import { startTomu, type Tomu } from "#lib/tomu/index.js";
 import Page from "../../src/routes/list/[id]/+page.svelte";
-import { id22, labelDoc, listDoc, offlineOpts, offlineTomu, op } from "../helpers.ts";
+import { id22, labelDoc, listDoc, offlineOpts, offlineTomu, op, outboxOf } from "../helpers.ts";
 import { renderWithTomu } from "./render.ts";
 
 const route = vi.hoisted(() => ({ id: "" }));
@@ -29,8 +30,19 @@ const start = async (): Promise<Tomu> => {
   return t;
 };
 
+beforeEach(() => {
+  // jsdom has no Web Animations API: reduced motion makes every move and slide instant.
+  vi.stubGlobal("matchMedia", (q: string) => ({
+    matches: q.includes("reduce"),
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+});
+
 afterEach(async () => {
   cleanup();
+  vi.unstubAllGlobals();
   await Promise.all(started.splice(0).map((t) => t.stop()));
 });
 
@@ -221,4 +233,114 @@ test("an entry that arrives from elsewhere carries the neu mark", async () => {
   await t.addItems(id, "Kaffee");
   await waitFor(() => expect(screen.getByText("Kaffee")).toBeTruthy());
   expect(screen.getByText(m.fresh_mark())).toBeTruthy();
+});
+
+const rowTexts = (): string[] =>
+  screen.getAllByRole("checkbox").map((c) => c.querySelector(".text")!.firstChild!.textContent ?? "");
+
+test("each entry has its own move handle", async () => {
+  const t = await start();
+  await open(t, "Einkauf", "Milch, Brot");
+  expect(screen.getByRole("button", { name: m.item_move({ text: "Milch" }) })).toBeTruthy();
+  expect(screen.getByRole("button", { name: m.item_move({ text: "Brot" }) })).toBeTruthy();
+});
+
+test("open and ticked entries are two lists with the perforation between them", async () => {
+  const t = await start();
+  const id = await open(t, "Einkauf", "Milch, Brot");
+  expect(screen.getAllByRole("list")).toHaveLength(1);
+  await fireEvent.click(screen.getByRole("checkbox", { name: /Milch/ }));
+  await waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Milch")!.checked).toBe(true));
+  const perf = await screen.findByText(m.done_count({ count: 1 }));
+  const [openList, doneList] = screen.getAllByRole("list");
+  expect(doneList).toBeTruthy();
+  expect(within(openList!).getByRole("checkbox", { name: /Brot/ })).toBeTruthy();
+  expect(within(doneList!).getByRole("checkbox", { name: /Milch/ })).toBeTruthy();
+  expect(openList!.compareDocumentPosition(perf) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(perf.compareDocumentPosition(doneList!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("tapping the text of a row still ticks it", async () => {
+  const t = await start();
+  const id = await open(t, "Einkauf", "Milch");
+  await fireEvent.click(screen.getByText("Milch"));
+  await waitFor(() => expect(t.list(id)!.items[0]!.checked).toBe(true));
+});
+
+test("keyboard: the handle picks an entry up, arrows move it, the drop sends one move", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  started.push(t);
+  const id = await open(t, "Einkauf", "a, b, c");
+  expect(rowTexts()).toEqual(["a", "b", "c"]);
+  const before = (await outboxOf(opts.dbName!, {})).length;
+  const handle = screen.getByRole("button", { name: m.item_move({ text: "c" }) });
+  handle.focus();
+  await fireEvent.keyDown(handle, { key: " " });
+  const held = (): Element => document.activeElement ?? document.body;
+  await fireEvent.keyDown(held(), { key: "ArrowUp" });
+  await fireEvent.keyDown(held(), { key: "ArrowUp" });
+  await fireEvent.keyDown(held(), { key: " " });
+  await waitFor(() => expect(t.list(id)!.items.map((i) => i.text)).toEqual(["c", "a", "b"]));
+  await waitFor(() => expect(rowTexts()).toEqual(["c", "a", "b"]));
+  const out = (await outboxOf(opts.dbName!, {})).slice(before);
+  expect(out.map((e) => e.op.t)).toEqual(["move"]);
+});
+
+test("an entry added elsewhere during a keyboard drag shows after the drop", async () => {
+  const t = await start();
+  const id = await open(t, "Einkauf", "a, b");
+  const handle = screen.getByRole("button", { name: m.item_move({ text: "b" }) });
+  handle.focus();
+  await fireEvent.keyDown(handle, { key: " " });
+  const held = (): Element => document.activeElement ?? document.body;
+  await fireEvent.keyDown(held(), { key: "ArrowUp" });
+  await t.addItems(id, "c");
+  flushSync();
+  expect(rowTexts()).toEqual(["b", "a"]);
+  await fireEvent.keyDown(held(), { key: " " });
+  await waitFor(() => expect(rowTexts()).toEqual(["b", "a", "c"]));
+  expect(t.list(id)!.items.map((i) => i.text)).toEqual(["b", "a", "c"]);
+});
+
+test("with motion, a ticked entry slides into the ticked list over the flip time", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({
+    matches: false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+  // jsdom has no element.animate; a stand-in that finishes after the given duration.
+  const runs: { el: Element; duration: number }[] = [];
+  Element.prototype.animate = function (this: Element, _k: unknown, o: { duration: number }) {
+    runs.push({ el: this, duration: o.duration });
+    const a = {
+      onfinish: null as null | (() => void),
+      cancel() {},
+      finish() {},
+      pause() {},
+      play() {},
+      currentTime: 0,
+    };
+    setTimeout(() => a.onfinish?.(), o.duration);
+    return a;
+  } as never;
+  try {
+    const t = await start();
+    const id = await open(t, "Einkauf", "Milch, Brot");
+    await fireEvent.click(screen.getByRole("checkbox", { name: /Milch/ }));
+    await waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Milch")!.checked).toBe(true));
+    // The row arriving below the perforation runs the slide, not just the flip of the rows that close up.
+    const [, doneList] = await waitFor(() => {
+      const lists = screen.getAllByRole("list");
+      expect(lists).toHaveLength(2);
+      return lists;
+    });
+    const arrived = within(doneList!).getByRole("checkbox", { name: /Milch/ }).closest("li");
+    await waitFor(() => expect(runs.some((r) => r.el === arrived && r.duration === FLIP_MS)).toBe(true));
+    // The copy leaving the open list goes once the slide ends.
+    await waitFor(() => expect(screen.getAllByRole("checkbox", { name: /Milch/ })).toHaveLength(1));
+  } finally {
+    delete (Element.prototype as { animate?: unknown }).animate;
+  }
 });

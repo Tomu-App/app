@@ -33,6 +33,7 @@
   "done_count": "{count} done",
   "fresh_mark": "new",
   "item_edit": "Edit",
+  "item_move": "Move: {text}",
   "item_edit_title": "Edit entry",
   "item_text_field": "Entry",
   "item_save": "Save",
@@ -116,5 +117,12 @@
   "onboarding_done": "Done",
   "onboarding_privacy": "Your lists are end-to-end encrypted.",
   "onboarding_install_heading": "Tomu on your phone",
-  "save_failed": "That did not work. Please try again."
+  "save_failed": "That did not work. Please try again.",
+  "dnd_drag_started": "{item} picked up. Move it with the arrow keys, drop it with Space or Enter.",
+  "dnd_moved_to_position": "{item} moved to place {position} of {count}",
+  "dnd_moved_to_zone_end": "{item} moved to the end of {zone}",
+  "dnd_moved_to_zone_start": "{item} moved to the start of {zone}",
+  "dnd_dropped": "{item} dropped at place {position} of {count}",
+  "dnd_zone_active_instruction": "To move an entry, tab to its handle and press Space or Enter",
+  "dnd_zone_drag_disabled_instruction": "Moving is turned off here"
 }

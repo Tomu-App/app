@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Attachment } from "svelte/attachments";
   import { m } from "#lib/paraglide/messages.js";
 
   let {
@@ -6,11 +7,14 @@
     fresh = false,
     onToggle,
     onEdit,
+    handle,
   }: {
     item: { id: string; text: string; checked: boolean };
     fresh?: boolean;
     onToggle: () => void;
     onEdit: () => void;
+    /** Marks the grip that drags the row; only it starts a drag, so a tap or a swipe on the row never does. */
+    handle: Attachment<HTMLElement>;
   } = $props();
 </script>
 
@@ -53,6 +57,17 @@
     </svg>
     <span class="sr">{m.item_edit()}: {item.text}</span>
   </button>
+  <!-- Not a <button>: the library ignores its drag keys on native buttons. It keeps role and tab stop up to date. -->
+  <div class="grip" role="button" tabindex="0" aria-label={m.item_move({ text: item.text })} {@attach handle}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <circle cx="9" cy="6" r="1.75" />
+      <circle cx="15" cy="6" r="1.75" />
+      <circle cx="9" cy="12" r="1.75" />
+      <circle cx="15" cy="12" r="1.75" />
+      <circle cx="9" cy="18" r="1.75" />
+      <circle cx="15" cy="18" r="1.75" />
+    </svg>
+  </div>
 </div>
 
 <style>
@@ -119,7 +134,8 @@
     color: var(--sheet);
     padding: 0.2rem;
   }
-  .edit {
+  .edit,
+  .grip {
     flex: none;
     align-self: center;
     display: grid;

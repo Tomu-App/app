@@ -21,6 +21,8 @@
   --font-count: "Archivo Variable", "Arial Narrow", sans-serif;
   --tap: 3rem;
   --radius: 6px;
+  /* Only a held entry lifts off the sheet while it is dragged. */
+  --lift: 0 0.4rem 1.25rem rgb(0 0 0 / 0.3);
   color-scheme: light dark;
 }
 
