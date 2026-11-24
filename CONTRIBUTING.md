@@ -45,9 +45,11 @@ Run `pnpm install` once, then `pnpm lint`, `pnpm check` and `pnpm test` before y
 
 From an up-to-date, clean `main`:
 
-- `pnpm release 0.3.0 --dry-run` prints the notes that would be released.
-- `pnpm release 0.3.0` moves `[Unreleased]` to `[0.3.0] - <today>`, opens a fresh `[Unreleased]`, fixes the compare links, commits `chore: release 0.3.0` and tags `v0.3.0`.
-- `pnpm release 0.3.0 --push` also pushes `main` and the tag and creates the GitHub release with that section as notes (needs `gh`).
+- `pnpm release 0.3.0 --dry-run` runs every check below and prints the notes that would be released. It changes nothing.
+- `pnpm release 0.3.0` moves `[Unreleased]` to `[0.3.0] - <today>`, opens a fresh `[Unreleased]`, fixes the compare links, commits `chore: release 0.3.0` and tags `v0.3.0` (annotated). Nothing is pushed; it prints the push command.
+- `pnpm release 0.3.0 --push` also pushes `main` and the tag in one atomic push and creates the GitHub release with that section as notes (needs a logged-in `gh`). The push runs the `pre-push` hook (lint, check, test, build), so it takes a while.
+
+Pick the version by [Semantic Versioning](https://semver.org/): while on 0.x, a new feature or a protocol change bumps the minor (0.3.0 to 0.4.0), a fix bumps the patch. The date is today in local time; to backfill an older release, edit `CHANGELOG.md` and tag by hand. The script lives in `scripts/release.mjs`, its tests in `scripts/release.test.mjs` (run by `pnpm test`).
 
 It checks everything before it changes anything and lists every problem at once: not on `main`, uncommitted changes, `main` not level with `origin/main`, an existing tag, an empty `[Unreleased]`, a version not higher than the last release, unknown options, or (with `--push`) a missing `gh` login. If committing or tagging fails, it undoes its local changes. The push is atomic; if it or the GitHub release fails, the script prints the exact command to retry or undo.
 

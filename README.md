@@ -10,9 +10,10 @@ pnpm workspace (`apps/*`, `packages/*`), Node version in `.node-version`, Bun ve
 
 ```sh
 pnpm install
-pnpm test    # all packages
+pnpm test    # all packages and the release script
 pnpm check   # TypeScript
 pnpm lint    # Prettier check (pnpm format to fix)
+pnpm release 0.3.0 --dry-run   # maintainer: cut a release, see CONTRIBUTING.md
 ```
 
 ## Packages
@@ -73,7 +74,7 @@ Tests run with Vitest and `fake-indexeddb`. On a low-memory Windows machine the 
 
 ## Caveats
 
-- No tagged release yet. The protocol in `packages/shared` can still change; the test vectors are the fixed point for other implementations.
+- Still 0.x. The protocol in `packages/shared` can still change; the test vectors are the fixed point for other implementations.
 - The web app needs the sync server; neither works alone. The server runs only on Bun.
 - Only a web client exists. The Kotlin app is planned, not built.
 
