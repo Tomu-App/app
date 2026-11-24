@@ -6,6 +6,8 @@ Every user-facing change adds an entry under `[Unreleased]` in the matching cate
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-25
+
 ### Added
 
 - Entries can have several lines. The add field makes one entry per submit and keeps line breaks; Enter starts a new line, "+" or Ctrl+Enter (Cmd+Enter on macOS) adds. The edit dialog works the same way.
@@ -44,6 +46,7 @@ First public release, live at `app.tomu.foo`.
 - Contributing guidelines, PR template, security policy and code of conduct.
 - Git hooks via husky: Conventional Commit check on `commit-msg`, CI checks on `pre-push` to `main`.
 
-[Unreleased]: https://github.com/Tomu-App/app/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Tomu-App/app/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Tomu-App/app/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Tomu-App/app/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Tomu-App/app/releases/tag/v0.1.0
