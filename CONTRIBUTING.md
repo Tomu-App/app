@@ -49,7 +49,7 @@ From an up-to-date, clean `main`:
 - `pnpm release 0.3.0` moves `[Unreleased]` to `[0.3.0] - <today>`, opens a fresh `[Unreleased]`, fixes the compare links, commits `chore: release 0.3.0` and tags `v0.3.0`.
 - `pnpm release 0.3.0 --push` also pushes `main` and the tag and creates the GitHub release with that section as notes (needs `gh`).
 
-It refuses to run off `main`, with uncommitted changes, behind `origin/main`, with an empty `[Unreleased]`, or with a version that is not higher than the last release.
+It checks everything before it changes anything and lists every problem at once: not on `main`, uncommitted changes, `main` not level with `origin/main`, an existing tag, an empty `[Unreleased]`, a version not higher than the last release, unknown options, or (with `--push`) a missing `gh` login. If committing or tagging fails, it undoes its local changes. The push is atomic; if it or the GitHub release fails, the script prints the exact command to retry or undo.
 
 ## AI tools
 
