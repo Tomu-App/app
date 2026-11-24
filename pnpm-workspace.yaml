@@ -27,4 +27,4 @@ minimumReleaseAgeExclude:
   - "workerd@1.20261103.1"
   - "wrangler@4.157.0"
   # Our own package (published 2026-11-23); no third-party release to wait out.
-  - "@lukez/svelte-dnd"
+  - "@lukez/svelte-dnd@1.1.0"
