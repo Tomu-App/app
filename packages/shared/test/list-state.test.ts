@@ -175,6 +175,28 @@ test("itemOrder ignores checked", () => {
   expect(listView(s).items.map((i) => i.id)).toEqual([I2, I3, I1]);
 });
 
+/** Simulates state stored before reordering existed: items without `pos`/`posStamp` keys. */
+const asStoredBeforeReordering = (state: ListState): ListState => {
+  for (const item of Object.values(state.items)) {
+    delete (item as Partial<typeof item>).pos;
+    delete (item as Partial<typeof item>).posStamp;
+  }
+  return state;
+};
+
+test("stored entries without pos fields accept a move", () => {
+  const s = asStoredBeforeReordering(run([add(I1, "a", 1), add(I2, "b", 2)]));
+  expect(() => run([move(I2, "5", 3), add(I1, "a", 1, A, "9")], s)).not.toThrow();
+  expect(ids([], s)).toEqual([I2, I1]);
+});
+
+test("stored entries without pos fields sort after positioned ones", () => {
+  const s = asStoredBeforeReordering(run([add(I1, "a", 1), add(I2, "b", 2)]));
+  run([add(I3, "c", 3, A, "5"), add(I4, "d", 4, A, "2")], s);
+  expect(itemOrder(s)).toEqual([I4, I3, I1, I2]);
+  expect(listView(s).items.map((i) => i.id)).toEqual([I4, I3, I1, I2]);
+});
+
 const CLIENTS = [A, B, "C".repeat(22)];
 const ITEMS = [I1, I2, I3, I4];
 const arbListOpLog = () =>

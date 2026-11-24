@@ -8,7 +8,10 @@ export type ItemState = {
   checkedStamp: Stamp | null;
   /** Stamp of the earliest `add`; null while the item is provisional (an op arrived before its `add`). */
   created: Stamp | null;
-  /** Fractional-index key set by `move` (or `add`); null for entries from before reordering existed. */
+  /**
+   * Fractional-index key set by `move` (or `add`); null for entries without one. The fields may be missing
+   * altogether on state stored before reordering existed, so read them with `== null`, never `=== null`.
+   */
   pos: string | null;
   posStamp: Stamp | null;
   deleted: boolean;
@@ -33,7 +36,7 @@ export const emptyListState = (): ListState => ({
   seen: {},
 });
 
-const newer = (stamp: Stamp, current: Stamp | null) => current === null || compareStamp(stamp, current) > 0;
+const newer = (stamp: Stamp, current: Stamp | null) => current == null || compareStamp(stamp, current) > 0;
 
 function itemOf(state: ListState, id: string): ItemState {
   return (state.items[id] ??= {
@@ -119,9 +122,9 @@ const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** Entries with `pos` by `pos` (ties by id), then entries without by creation. */
 function compareOrder([idA, a]: [string, ItemState], [idB, b]: [string, ItemState]): number {
-  if (a.pos !== null && b.pos !== null) return cmp(a.pos, b.pos) || cmp(idA, idB);
-  if (a.pos !== null) return -1;
-  if (b.pos !== null) return 1;
+  if (a.pos != null && b.pos != null) return cmp(a.pos, b.pos) || cmp(idA, idB);
+  if (a.pos != null) return -1;
+  if (b.pos != null) return 1;
   return compareStamp(a.created!, b.created!) || cmp(idA, idB);
 }
 
