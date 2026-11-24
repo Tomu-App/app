@@ -4,6 +4,7 @@ import { flushSync } from "svelte";
 import { afterEach, expect, test, vi } from "vitest";
 import StatusBadge from "#lib/app/components/StatusBadge.svelte";
 import Shell from "#lib/app/components/Shell.svelte";
+import { viewTransition } from "#lib/app/motion.ts";
 import { m } from "#lib/paraglide/messages.js";
 import type { Tomu } from "#lib/tomu/index.js";
 import { page } from "../app-state.svelte.ts";
@@ -18,6 +19,8 @@ const start = async (locks: LockManager | null = null): Promise<Tomu> => {
 };
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
+  Reflect.deleteProperty(document, "startViewTransition");
   cleanup();
   document.documentElement.className = "";
   page.url = new URL("http://localhost/");
@@ -161,4 +164,42 @@ test("blocked wins over onboarding", async () => {
   render(ShellFixture, { props: { tomu: blocked } });
   expect(screen.getByText(m.blocked_title())).toBeTruthy();
   expect(screen.queryByText(m.onboarding_welcome())).toBeNull();
+});
+
+const navigation = (complete: Promise<void> = Promise.resolve()) =>
+  ({ complete }) as unknown as Parameters<typeof viewTransition>[0];
+
+test("a page change starts one view transition that waits for the navigation", async () => {
+  let update: (() => Promise<void>) | undefined;
+  const start = vi.fn((cb: () => Promise<void>) => {
+    update = cb;
+    return {};
+  });
+  Object.defineProperty(document, "startViewTransition", { value: start, configurable: true });
+  let finish!: () => void;
+  const complete = new Promise<void>((resolve) => (finish = resolve));
+  const done = viewTransition(navigation(complete));
+  expect(start).toHaveBeenCalledOnce();
+  // SvelteKit may go on once the browser has captured the old page.
+  const waiting = update!();
+  await done;
+  let settled = false;
+  void waiting.then(() => (settled = true));
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  finish();
+  await waiting;
+  expect(settled).toBe(true);
+});
+
+test("a page change switches at once without view transition support", () => {
+  expect(viewTransition(navigation())).toBeUndefined();
+});
+
+test("a page change switches at once with reduced motion", () => {
+  const start = vi.fn();
+  Object.defineProperty(document, "startViewTransition", { value: start, configurable: true });
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce") }));
+  expect(viewTransition(navigation())).toBeUndefined();
+  expect(start).not.toHaveBeenCalled();
 });

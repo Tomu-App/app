@@ -2,8 +2,10 @@
   import "./app.css";
   import type { Snippet } from "svelte";
   import { PUBLIC_API_URL } from "$app/env/public";
+  import { onNavigate } from "$app/navigation";
   import Shell from "#lib/app/components/Shell.svelte";
   import Sheet from "#lib/app/components/Sheet.svelte";
+  import { viewTransition } from "#lib/app/motion.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { startTomu, type Tomu } from "#lib/tomu/index.js";
 
@@ -12,6 +14,9 @@
   let tomu = $state.raw<Tomu | null>(null);
   let failed = $state(false);
   let attempt = $state(0);
+
+  // Pages cross-fade (the look is in app.css); the header stays put.
+  onNavigate(viewTransition);
 
   $effect(() => {
     void attempt;

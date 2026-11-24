@@ -53,6 +53,8 @@
 html {
   font-size: 112.5%;
   -webkit-text-size-adjust: 100%;
+  /* The pressed state below replaces the system's flash on tap. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Percent roots keep the browser's own text size; the large view grows type and targets by a third. */
@@ -153,11 +155,71 @@ input::placeholder {
   flex: none;
 }
 
+/* Pressed state: a slight shrink and a darker tone for 100ms. The dragged row is none of these
+   (a div), and the library moves it with `transform`, so the two never fight. */
+button,
+a,
+[role="button"],
+[role="checkbox"] {
+  transition:
+    transform 100ms,
+    filter 100ms;
+}
+
+button:active,
+a:active,
+[role="button"]:active,
+[role="checkbox"]:active {
+  transform: scale(0.97);
+  filter: brightness(0.92);
+}
+
+/* Page change: the old page fades out and up, the new one fades in from below. The header
+   (view-transition-name: board in Board.svelte) does not fade; the new one replaces the old at once. */
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+::view-transition-old(root) {
+  animation: 180ms ease-out both page-out;
+}
+
+::view-transition-new(root) {
+  animation: 180ms ease-out both page-in;
+}
+
+::view-transition-old(board) {
+  display: none;
+}
+
+::view-transition-new(board) {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* Own rule: a browser without view transitions would drop a selector list that contains these. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.001ms !important;
   }
 }

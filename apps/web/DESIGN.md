@@ -248,15 +248,16 @@ Fixed furniture on every list sheet: label capitals, then title left with open c
 
 ## Elevation & Depth
 
-Flat. Depth comes from the sheet lying on the board and from thick lines. The single exception is the dialog, which lies above the sheet with a 3px ink border, a backdrop of 50% black, and a soft shadow.
+Flat. Depth comes from the sheet lying on the board and from thick lines. Two things lift off the sheet: the dialog, which lies above it with a 3px ink border, a backdrop of 50% black, and a soft shadow, and the entry or list a person is holding while dragging it.
 
 ### Shadow Vocabulary
 
 - **Dialog lift** (`box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 0.35)`): dialogs only.
+- **Drag lift** (`--lift`, `box-shadow: 0 0.4rem 1.25rem rgb(0 0 0 / 0.3)`, the same in light and dark): the held entry or list only, for as long as it is held.
 
 ### Named Rules
 
-**The Flat Sheet Rule.** No shadow on anything that lies on the sheet. Only an object above the sheet (a dialog) gets one.
+**The Flat Sheet Rule.** No shadow on anything that lies on the sheet. Only an object above the sheet gets one: a dialog, or the entry or list held in a drag.
 
 ## Shapes
 
@@ -330,8 +331,12 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 ### Motion
 
 - **Tick:** entries reorder with a 250ms flip.
+- **Dragging:** an entry (list screen) or a list (overview) is dragged only by its grip, the six-dot target at the right edge of the row. The held row lifts with the drag shadow and grows to 1.02 times its size; the other rows flip aside in 250ms. Dropping settles it in the same 250ms.
+- **Zone change:** the list screen has two drag zones, open and ticked. An entry that changes zone by being ticked or unticked (entries cannot be dragged across) travels by crossfade in 250ms.
+- **Page change:** the old page fades out and up by 0.5rem while the new one fades in from 0.5rem below, 180ms, ease-out (View Transitions API). The header keeps its own layer and does not animate. Browsers without view transitions switch at once.
+- **Pressed state:** buttons, links, checkboxes and grips shrink to 0.97 times their size and darken by 8% for 100ms while pressed. The system tap flash is off, so the two never double up.
 - **Tear off:** the ticked entries leave over 450ms with a cubic-in curve, sliding down 2.5rem and rotating 3 degrees from the top-left corner while fading. The sheet then closes up.
-- **Reduced motion:** the flip and tear durations are zero and a global rule cuts any remaining animation and transition to 0.001ms. Nothing else moves.
+- **Reduced motion:** the flip, the zone crossfade and the tear durations are zero, the page change switches at once, and a global rule cuts any remaining animation and transition (the pressed state included) to 0.001ms. Nothing else moves. The held entry still lifts, since that is a state, not a movement.
 
 ## Do's and Don'ts
 
@@ -347,10 +352,10 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 ### Don't:
 
 - **Don't** use red for buttons, errors, tags or decoration.
-- **Don't** put a shadow on anything that lies on the sheet; only dialogs lift.
+- **Don't** put a shadow on anything that lies on the sheet; only dialogs and the entry or list held in a drag lift.
 - **Don't** set sentences or labels in the condensed count face.
 - **Don't** use px for type sizes, which would ignore the large view.
 - **Don't** shrink a tap target below 3rem or a divider below 2px.
-- **Don't** add motion beyond the flip and the tear; honour reduced motion.
+- **Don't** add motion beyond the flip, the zone crossfade, the tear, the page change and the pressed state; honour reduced motion.
 
 **Not canonized (defects the build carries):** label colours from the product brief are not rendered anywhere (tags use only the shared/private treatment). The row dividers on the settings page and the label-sharing page are 1px dashed perforation grey, below the 2px divider floor; they are drift, not a second divider style.

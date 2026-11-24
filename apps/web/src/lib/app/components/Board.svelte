@@ -22,6 +22,8 @@
     padding: 1rem max(1rem, calc((100% - 40rem) / 2 + 1.25rem + 3px)) 0;
     background: var(--board);
     color: var(--board-ink);
+    /* Its own layer, so the page change leaves the header where it is (see app.css). */
+    view-transition-name: board;
   }
   .start,
   .end {

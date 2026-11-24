@@ -39,9 +39,10 @@ The link is the permission. The key lives only in the URL fragment (`https://app
 Confirmed scope of Plan 3b: the MVP column of the spec plus PWA install.
 
 - Lists: create (title, labels, folder), rename, delete for everyone.
-- Items: add via text field, Enter adds, several at once by comma or newline (pasted WhatsApp lists); tap to tick, ticked items move down; edit text; delete single items; "remove ticked" as a bulk action.
+- Items: add via text field, Enter adds, several at once by comma or newline (pasted WhatsApp lists); tap to tick, ticked items move down; edit text, where an edited item may contain line breaks (adding still splits on newline and comma); delete single items; "remove ticked" as a bulk action.
 - Labels: private and shared labels, shown in two styles (shared: filled board blue, private: grey outline; per `docs/spec.md`, "eigene Farbe" means one colour per kind, not per label); shared labels from others show as "Lisa / Familie"; recipients can create lists with a shared label.
 - Sharing: a label or a single list; copy link, show QR code, device share sheet. Sharing a label needs a display name first.
+- Drag and drop: items are reordered by their grip, within open or within ticked; the order is shared and synced. Lists are reordered by their grip within their folder group; that order is local to the device. A new list appears first on the overview (newest first). Tapping a row still ticks or opens it and swiping on a row still scrolls; a swipe that starts on a grip does not scroll the page (library behaviour).
 - Folders: local only, never shared.
 - Display name: local per device, prefix of shared labels.
 - Sync status: small "offline" / "synced" hint.
@@ -50,7 +51,7 @@ Confirmed scope of Plan 3b: the MVP column of the spec plus PWA install.
 - Only the public API in `src/lib/tomu/index.ts` may be used by the UI.
 - Limits: title up to 200 characters, item up to 900, label name up to 100, display name up to 50.
 - No access revocation in the MVP: whoever had the link keeps it. Deleting a list deletes it for everyone who has it.
-- No accounts, logins, analytics, third-party scripts, push notifications, attachments, drag-and-drop ordering, presence (not in 3b).
+- No accounts, logins, analytics, third-party scripts, push notifications, attachments, presence (not in 3b).
 - Strict CSP: no foreign scripts may read the key from the fragment. Keys and links never appear in logs.
 
 Undecided:
