@@ -35,6 +35,7 @@ export {
 } from "./schemas/messages.ts";
 export { importDocKey, encryptOp, decryptOp, EnvelopeTooLargeError } from "./crypto.ts";
 export { Clock, compareStamp, type Stamp } from "./clock.ts";
+export { POS_RE, MAX_POS, keyBetween, spreadKeys } from "./order.ts";
 export {
   emptyListState,
   applyListOp,
