@@ -283,6 +283,7 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 ### Entry row (signature)
 
 - 4rem tall, 2px perforation-grey divider at 45% mix. A 2.1rem box with a 3px ink border and 6px radius, then 1.35rem text; the whole row is the tap target, with a separate 3rem edit button in soft ink.
+- **Edit button:** the pen sits on a filled 3rem square with the 6px radius, ink mixed at 8% into the sheet (light and dark alike), so it reads as a tap target of its own. The pressed state applies on top. The grip at the right edge stays bare: it is held, not tapped, and the fill marks the one thing to tap.
 - **Ticked:** the box fills with ink and shows a sheet-colour check; text is soft ink, struck through with a 3px line; the row sits below the perforation.
 - **New:** a 2px red outlined "new" mark, 4px radius, inline with the text so it wraps with the words.
 

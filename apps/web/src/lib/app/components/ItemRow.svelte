@@ -145,6 +145,10 @@
     border-radius: var(--radius);
     color: var(--ink-soft);
   }
+  /* A filled square shows the pen as a tap target of its own. The grip stays bare: it is held, not tapped. */
+  .edit {
+    background: color-mix(in srgb, var(--ink) 8%, var(--sheet));
+  }
   .sr {
     position: absolute;
     width: 1px;
