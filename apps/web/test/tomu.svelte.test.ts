@@ -1,5 +1,14 @@
 // @vitest-environment jsdom
-import { buildLink, MAX_ITEM_TEXT, MAX_POS, MAX_TITLE, newDocId, newDocKey, parseLink } from "@tomu/shared";
+import {
+  buildLink,
+  MAX_ITEM_TEXT,
+  MAX_POS,
+  MAX_TITLE,
+  newDocId,
+  newDocKey,
+  parseLink,
+  spreadKeys,
+} from "@tomu/shared";
 import { flushSync } from "svelte";
 import { expect, test, vi } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
@@ -797,5 +806,45 @@ test("reorderLists rejects an unknown id and changes nothing", async () => {
   expect(titlesOf(t)).toEqual(["B", "A"]);
   await t.reorderLists([b, a]);
   expect(titlesOf(t)).toEqual(["B", "A"]);
+  await t.stop();
+});
+
+test("reorderLists renumbers a group whose ranks are equal, so the drag is not lost", async () => {
+  const opts = offlineOpts();
+  const [a, b, c] = [id22("tieA"), id22("tieB"), id22("tieC")];
+  const store = await LocalStore.open(opts.dbName!);
+  const docs = [a, b, c].map((id, n) => {
+    const rec = { ...listDoc(id), rank: 7 };
+    applyToDoc(rec, id22(`ti${n}`), op({ t: "init", kind: "list" }, 1));
+    applyToDoc(rec, id22(`tt${n}`), op({ t: "title", text: `L${n}` }, 2));
+    return rec;
+  });
+  await store.commit({ putDocs: docs });
+  await store.close();
+  const t = await startTomu(opts);
+  const shown = t.lists.map((l) => l.id);
+  const wanted = shown.toReversed();
+  await t.reorderLists(wanted);
+  expect(t.lists.map((l) => l.id)).toEqual(wanted);
+  const ranks = await storedRanks(opts);
+  expect(wanted.map((id) => ranks[id])).toEqual([7, 8, 9]);
+  await t.stop();
+});
+
+test("moveItem commits nothing when the fresh keys equal the stored ones", async () => {
+  const opts = offlineOpts();
+  const [a, b, c, d] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const keys = spreadKeys(4);
+  const { id } = await seedOrdered(
+    opts,
+    [a, b, c, d].map((item, i) => ({ id: item, text: item, pos: keys[i]! })),
+  );
+  const t = await startTomu(opts);
+  const commit = vi.spyOn(LocalStore.prototype, "commit");
+  // Neighbours out of order (a stale drop): the entry lands where it already is, with the keys it already has.
+  await t.moveItem(id, c, b, a);
+  expect(commit).not.toHaveBeenCalled();
+  expect(t.list(id)!.items.map((i) => i.id)).toEqual([a, b, c, d]);
+  commit.mockRestore();
   await t.stop();
 });

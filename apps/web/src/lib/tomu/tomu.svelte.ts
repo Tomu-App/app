@@ -335,6 +335,7 @@ export class Tomu {
     const moves = rest.flatMap((id, i) =>
       posOf(id) === keys[i] ? [] : [this.#op({ t: "move", item: id, pos: keys[i]! })],
     );
+    if (moves.length === 0) return;
     await this.#ops(listId, moves);
   }
 
@@ -551,13 +552,16 @@ export class Tomu {
 
   /**
    * Saves a new overview order. `ids` is the new order of some lists (one group in the overview): they trade
-   * the rank values they hold, so lists outside `ids` keep their place. Nothing changes when an id is unknown.
+   * the rank values they hold, so lists outside `ids` keep their place. Equal ranks (records numbered by
+   * `rankLists` next to ranked ones) cannot express an order, so then the group is renumbered `min..min+n-1`.
+   * Nothing changes when an id is unknown.
    */
   async reorderLists(ids: string[]): Promise<void> {
     const eng = this.#eng();
     const recs = ids.map((id) => this.#list(id));
     if (new Set(ids).size !== ids.length) throw new Error("duplicate list in the new order");
-    const ranks = recs.map((r) => r.rank).toSorted((a, b) => a - b);
+    let ranks = recs.map((r) => r.rank).toSorted((a, b) => a - b);
+    if (new Set(ranks).size !== ranks.length) ranks = ranks.map((_, i) => ranks[0]! + i);
     if (recs.every((r, i) => r.rank === ranks[i])) return;
     await eng.updateDocs(recs.map((r, i) => ({ ...r, rank: ranks[i]! })));
   }
