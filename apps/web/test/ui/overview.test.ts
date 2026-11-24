@@ -9,6 +9,9 @@ import LabelPicker from "#lib/app/components/LabelPicker.svelte";
 import ListRow from "#lib/app/components/ListRow.svelte";
 import Page from "../../src/routes/+page.svelte";
 import { addAll, offlineTomu } from "../helpers.ts";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { allowPointerDrags, dragged, mouseDrag, release } from "./drag.ts";
 import { renderWithTomu } from "./render.ts";
 
 const goto = vi.hoisted(() => vi.fn());
@@ -113,4 +116,22 @@ test("each list row has a move button and tapping the title still opens the list
   const link = screen.getByRole("link", { name: /Einkauf/ });
   expect(link.contains(screen.getByRole("button", { name: m.list_move({ title: "Einkauf" }) }))).toBe(false);
   expect(link.getAttribute("href")).toBe(`/list/${a}`);
+});
+
+test("a dragged list moves only up and down, and an empty slot marks where it lands", async () => {
+  allowPointerDrags();
+  const t = await start();
+  await t.createList("Einkauf");
+  await t.createList("Grillen");
+  renderWithTomu(Page, {}, t);
+  await mouseDrag(screen.getByRole("button", { name: m.list_move({ title: "Grillen" }) }), 80, 30);
+  const slots = document.querySelectorAll("li.drop-slot");
+  expect(slots).toHaveLength(1);
+  expect(slots[0]!.getAttribute("aria-label")).toBe("Grillen");
+  // The library hides the slot with an inline style; the global rule must win over it.
+  expect((slots[0] as HTMLElement).style.visibility).toBe("hidden");
+  const css = readFileSync(resolve(process.cwd(), "src/routes/app.css"), "utf8");
+  expect(css.match(/\.drop-slot\s*\{[^}]*\}/)?.[0]).toContain("visibility: visible !important");
+  expect(dragged()!.style.transform).toMatch(/^translate3d\(0px, \d+px, 0\)$/);
+  await release();
 });

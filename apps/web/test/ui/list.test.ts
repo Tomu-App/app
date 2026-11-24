@@ -12,6 +12,7 @@ import { applyToDoc } from "../../src/lib/tomu/docs.ts";
 import { startTomu, type Tomu } from "#lib/tomu/index.js";
 import Page from "../../src/routes/list/[id]/+page.svelte";
 import { addAll, id22, labelDoc, listDoc, offlineOpts, offlineTomu, op, outboxOf } from "../helpers.ts";
+import { allowPointerDrags, dragged, mouseDrag, pause, release } from "./drag.ts";
 import { renderWithTomu } from "./render.ts";
 
 const route = vi.hoisted(() => ({ id: "" }));
@@ -399,5 +400,96 @@ test("with motion, a ticked entry slides into the ticked list over the flip time
     await waitFor(() => expect(screen.getAllByRole("checkbox", { name: /Milch/ })).toHaveLength(1));
   } finally {
     delete (Element.prototype as { animate?: unknown }).animate;
+  }
+});
+
+test("a dragged entry moves only up and down, and an empty slot marks where it lands", async () => {
+  allowPointerDrags();
+  const t = await start();
+  await open(t, "Einkauf", ["a", "b"]);
+  await mouseDrag(screen.getByRole("button", { name: m.item_move({ text: "b" }) }), 80, -30);
+  const slots = document.querySelectorAll("li.drop-slot");
+  expect(slots).toHaveLength(1);
+  expect(slots[0]!.getAttribute("aria-label")).toBe("b");
+  expect(dragged()!.style.transform).toMatch(/^translate3d\(0px, -?\d+px, 0\)$/);
+  await release();
+});
+
+test("touch must rest 400ms on the grip before an entry lifts", async () => {
+  allowPointerDrags();
+  const t = await start();
+  await open(t, "Einkauf", ["a", "b"]);
+  const grip = screen.getByRole("button", { name: m.item_move({ text: "b" }) });
+  await fireEvent.touchStart(grip, { touches: [{ clientX: 10, clientY: 10 }] });
+  await pause(250); // well past the library's 80ms default
+  flushSync();
+  expect(dragged()).toBeNull();
+  expect(document.querySelector("li.drop-slot")).toBeNull();
+  await pause(250);
+  flushSync();
+  await waitFor(() => expect(document.querySelector("li.drop-slot")).not.toBeNull());
+  await release();
+});
+
+test("a drop that cannot be saved shows the save note", async () => {
+  allowPointerDrags();
+  const t = await start();
+  await open(t, "Einkauf", ["a", "b"]);
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.spyOn(t, "moveItem").mockRejectedValue(new Error("disk full"));
+  const handle = screen.getByRole("button", { name: m.item_move({ text: "b" }) });
+  handle.focus();
+  await fireEvent.keyDown(handle, { key: " " });
+  const held = (): Element => document.activeElement ?? document.body;
+  await fireEvent.keyDown(held(), { key: "ArrowUp" });
+  await fireEvent.keyDown(held(), { key: " " });
+  await waitFor(() => expect(screen.getByText(m.save_failed()).getAttribute("role")).toBe("alert"));
+  await waitFor(() => expect(rowTexts()).toEqual(["a", "b"]));
+  expect(warn).toHaveBeenCalled();
+});
+
+test("the lifted entry does not creep sideways while it is held", async () => {
+  allowPointerDrags();
+  // A layout stand-in: rows are 300px wide at x 20; the 1.02 lift makes the held row's box wider, as in a browser.
+  const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (
+    this: Element,
+  ) {
+    const w = (this as HTMLElement).style?.scale === "1.02" ? 306 : 300;
+    const x = 20 - (w - 300) / 2;
+    return {
+      x,
+      y: 0,
+      left: x,
+      top: 0,
+      right: x + w,
+      bottom: 64,
+      width: w,
+      height: 64,
+      toJSON() {},
+    } as DOMRect;
+  });
+  // The library drops an entry that leaves the document, which jsdom reports as 0 by 0, and may scroll.
+  const root = document.documentElement;
+  const scrollBy = vi.fn();
+  vi.stubGlobal("scrollBy", scrollBy);
+  Element.prototype.scrollBy = scrollBy;
+  for (const k of ["scrollWidth", "scrollHeight"])
+    Object.defineProperty(root, k, { value: 1000, configurable: true });
+  try {
+    const t = await start();
+    await open(t, "Einkauf", ["a", "b", "c"]);
+    await mouseDrag(screen.getByRole("button", { name: m.item_move({ text: "a" }) }), 0, 4);
+    const left = dragged()!.style.left;
+    for (const dy of [6, 8, 10]) {
+      await fireEvent.mouseMove(window, { clientX: 10, clientY: 20 + dy });
+      await t.addItem(t.lists[0]!.id, `x${dy}`); // a change from elsewhere re-renders the held zone
+      await pause(20);
+    }
+    expect(dragged()!.style.left).toBe(left);
+    await release();
+  } finally {
+    rect.mockRestore();
+    for (const k of ["scrollWidth", "scrollHeight"]) delete (root as unknown as Record<string, unknown>)[k];
+    delete (Element.prototype as Partial<Element>).scrollBy;
   }
 });

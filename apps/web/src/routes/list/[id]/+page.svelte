@@ -1,6 +1,13 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { dragHandle, dragHandleZone, SOURCES, TRIGGERS, type DndEvent } from "@lukez/svelte-dnd";
+  import {
+    dragHandle,
+    dragHandleZone,
+    SHADOW_ITEM_MARKER_PROPERTY_NAME,
+    SOURCES,
+    TRIGGERS,
+    type DndEvent,
+  } from "@lukez/svelte-dnd";
   import { tick } from "svelte";
   import { flip } from "svelte/animate";
   import { cubicIn } from "svelte/easing";
@@ -79,15 +86,27 @@
     held = { ...held, [zone]: list };
   };
 
+  // The placeholder where the held entry will land; the library marks it on the item.
+  const isSlot = (item: Item): boolean =>
+    (item as Item & { [SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean })[SHADOW_ITEM_MARKER_PROPERTY_NAME] ===
+    true;
+
+  // A drop that could not be saved: the entry goes back to its place and a note says so.
+  let moveFailed = $state(false);
+
   // Saved once per drag, with the neighbours inside the zone. Entries that went away during the drag are skipped.
   async function drop(zone: Zone, e: DndEvent<Item>): Promise<void> {
     const live = new Set((zone === "open" ? openItems : doneItems).map((i) => i.id));
     const order = e.items.filter((i) => live.has(i.id));
     const at = order.findIndex((i) => i.id === e.info.id);
+    moveFailed = false;
     try {
       if (at >= 0 && order.length > 1) {
         await tomu.moveItem(id, e.info.id, order[at - 1]?.id ?? null, order[at + 1]?.id ?? null);
       }
+    } catch (err) {
+      console.warn("could not save the entry order", err);
+      moveFailed = true;
     } finally {
       hold(zone, null);
     }
@@ -106,8 +125,14 @@
       items: shown[kind],
       type: kind,
       flipDurationMs: reduceMotion() ? 0 : FLIP_MS,
-      // The library's hold time for touch: a swipe that starts on the grip still scrolls.
-      delayTouchStart: true,
+      // Up and down only: the held entry never wanders sideways.
+      lockAxis: "y",
+      // The library reshapes the held entry to its slot on every update and measures it with the 1.02 lift
+      // included, so the entry crept sideways (towards the grip) with each step. Both are the same size anyway.
+      morphDisabled: true,
+      // Touch must rest 400ms on the grip before the entry lifts, so a slow scroll that ends on the grip moves
+      // nothing. The grip itself never scrolls the page (the library takes its touches); the rest of the row does.
+      delayTouchStart: 400,
       // The default outline is not part of the sheet; the lifted entry shows the drag.
       dropTargetStyle: {},
       transformDraggedElement: lift,
@@ -219,11 +244,13 @@
     <div class="rule"></div>
     <AddField bind:this={addField} listId={id} {fresh} />
     <InstallHint />
+    {#if moveFailed}<p class="failed" role="alert">{m.save_failed()}</p>{/if}
     <ul bind:this={openEl} aria-label={m.open_label()} {@attach zone("open")}>
       {#each shown.open as item (item.id)}
         <li
           data-item={item.id}
           aria-label={item.text}
+          class:drop-slot={isSlot(item)}
           animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}
           in:arrive|global={{ key: item.id, zone: "open" }}
           out:leave|global={{ key: item.id, zone: "open" }}
@@ -241,6 +268,7 @@
           <li
             data-item={item.id}
             aria-label={item.text}
+            class:drop-slot={isSlot(item)}
             animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}
             in:arrive|global={{ key: item.id, zone: "done" }}
             out:leave|global={{ key: item.id, zone: "done" }}
@@ -405,6 +433,10 @@
     font-size: 1.15rem;
     font-weight: 700;
     text-decoration: none;
+  }
+  .failed {
+    margin: 0.6rem 0 0;
+    font-weight: 700;
   }
   .note {
     margin: 2rem 0;

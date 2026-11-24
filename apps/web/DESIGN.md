@@ -330,9 +330,10 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 
 ### Motion
 
-- **Tick:** entries reorder with a 250ms flip.
-- **Dragging:** an entry (list screen) or a list (overview) is dragged only by its grip, the six-dot target at the right edge of the row. The held row lifts with the drag shadow and grows to 1.02 times its size; the other rows flip aside in 250ms. Dropping settles it in the same 250ms.
-- **Zone change:** the list screen has two drag zones, open and ticked. An entry that changes zone by being ticked or unticked (entries cannot be dragged across) travels by crossfade in 250ms.
+- **Tick:** entries reorder with a 150ms flip.
+- **Dragging:** an entry (list screen) or a list (overview) is dragged only by its grip, the six-dot target at the right edge of the row, and only up and down. On touch the finger must rest on the grip for 400ms before the row lifts, so a scroll that ends on the grip moves nothing; the grip itself does not scroll the page, the rest of the row does. The held row lifts with the drag shadow and grows to 1.02 times its size; the other rows flip aside in 150ms. Dropping settles it in the same 150ms.
+- **Drop slot:** where the held row will land, an empty slot of the row's height shows: the row's content is hidden, the slot is ink mixed at 6% into the sheet with a 3px dashed perforation-grey edge, in light and dark alike. Entries and lists look the same. The slot itself never moves on its own; it only flips with the other rows.
+- **Zone change:** the list screen has two drag zones, open and ticked. An entry that changes zone by being ticked or unticked (entries cannot be dragged across) travels by crossfade in 150ms.
 - **Page change:** the old page fades out and up by 0.5rem while the new one fades in from 0.5rem below, 180ms, ease-out (View Transitions API). The header keeps its own layer and does not animate. Browsers without view transitions switch at once.
 - **Pressed state:** buttons, links, checkboxes and grips shrink to 0.97 times their size and darken by 8% for 100ms while pressed. The system tap flash is off, so the two never double up.
 - **Tear off:** the ticked entries leave over 450ms with a cubic-in curve, sliding down 2.5rem and rotating 3 degrees from the top-left corner while fading. The sheet then closes up.

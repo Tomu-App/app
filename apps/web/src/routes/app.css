@@ -174,6 +174,28 @@ a:active,
   filter: brightness(0.92);
 }
 
+/* Drop slot: where a dragged entry or list will land (the library's shadow item). The row stays in place,
+   hidden, so the slot keeps its height; a faint ink tint and a perforation-style dashed edge show the gap.
+   The library hides the slot with an inline `visibility: hidden`, hence `!important`. The look sits on
+   `::after` because the library copies the slot's background and border onto the held row. No motion. */
+.drop-slot {
+  position: relative;
+  visibility: visible !important;
+}
+
+.drop-slot > * {
+  visibility: hidden;
+}
+
+.drop-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 6%, var(--sheet));
+  border: 3px dashed var(--perf);
+  pointer-events: none;
+}
+
 /* Page change: the old page fades out and up, the new one fades in from below. The header
    (view-transition-name: board in Board.svelte) does not fade, slide or resize; the new one replaces the old at once. */
 @keyframes page-out {

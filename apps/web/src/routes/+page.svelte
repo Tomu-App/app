@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { dragHandle, dragHandleZone, SOURCES, TRIGGERS, type DndEvent } from "@lukez/svelte-dnd";
+  import {
+    dragHandle,
+    dragHandleZone,
+    SHADOW_ITEM_MARKER_PROPERTY_NAME,
+    SOURCES,
+    TRIGGERS,
+    type DndEvent,
+  } from "@lukez/svelte-dnd";
   import { flip } from "svelte/animate";
   import Board from "#lib/app/components/Board.svelte";
   import ListRow from "#lib/app/components/ListRow.svelte";
@@ -26,6 +33,12 @@
     held = { ...held, [key]: lists };
   };
 
+  // The placeholder where the held list will land; the library marks it on the item.
+  const isSlot = (list: ListInfo): boolean =>
+    (list as ListInfo & { [SHADOW_ITEM_MARKER_PROPERTY_NAME]?: boolean })[
+      SHADOW_ITEM_MARKER_PROPERTY_NAME
+    ] === true;
+
   // Saved once per drag. Lists that went away during the drag are skipped; if saving fails the saved order shows again.
   async function drop(key: string, e: DndEvent<ListInfo>): Promise<void> {
     const live = new Set(tomu.lists.map((l) => l.id));
@@ -51,8 +64,14 @@
       items: shown(),
       type: key,
       flipDurationMs: reduceMotion() ? 0 : FLIP_MS,
-      // The library's hold time for touch: a swipe that starts on the grip still scrolls.
-      delayTouchStart: true,
+      // Up and down only: the held list never wanders sideways.
+      lockAxis: "y",
+      // The library reshapes the held list to its slot on every update and measures it with the 1.02 lift
+      // included, so the list crept sideways (towards the grip) with each step. Both are the same size anyway.
+      morphDisabled: true,
+      // Touch must rest 400ms on the grip before the list lifts, so a slow scroll that ends on the grip moves
+      // nothing. The grip itself never scrolls the page (the library takes its touches); the rest of the row does.
+      delayTouchStart: 400,
       // The default outline is not part of the sheet; the lifted list shows the drag.
       dropTargetStyle: {},
       transformDraggedElement: lift,
@@ -136,7 +155,11 @@
           {@attach zone(key, () => held[key] ?? group.lists)}
         >
           {#each held[key] ?? group.lists as list (list.id)}
-            <li aria-label={list.title} animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}>
+            <li
+              aria-label={list.title}
+              class:drop-slot={isSlot(list)}
+              animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}
+            >
               <ListRow {list} handle={dragHandle} />
             </li>
           {/each}
