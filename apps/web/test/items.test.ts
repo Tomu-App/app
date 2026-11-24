@@ -1,6 +1,6 @@
 import { MAX_ITEM_TEXT } from "@tomu/shared";
 import { expect, test } from "vitest";
-import { splitItems } from "../src/lib/tomu/items.ts";
+import { cleanMultiline, splitItems } from "../src/lib/tomu/items.ts";
 
 test("splits on commas and newlines, trims, drops empty parts", () => {
   expect(splitItems("Milch, Brot,,  Eier \n\nKäse\r\n Tomaten,")).toEqual([
@@ -31,4 +31,16 @@ test("one overlong part rejects the whole input", () => {
 
 test("a part of exactly the maximum length is fine", () => {
   expect(splitItems("x".repeat(MAX_ITEM_TEXT))).toHaveLength(1);
+});
+
+test("cleanMultiline keeps line breaks, cleans each line and collapses blank runs", () => {
+  expect(cleanMultiline("  Milch \r\n\r\n\r\n\tHafer  \rBrot\n\n")).toBe("Milch\n\nHafer\nBrot");
+});
+
+test("cleanMultiline strips control characters and collapses spaces", () => {
+  expect(cleanMultiline("a  b\u0007c")).toBe("a bc");
+});
+
+test("cleanMultiline of only breaks and spaces is empty", () => {
+  expect(cleanMultiline(" \n \r\n ")).toBe("");
 });

@@ -119,6 +119,38 @@ test("edit dialog saves new text; empty text cannot be saved", async () => {
   await waitFor(() => expect(t.list(id)!.items[0]!.text).toBe("Hafermilch"));
 });
 
+test("edit dialog keeps line breaks; breaks-only text cannot be saved", async () => {
+  const t = await start();
+  const id = await open(t, "Einkauf", "Milch");
+  await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
+  const input = screen.getByLabelText(m.item_text_field()) as HTMLTextAreaElement;
+  const save = screen.getByRole("button", { name: m.item_save() }) as HTMLButtonElement;
+  await fireEvent.input(input, { target: { value: "\n \r\n" } });
+  flushSync();
+  expect(save.disabled).toBe(true);
+  await fireEvent.input(input, { target: { value: "Milch\r\n\r\n\r\nHafer" } });
+  flushSync();
+  expect(save.disabled).toBe(false);
+  await fireEvent.click(save);
+  await waitFor(() => expect(t.list(id)!.items[0]!.text).toBe("Milch\n\nHafer"));
+});
+
+test("an entry with line breaks renders with pre-line", async () => {
+  const t = await start();
+  const id = await t.createList("Einkauf");
+  const [a] = await t.addItems(id, "a");
+  await t.editItem(id, a!, "a\nb");
+  route.id = id;
+  renderWithTomu(Page, {}, t);
+  const text = screen.getByText(
+    (_, el) => el?.classList.contains("text") === true && el.textContent === "a\nb",
+  );
+  // jsdom does not compute scoped Svelte CSS, so check the component rule instead.
+  const rowCss = readFileSync(resolve(process.cwd(), "src/lib/app/components/ItemRow.svelte"), "utf8");
+  expect(text.classList.contains("text")).toBe(true);
+  expect(rowCss.match(/\.text\s*\{[^}]*\}/)?.[0]).toContain("white-space: pre-line");
+});
+
 test("edit dialog deletes the item", async () => {
   const t = await start();
   const id = await open(t, "Einkauf", "Milch");

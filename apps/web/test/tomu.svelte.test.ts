@@ -37,6 +37,23 @@ test("create a list, add items by comma and newline, check, edit, delete, clear 
   await t.stop();
 });
 
+test("editing keeps line breaks, adding still splits on them", async () => {
+  const t = await startTomu(offlineOpts());
+  const id = await t.createList("Einkauf");
+  const [milch] = await t.addItems(id, "Milch");
+  await t.editItem(id, milch!, "Milch\nHafer");
+  expect(t.list(id)!.items.map((i) => i.text)).toEqual(["Milch\nHafer"]);
+  await expect(t.editItem(id, milch!, "\n \n")).rejects.toBeInstanceOf(RangeError);
+  expect(await t.addItems(id, "a\nb")).toHaveLength(2);
+  expect(
+    t
+      .list(id)!
+      .items.map((i) => i.text)
+      .sort(),
+  ).toEqual(["Milch\nHafer", "a", "b"]);
+  await t.stop();
+});
+
 test("invalid input throws before any op is stored", async () => {
   const opts = offlineOpts();
   const t = await startTomu(opts);

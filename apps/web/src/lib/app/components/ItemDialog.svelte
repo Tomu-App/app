@@ -2,6 +2,7 @@
   import { MAX_ITEM_TEXT } from "@tomu/shared";
   import { untrack } from "svelte";
   import { m } from "#lib/paraglide/messages.js";
+  import { cleanMultiline } from "#lib/tomu/items.ts";
   import Dialog from "./Dialog.svelte";
 
   let {
@@ -24,8 +25,9 @@
     if (open) text = untrack(() => item?.text ?? "");
   });
 
-  const tooLong = $derived(text.trim().length > MAX_ITEM_TEXT);
-  const valid = $derived(text.trim().length > 0 && !tooLong && !busy);
+  const clean = $derived(cleanMultiline(text));
+  const tooLong = $derived(clean.length > MAX_ITEM_TEXT);
+  const valid = $derived(clean.length > 0 && !tooLong && !busy);
 
   async function save(e: SubmitEvent): Promise<void> {
     e.preventDefault();

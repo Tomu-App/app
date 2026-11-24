@@ -91,6 +91,7 @@
   .text {
     min-width: 0;
     overflow-wrap: anywhere;
+    white-space: pre-line;
     line-height: 1.25;
   }
   /* Inside the text flow, so a narrow column wraps it with the words. */

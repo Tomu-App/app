@@ -17,7 +17,7 @@ import {
 import type { Connect } from "./connection.ts";
 import { LocalStore } from "./db.ts";
 import { newDocRecord } from "./docs.ts";
-import { cleanEntry, splitItems } from "./items.ts";
+import { cleanMultiline, splitItems } from "./items.ts";
 import { SyncEngine } from "./sync.ts";
 import type { Change, DocRecord, Folder, LocalLabel, Origin, Snapshot, SyncStatus } from "./types.ts";
 
@@ -62,9 +62,9 @@ function bounded(input: string, max: number, what: string): string {
   return s;
 }
 
-/** One list entry, cleaned like `splitItems` does but never split. */
+/** One list entry, cleaned like `splitItems` does but never split; line breaks stay. */
 function entryText(input: string): string {
-  const s = cleanEntry(input);
+  const s = cleanMultiline(input);
   if (s.length < 1 || s.length > MAX_ITEM_TEXT)
     throw new RangeError(`entry must have 1 to ${MAX_ITEM_TEXT} characters`);
   return s;
