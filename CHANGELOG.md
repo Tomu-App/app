@@ -2,7 +2,7 @@
 
 All notable changes to **Tomu App** are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
-Every user-facing change adds an entry under `[Unreleased]` in the matching category (Added, Changed, Deprecated, Removed, Fixed, Security). A release renames `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, opens a fresh `[Unreleased]` and is tagged `vx.y.z`.
+Every user-facing change adds an entry under `[Unreleased]` in the matching category (Added, Changed, Deprecated, Removed, Fixed, Security). A release renames `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, opens a fresh `[Unreleased]` and is tagged `vx.y.z`; `pnpm release x.y.z` does all of that (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 

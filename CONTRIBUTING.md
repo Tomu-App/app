@@ -41,6 +41,16 @@ Run `pnpm install` once, then `pnpm lint`, `pnpm check` and `pnpm test` before y
 - Describe what you changed and why, and confirm CI is green. The [PR template](.github/pull_request_template.md) has the sections.
 - The CHANGELOG follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries go under `[Unreleased]`; the maintainer cuts releases.
 
+## Releasing (maintainer)
+
+From an up-to-date, clean `main`:
+
+- `pnpm release 0.3.0 --dry-run` prints the notes that would be released.
+- `pnpm release 0.3.0` moves `[Unreleased]` to `[0.3.0] - <today>`, opens a fresh `[Unreleased]`, fixes the compare links, commits `chore: release 0.3.0` and tags `v0.3.0`.
+- `pnpm release 0.3.0 --push` also pushes `main` and the tag and creates the GitHub release with that section as notes (needs `gh`).
+
+It checks everything before it changes anything and lists every problem at once: not on `main`, uncommitted changes, `main` not level with `origin/main`, an existing tag, an empty `[Unreleased]`, a version not higher than the last release, unknown options, or (with `--push`) a missing `gh` login. If committing or tagging fails, it undoes its local changes. The push is atomic; if it or the GitHub release fails, the script prints the exact command to retry or undo.
+
 ## AI tools
 
 AI tools are welcome - this repo is layed out for Claude (as can be seen in CLAUDE.md). You stay responsible for what you submit: read it, test it, and be able to explain it in review (also _why_ certain decisions have been made).
