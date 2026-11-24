@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { PendingDeletes } from "#lib/app/undo.svelte.ts";
 import { m } from "#lib/paraglide/messages.js";
 import { startTomu, type Tomu } from "#lib/tomu/index.js";
-import { freshDbName, offlineOpts, offlineTomu } from "../helpers.ts";
+import { addAll, freshDbName, offlineOpts, offlineTomu } from "../helpers.ts";
 import { renderWithTomu } from "./render.ts";
 import ShellPage from "./ShellPage.svelte";
 import UndoPage from "./UndoPage.svelte";
@@ -60,7 +60,7 @@ const itemTexts = (t: Tomu, id: string): string[] =>
 const setup = async (pending = new PendingDeletes()) => {
   const t = await start();
   const id = await t.createList("Einkauf");
-  await t.addItems(id, "Milch, Brot, Eier");
+  await addAll(t, id, "Milch", "Brot", "Eier");
   for (const item of t.list(id)!.items) if (item.text !== "Eier") await t.setChecked(id, item.id, true);
   route.id = id;
   renderWithTomu(UndoPage, {}, t, pending);
@@ -93,7 +93,7 @@ test("after tearing off, focus lands on the first remaining entry", async () => 
 test("after tearing off the last entries, focus lands on the add field", async () => {
   const t = await start();
   const id = await t.createList("Einkauf");
-  await t.addItems(id, "Milch");
+  await t.addItem(id, "Milch");
   for (const item of t.list(id)!.items) await t.setChecked(id, item.id, true);
   route.id = id;
   renderWithTomu(UndoPage, {}, t);
@@ -145,7 +145,7 @@ test("closing the app inside the undo window deletes nothing", async () => {
   const db = freshDbName();
   const t = await start(db);
   const id = await t.createList("Einkauf");
-  await t.addItems(id, "Milch, Brot");
+  await addAll(t, id, "Milch", "Brot");
   for (const item of t.list(id)!.items) await t.setChecked(id, item.id, true);
   route.id = id;
   renderWithTomu(ShellPage, { tomu: t }, t);

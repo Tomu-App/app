@@ -28,7 +28,7 @@ test("Lisa shares a label; Mike sees Lisa / Familie with all its lists", async (
   wochenende = await lisa.createList("Wochenende", [label]);
   geburtstag = await lisa.createList("Geburtstag", [label]);
   privat = await lisa.createList("Privat");
-  await lisa.addItems(wochenende, "Milch");
+  await lisa.addItem(wochenende, "Milch");
   const link = await lisa.shareLabel(label);
   // A link is sent after the docs exist on the server; a doc Mike subscribes to too early is retried only after 60 s.
   await waitFor(() => lisa.status === "synced", 3000);

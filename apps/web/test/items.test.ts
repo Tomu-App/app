@@ -1,40 +1,21 @@
-import { MAX_ITEM_TEXT } from "@tomu/shared";
 import { expect, test } from "vitest";
-import { cleanMultiline, splitItems } from "../src/lib/tomu/items.ts";
+import { cleanEntry, cleanMultiline } from "../src/lib/tomu/items.ts";
 
-test("splits on commas and newlines, trims, drops empty parts", () => {
-  expect(splitItems("Milch, Brot,,  Eier \n\nKäse\r\n Tomaten,")).toEqual([
-    "Milch",
-    "Brot",
-    "Eier",
-    "Käse",
-    "Tomaten",
-  ]);
+test("cleanEntry collapses inner whitespace and strips control characters", () => {
+  expect(cleanEntry("Hafer\tmilch   1l")).toBe("Hafer milch 1l");
+  expect(cleanEntry("Mi\u0000lch\u007f")).toBe("Milch");
 });
 
-test("collapses inner whitespace and strips control characters", () => {
-  expect(splitItems("Hafer\tmilch   1l")).toEqual(["Hafer milch 1l"]);
-  expect(splitItems("Mi\u0000lch\u007f")).toEqual(["Milch"]);
-});
-
-test("keeps emoji and umlauts", () => {
-  expect(splitItems("Äpfel 🍎")).toEqual(["Äpfel 🍎"]);
-});
-
-test("empty input gives no items", () => {
-  expect(splitItems(" ,\n ")).toEqual([]);
-});
-
-test("one overlong part rejects the whole input", () => {
-  expect(() => splitItems(`Milch, ${"x".repeat(MAX_ITEM_TEXT + 1)}`)).toThrow(RangeError);
-});
-
-test("a part of exactly the maximum length is fine", () => {
-  expect(splitItems("x".repeat(MAX_ITEM_TEXT))).toHaveLength(1);
+test("cleanEntry keeps emoji, umlauts and commas", () => {
+  expect(cleanEntry("Äpfel 🍎, Birnen")).toBe("Äpfel 🍎, Birnen");
 });
 
 test("cleanMultiline keeps line breaks, cleans each line and collapses blank runs", () => {
   expect(cleanMultiline("  Milch \r\n\r\n\r\n\tHafer  \rBrot\n\n")).toBe("Milch\n\nHafer\nBrot");
+});
+
+test("cleanMultiline never splits: commas and pasted lists stay one text", () => {
+  expect(cleanMultiline("Milch, Brot\nEier")).toBe("Milch, Brot\nEier");
 });
 
 test("cleanMultiline strips control characters and collapses spaces", () => {

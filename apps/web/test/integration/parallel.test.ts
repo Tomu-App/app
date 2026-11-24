@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "vitest";
 import { client, startTestServer, stopClients, waitFor } from "./harness.ts";
+import { addAll } from "../helpers.ts";
 
 let server: Awaited<ReturnType<typeof startTestServer>>;
 beforeAll(async () => {
@@ -18,7 +19,7 @@ test("two devices edit the same list at the same time; changes show up within a 
   await mike.openLink(lisa.shareList(id));
   await waitFor(() => mike.list(id)?.title === "Party", 3000);
 
-  await Promise.all([lisa.addItems(id, "A1, A2, A3"), mike.addItems(id, "M1, M2, M3")]);
+  await Promise.all([addAll(lisa, id, "A1", "A2", "A3"), addAll(mike, id, "M1", "M2", "M3")]);
   const texts = (t: typeof lisa): string =>
     t
       .list(id)!

@@ -14,15 +14,25 @@ import { expect, test, vi } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
 import { applyToDoc, newDocRecord } from "../src/lib/tomu/docs.ts";
 import { DisplayNameRequiredError, startTomu, type Tomu } from "../src/lib/tomu/tomu.svelte.ts";
-import { fakeLocks, fakeSocket, id22, labelDoc, listDoc, offlineOpts, op, outboxOf } from "./helpers.ts";
+import {
+  addAll,
+  fakeLocks,
+  fakeSocket,
+  id22,
+  labelDoc,
+  listDoc,
+  offlineOpts,
+  op,
+  outboxOf,
+} from "./helpers.ts";
 
 const keyOf = (t: Tomu, listId: string): string => parseLink(t.shareList(listId))!.key;
 const types = (entries: { op: { t: string } }[]): string[] => entries.map((e) => e.op.t);
 
-test("create a list, add items by comma and newline, check, edit, delete, clear checked", async () => {
+test("create a list, add items, check, edit, delete, clear checked", async () => {
   const t = await startTomu(offlineOpts());
   const id = await t.createList("Einkauf");
-  const [milch, brot] = await t.addItems(id, "Milch, Brot\nEier");
+  const [milch, brot] = await addAll(t, id, "Milch", "Brot", "Eier");
   await t.setChecked(id, milch!, true);
   await t.editItem(id, brot!, "Vollkornbrot");
   expect(t.list(id)).toEqual({
@@ -46,20 +56,30 @@ test("create a list, add items by comma and newline, check, edit, delete, clear 
   await t.stop();
 });
 
-test("editing keeps line breaks, adding still splits on them", async () => {
+test("editing keeps line breaks", async () => {
   const t = await startTomu(offlineOpts());
   const id = await t.createList("Einkauf");
-  const [milch] = await t.addItems(id, "Milch");
+  const milch = await t.addItem(id, "Milch");
   await t.editItem(id, milch!, "Milch\nHafer");
   expect(t.list(id)!.items.map((i) => i.text)).toEqual(["Milch\nHafer"]);
   await expect(t.editItem(id, milch!, "\n \n")).rejects.toBeInstanceOf(RangeError);
-  expect(await t.addItems(id, "a\nb")).toHaveLength(2);
-  expect(
-    t
-      .list(id)!
-      .items.map((i) => i.text)
-      .sort(),
-  ).toEqual(["Milch\nHafer", "a", "b"]);
+  await t.stop();
+});
+
+test("addItem makes one entry per call: line breaks stay, commas are text, the text is cleaned", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const id = await t.createList("Einkauf");
+  const a = await t.addItem(id, "  Milch, Brot \r\n\r\n\r\n\tEier  \n");
+  expect(t.list(id)!.items).toEqual([{ id: a, text: "Milch, Brot\n\nEier", checked: false }]);
+  expect((await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "add")).toHaveLength(1);
+  // Nothing left after cleaning: nothing is added.
+  expect(await t.addItem(id, " \n\u0007 \r\n ")).toBeNull();
+  expect(t.list(id)!.items).toHaveLength(1);
+  // Exactly the limit is fine; line breaks count.
+  const max = `${"x".repeat(MAX_ITEM_TEXT - 2)}\ny`;
+  expect(await t.addItem(id, max)).not.toBeNull();
+  expect(t.list(id)!.items.at(-1)!.text).toBe(max);
   await t.stop();
 });
 
@@ -72,7 +92,7 @@ test("invalid input throws before any op is stored", async () => {
   await expect(t.createList("   ")).rejects.toBeInstanceOf(RangeError);
   await expect(t.createList("x".repeat(MAX_TITLE + 1))).rejects.toBeInstanceOf(RangeError);
   await expect(t.renameList(id, "")).rejects.toBeInstanceOf(RangeError);
-  await expect(t.addItems(id, `ok, ${"y".repeat(MAX_ITEM_TEXT + 1)}`)).rejects.toBeInstanceOf(RangeError);
+  await expect(t.addItem(id, `ok${"y".repeat(MAX_ITEM_TEXT)}`)).rejects.toBeInstanceOf(RangeError);
   await expect(t.editItem(id, crypto.randomUUID(), "")).rejects.toBeInstanceOf(RangeError);
   await expect(t.createLabel("")).rejects.toBeInstanceOf(RangeError);
   await expect(t.createLabel("l".repeat(101))).rejects.toBeInstanceOf(RangeError);
@@ -82,7 +102,7 @@ test("invalid input throws before any op is stored", async () => {
   expect(t.lists.length).toBe(1);
   expect(t.labels).toEqual([]);
   expect(t.displayName).toBe("");
-  expect(await t.addItems(id, " , \n ")).toEqual([]);
+  expect(await t.addItem(id, " \n\u0007 ")).toBeNull();
   expect(await outboxOf(opts.dbName!, {})).toEqual(before);
   await t.stop();
 });
@@ -266,7 +286,7 @@ test("settings and data survive a restart", async () => {
   const label = await t.createLabel("Familie");
   const f = await t.createFolder("Küche");
   const id = await t.createList("Einkauf", [label], f);
-  await t.addItems(id, "Milch, Brot");
+  await addAll(t, id, "Milch", "Brot");
   const lists = t.lists;
   const view = t.list(id);
   await t.stop();
@@ -327,7 +347,7 @@ test("views are replaced, not mutated, so effects rerun", async () => {
     });
   });
   flushSync();
-  await t.addItems(id, "Milch");
+  await t.addItem(id, "Milch");
   flushSync();
   expect(seen).toEqual([0, 1]);
   stop();
@@ -550,7 +570,7 @@ test("after the state rebuild an offline start still shows the lists and their e
   const opts = offlineOpts();
   const t = await startTomu(opts);
   const id = await t.createList("Einkauf");
-  await t.addItems(id, "Milch, Brot");
+  await addAll(t, id, "Milch", "Brot");
   await t.stop();
 
   const store = await LocalStore.open(opts.dbName);
@@ -599,7 +619,7 @@ test("moveItem on a new list sends one move", async () => {
   const opts = offlineOpts();
   const t = await startTomu(opts);
   const id = await t.createList("Einkauf");
-  const [a, b, c] = await t.addItems(id, "a, b, c");
+  const [a, b, c] = await addAll(t, id, "a", "b", "c");
   expect(texts(t, id)).toEqual(["a", "b", "c"]);
   const adds = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "add");
   expect(adds.every((e) => e.op.t === "add" && e.op.pos !== undefined)).toBe(true);
@@ -624,7 +644,7 @@ test("entries without pos: a new entry goes last, the first move gives every ent
   ]);
   const t = await startTomu(opts);
   expect(texts(t, id)).toEqual(["x", "y", "z"]);
-  const [neu] = await t.addItems(id, "neu");
+  const neu = await t.addItem(id, "neu");
   expect(texts(t, id)).toEqual(["x", "y", "z", "neu"]);
   const adds = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "add");
   expect(adds).toHaveLength(1);
@@ -640,7 +660,7 @@ test("entries without pos: a new entry goes last, the first move gives every ent
 test("moving within the ticked zone uses the global order", async () => {
   const t = await startTomu(offlineOpts());
   const id = await t.createList("Einkauf");
-  const [a, b, c] = await t.addItems(id, "a, b, c");
+  const [a, b, c] = await addAll(t, id, "a", "b", "c");
   await t.setChecked(id, a!, true);
   await t.setChecked(id, b!, true);
   expect(t.list(id)!.items.map((i) => [i.text, i.checked])).toEqual([
@@ -702,7 +722,7 @@ test("moveItem rejects unknown input and ignores a move to the current place", a
   const opts = offlineOpts();
   const t = await startTomu(opts);
   const id = await t.createList("Einkauf");
-  const [a, b, c] = await t.addItems(id, "a, b, c");
+  const [a, b, c] = await addAll(t, id, "a", "b", "c");
   const count = (await outboxOf(opts.dbName!, {})).length;
   await expect(t.moveItem(id, crypto.randomUUID(), null, a!)).rejects.toThrow();
   await expect(t.moveItem(newDocId(), a!, null, b!)).rejects.toThrow();

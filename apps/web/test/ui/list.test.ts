@@ -11,7 +11,7 @@ import { LocalStore } from "../../src/lib/tomu/db.ts";
 import { applyToDoc } from "../../src/lib/tomu/docs.ts";
 import { startTomu, type Tomu } from "#lib/tomu/index.js";
 import Page from "../../src/routes/list/[id]/+page.svelte";
-import { id22, labelDoc, listDoc, offlineOpts, offlineTomu, op, outboxOf } from "../helpers.ts";
+import { addAll, id22, labelDoc, listDoc, offlineOpts, offlineTomu, op, outboxOf } from "../helpers.ts";
 import { renderWithTomu } from "./render.ts";
 
 const route = vi.hoisted(() => ({ id: "" }));
@@ -46,9 +46,9 @@ afterEach(async () => {
   await Promise.all(started.splice(0).map((t) => t.stop()));
 });
 
-const open = async (t: Tomu, title = "Einkauf", items = ""): Promise<string> => {
+const open = async (t: Tomu, title = "Einkauf", items: string[] = []): Promise<string> => {
   const id = await t.createList(title);
-  if (items) await t.addItems(id, items);
+  await addAll(t, id, ...items);
   route.id = id;
   renderWithTomu(Page, {}, t);
   return id;
@@ -60,20 +60,51 @@ const type = async (text: string): Promise<void> => {
   await fireEvent.input(field(), { target: { value: text } });
   flushSync();
 };
-const enter = (): Promise<boolean> => fireEvent.keyDown(field(), { key: "Enter" });
+/** Ctrl+Enter, or Cmd+Enter with `meta`. Resolves to false when the key's default (a line break) was prevented. */
+const enter = (mod: "ctrl" | "meta" | null = "ctrl"): Promise<boolean> =>
+  fireEvent.keyDown(field(), { key: "Enter", ctrlKey: mod === "ctrl", metaKey: mod === "meta" });
 
-test("adding Milch, Brot\\nEier creates three open items and keeps focus", async () => {
+test("Enter alone is a line break and adds nothing", async () => {
+  const t = await start();
+  const id = await open(t);
+  await type("Milch");
+  expect(await enter(null)).toBe(true); // not prevented: the browser inserts the break
+  await new Promise((r) => setTimeout(r, 20));
+  expect(t.list(id)!.items).toHaveLength(0);
+  expect(field().value).toBe("Milch");
+});
+
+test("Ctrl+Enter adds the whole text as one entry, line breaks and commas kept, and keeps focus", async () => {
   const t = await start();
   const id = await open(t);
   field().focus();
   await type("Milch, Brot\nEier");
-  await enter();
-  await waitFor(() => expect(t.list(id)!.items).toHaveLength(3));
+  expect(await enter()).toBe(false);
+  await waitFor(() => expect(t.list(id)!.items).toHaveLength(1));
+  expect(t.list(id)!.items[0]!.text).toBe("Milch, Brot\nEier");
   await waitFor(() => expect(field().value).toBe(""));
-  expect(screen.getAllByRole("checkbox")).toHaveLength(3);
-  expect(screen.getByText("3")).toBeTruthy();
+  expect(screen.getAllByRole("checkbox")).toHaveLength(1);
+  expect(screen.getByText("1")).toBeTruthy();
   expect(document.activeElement).toBe(field());
   expect(screen.queryByText(/abgehakt/)).toBeNull();
+});
+
+test("Cmd+Enter adds too; the text is cleaned like an edit", async () => {
+  const t = await start();
+  const id = await open(t);
+  await type("  Milch \r\n\r\n\r\n\tHafer  \n");
+  await enter("meta");
+  await waitFor(() => expect(t.list(id)!.items.map((i) => i.text)).toEqual(["Milch\n\nHafer"]));
+});
+
+test("text that is empty after cleaning adds nothing", async () => {
+  const t = await start();
+  const id = await open(t);
+  await type(" \n\u0007 \r\n ");
+  await enter();
+  await fireEvent.click(screen.getByRole("button", { name: m.add_button() }));
+  await new Promise((r) => setTimeout(r, 20));
+  expect(t.list(id)!.items).toHaveLength(0);
 });
 
 test("plus button adds and returns focus to the field", async () => {
@@ -88,9 +119,10 @@ test("plus button adds and returns focus to the field", async () => {
 test("too long input shows a hint and keeps the text", async () => {
   const t = await start();
   const id = await open(t);
-  const long = "x".repeat(901);
+  const long = `${"x".repeat(899)}\ny`; // 901 with the break, as in the edit dialog
   await type(long);
   await enter();
+  await fireEvent.click(screen.getByRole("button", { name: m.add_button() }));
   await waitFor(() => expect(screen.getByText(m.item_too_long())).toBeTruthy());
   expect(field().value).toBe(long);
   expect(t.list(id)!.items).toHaveLength(0);
@@ -98,7 +130,7 @@ test("too long input shows a hint and keeps the text", async () => {
 
 test("tapping a row ticks it and moves it below the perforation", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch, Brot");
+  const id = await open(t, "Einkauf", ["Milch", "Brot"]);
   await fireEvent.click(screen.getByRole("checkbox", { name: /Milch/ }));
   await waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Milch")!.checked).toBe(true));
   const perf = await screen.findByText(m.done_count({ count: 1 }));
@@ -116,7 +148,7 @@ test("tapping a row ticks it and moves it below the perforation", async () => {
 
 test("edit dialog saves new text; empty text cannot be saved", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch");
+  const id = await open(t, "Einkauf", ["Milch"]);
   await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
   const input = screen.getByLabelText(m.item_text_field()) as HTMLTextAreaElement;
   expect(input.value).toBe("Milch");
@@ -133,7 +165,7 @@ test("edit dialog saves new text; empty text cannot be saved", async () => {
 
 test("edit dialog keeps line breaks; breaks-only text cannot be saved", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch");
+  const id = await open(t, "Einkauf", ["Milch"]);
   await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
   const input = screen.getByLabelText(m.item_text_field()) as HTMLTextAreaElement;
   const save = screen.getByRole("button", { name: m.item_save() }) as HTMLButtonElement;
@@ -147,10 +179,35 @@ test("edit dialog keeps line breaks; breaks-only text cannot be saved", async ()
   await waitFor(() => expect(t.list(id)!.items[0]!.text).toBe("Milch\n\nHafer"));
 });
 
+test("edit dialog: Enter is a line break, Ctrl+Enter and Cmd+Enter save", async () => {
+  const t = await start();
+  const id = await open(t, "Einkauf", ["Milch"]);
+  const edit = async (): Promise<HTMLTextAreaElement> => {
+    await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
+    return screen.getByLabelText(m.item_text_field()) as HTMLTextAreaElement;
+  };
+  let input = await edit();
+  await fireEvent.input(input, { target: { value: "Milch\nHafer" } });
+  flushSync();
+  expect(await fireEvent.keyDown(input, { key: "Enter" })).toBe(true); // the browser inserts the break
+  await new Promise((r) => setTimeout(r, 20));
+  expect(t.list(id)!.items[0]!.text).toBe("Milch");
+  expect(screen.queryByLabelText(m.item_text_field())).not.toBeNull();
+  expect(await fireEvent.keyDown(input, { key: "Enter", ctrlKey: true })).toBe(false);
+  await waitFor(() => expect(t.list(id)!.items[0]!.text).toBe("Milch\nHafer"));
+  await waitFor(() => expect(screen.queryByLabelText(m.item_text_field())).toBeNull());
+
+  input = await edit();
+  await fireEvent.input(input, { target: { value: "Hafer" } });
+  flushSync();
+  await fireEvent.keyDown(input, { key: "Enter", metaKey: true });
+  await waitFor(() => expect(t.list(id)!.items[0]!.text).toBe("Hafer"));
+});
+
 test("an entry with line breaks renders with pre-line", async () => {
   const t = await start();
   const id = await t.createList("Einkauf");
-  const [a] = await t.addItems(id, "a");
+  const a = await t.addItem(id, "a");
   await t.editItem(id, a!, "a\nb");
   route.id = id;
   renderWithTomu(Page, {}, t);
@@ -165,7 +222,7 @@ test("an entry with line breaks renders with pre-line", async () => {
 
 test("edit dialog deletes the item", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch");
+  const id = await open(t, "Einkauf", ["Milch"]);
   await fireEvent.click(screen.getByRole("button", { name: new RegExp(m.item_edit()) }));
   await fireEvent.click(screen.getByRole("button", { name: m.item_delete() }));
   await waitFor(() => expect(screen.queryByText("Milch")).toBeNull());
@@ -175,7 +232,7 @@ test("edit dialog deletes the item", async () => {
 test("long title and item wrap without horizontal overflow", async () => {
   const t = await start();
   const id = await t.createList("T".repeat(120));
-  await t.addItems(id, "w".repeat(900));
+  await t.addItem(id, "w".repeat(900));
   route.id = id;
   renderWithTomu(Page, {}, t);
   const h1 = screen.getByRole("heading", { level: 1 });
@@ -227,10 +284,10 @@ test("a list that is not there says so and links back", async () => {
 
 test("an entry that arrives from elsewhere carries the neu mark", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch");
+  const id = await open(t, "Einkauf", ["Milch"]);
   expect(screen.queryByText(m.fresh_mark())).toBeNull();
   // Not via the add field: stands in for another device.
-  await t.addItems(id, "Kaffee");
+  await t.addItem(id, "Kaffee");
   await waitFor(() => expect(screen.getByText("Kaffee")).toBeTruthy());
   expect(screen.getByText(m.fresh_mark())).toBeTruthy();
 });
@@ -240,14 +297,14 @@ const rowTexts = (): string[] =>
 
 test("each entry has its own move handle", async () => {
   const t = await start();
-  await open(t, "Einkauf", "Milch, Brot");
+  await open(t, "Einkauf", ["Milch", "Brot"]);
   expect(screen.getByRole("button", { name: m.item_move({ text: "Milch" }) })).toBeTruthy();
   expect(screen.getByRole("button", { name: m.item_move({ text: "Brot" }) })).toBeTruthy();
 });
 
 test("open and ticked entries are two lists with the perforation between them", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch, Brot");
+  const id = await open(t, "Einkauf", ["Milch", "Brot"]);
   expect(screen.getAllByRole("list")).toHaveLength(1);
   await fireEvent.click(screen.getByRole("checkbox", { name: /Milch/ }));
   await waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Milch")!.checked).toBe(true));
@@ -262,7 +319,7 @@ test("open and ticked entries are two lists with the perforation between them", 
 
 test("tapping the text of a row still ticks it", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "Milch");
+  const id = await open(t, "Einkauf", ["Milch"]);
   await fireEvent.click(screen.getByText("Milch"));
   await waitFor(() => expect(t.list(id)!.items[0]!.checked).toBe(true));
 });
@@ -271,7 +328,7 @@ test("keyboard: the handle picks an entry up, arrows move it, the drop sends one
   const opts = offlineOpts();
   const t = await startTomu(opts);
   started.push(t);
-  const id = await open(t, "Einkauf", "a, b, c");
+  const id = await open(t, "Einkauf", ["a", "b", "c"]);
   expect(rowTexts()).toEqual(["a", "b", "c"]);
   const before = (await outboxOf(opts.dbName!, {})).length;
   const handle = screen.getByRole("button", { name: m.item_move({ text: "c" }) });
@@ -289,13 +346,13 @@ test("keyboard: the handle picks an entry up, arrows move it, the drop sends one
 
 test("an entry added elsewhere during a keyboard drag shows after the drop", async () => {
   const t = await start();
-  const id = await open(t, "Einkauf", "a, b");
+  const id = await open(t, "Einkauf", ["a", "b"]);
   const handle = screen.getByRole("button", { name: m.item_move({ text: "b" }) });
   handle.focus();
   await fireEvent.keyDown(handle, { key: " " });
   const held = (): Element => document.activeElement ?? document.body;
   await fireEvent.keyDown(held(), { key: "ArrowUp" });
-  await t.addItems(id, "c");
+  await t.addItem(id, "c");
   flushSync();
   expect(rowTexts()).toEqual(["b", "a"]);
   await fireEvent.keyDown(held(), { key: " " });
@@ -327,7 +384,7 @@ test("with motion, a ticked entry slides into the ticked list over the flip time
   } as never;
   try {
     const t = await start();
-    const id = await open(t, "Einkauf", "Milch, Brot");
+    const id = await open(t, "Einkauf", ["Milch", "Brot"]);
     await fireEvent.click(screen.getByRole("checkbox", { name: /Milch/ }));
     await waitFor(() => expect(t.list(id)!.items.find((i) => i.text === "Milch")!.checked).toBe(true));
     // The row arriving below the perforation runs the slide, not just the flip of the rows that close up.

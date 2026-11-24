@@ -1,13 +1,16 @@
 <script lang="ts">
+  import { MAX_ITEM_TEXT } from "@tomu/shared";
   import { getTomu } from "#lib/app/context.ts";
   import type { FreshItems } from "#lib/app/fresh.svelte.ts";
   import { m } from "#lib/paraglide/messages.js";
+  import { cleanMultiline } from "#lib/tomu/items.ts";
 
   let { listId, fresh }: { listId: string; fresh: FreshItems } = $props();
 
   const tomu = getTomu();
   let value = $state("");
-  let tooLong = $state(false);
+  // Measured like the edit dialog: on the cleaned text, line breaks included.
+  const tooLong = $derived(cleanMultiline(value).length > MAX_ITEM_TEXT);
   let busy = false;
   let el: HTMLTextAreaElement;
 
@@ -16,31 +19,28 @@
     el.focus();
   }
 
+  // One submit is one entry: the text is never split, line breaks stay.
   async function submit(e?: Event): Promise<void> {
     e?.preventDefault();
     const text = value;
-    if (busy || text.trim() === "") {
+    if (busy || tooLong || cleanMultiline(text) === "") {
       el.focus();
       return;
     }
     busy = true;
-    tooLong = false;
     try {
-      const ids = await tomu.addItems(listId, text);
-      fresh.own(ids);
+      const id = await tomu.addItem(listId, text);
+      if (id) fresh.own([id]);
       if (value === text) value = "";
-    } catch (err) {
-      // The text stays in the field; nothing was stored.
-      if (err instanceof RangeError) tooLong = true;
-      else throw err;
     } finally {
       busy = false;
       el.focus();
     }
   }
 
+  // Enter is a line break; Ctrl+Enter (Cmd+Enter on macOS) adds, like the "+" button.
   function onkeydown(e: KeyboardEvent): void {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) void submit(e);
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.isComposing) void submit(e);
   }
 </script>
 
@@ -49,9 +49,7 @@
     bind:this={el}
     bind:value
     {onkeydown}
-    oninput={() => (tooLong = false)}
     rows="1"
-    enterkeyhint="done"
     autocomplete="off"
     aria-label={m.add_label()}
     aria-describedby="add-hint"

@@ -272,3 +272,10 @@ export const outboxOf = async (
     await store.close();
   }
 };
+
+/** Adds one entry per text, in order (each `addItem` makes exactly one entry), and returns their ids. */
+export async function addAll(t: Tomu, listId: string, ...texts: string[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const text of texts) ids.push((await t.addItem(listId, text))!);
+  return ids;
+}

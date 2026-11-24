@@ -29,7 +29,7 @@
   const tooLong = $derived(clean.length > MAX_ITEM_TEXT);
   const valid = $derived(clean.length > 0 && !tooLong && !busy);
 
-  async function save(e: SubmitEvent): Promise<void> {
+  async function save(e: Event): Promise<void> {
     e.preventDefault();
     if (!valid) return;
     busy = true;
@@ -39,6 +39,11 @@
     } finally {
       busy = false;
     }
+  }
+
+  // Enter is a line break; only "Save" or Ctrl+Enter (Cmd+Enter on macOS) saves.
+  function onkeydown(e: KeyboardEvent): void {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.isComposing) void save(e);
   }
 
   async function remove(): Promise<void> {
@@ -51,7 +56,7 @@
   <form onsubmit={save}>
     <label class="field">
       <span>{m.item_text_field()}</span>
-      <textarea bind:value={text} rows="3" aria-describedby="item-hint"></textarea>
+      <textarea bind:value={text} {onkeydown} rows="3" aria-describedby="item-hint"></textarea>
     </label>
     <p id="item-hint" class="hint" role="status">
       {#if tooLong}{m.item_too_long()}{/if}

@@ -165,7 +165,7 @@ test("list deleted elsewhere shows a notice, goes back and drops the waiting und
   const t = await start();
   const pending = new PendingDeletes(60000);
   const id = await t.createList("Einkauf");
-  const [item] = await t.addItems(id, "Milch");
+  const item = await t.addItem(id, "Milch");
   route.id = id;
   renderWithTomu(Page, {}, t, pending);
   const drop = vi.spyOn(pending, "drop");
@@ -184,7 +184,7 @@ test("undo bar disappears for a dropped list", async () => {
   const t = await start();
   const pending = new PendingDeletes(60000);
   const id = await t.createList("Einkauf");
-  const [item] = await t.addItems(id, "Milch");
+  const item = await t.addItem(id, "Milch");
   route.id = id;
   renderWithTomu(UndoPage, {}, t, pending);
   pending.schedule(id, [item!], async () => {});

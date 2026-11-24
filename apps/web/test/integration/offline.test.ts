@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "vitest";
 import { client, createNet, startTestServer, stopClients, waitFor } from "./harness.ts";
+import { addAll } from "../helpers.ts";
 
 let server: Awaited<ReturnType<typeof startTestServer>>;
 beforeAll(async () => {
@@ -27,7 +28,7 @@ test("offline edits sync after reconnect", async () => {
 
   net.offline();
   await waitFor(() => lisa.status === "offline");
-  await lisa.addItems(id, "Milch, Brot, Eier");
+  await addAll(lisa, id, "Milch", "Brot", "Eier");
   expect(lisa.list(id)!.items.length).toBe(3);
   expect(mike.list(id)!.items).toEqual([]);
 
@@ -54,7 +55,7 @@ test("offline edits survive a reload before reconnecting", async () => {
 
   net.offline();
   await waitFor(() => lisa.status === "offline");
-  await lisa.addItems(id, "Schrauben, Dübel");
+  await addAll(lisa, id, "Schrauben", "Dübel");
   await lisa.stop();
 
   const lisa2 = await client("lisa", server, undefined, "lisa-reload");

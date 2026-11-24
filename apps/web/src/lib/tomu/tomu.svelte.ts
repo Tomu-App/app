@@ -22,7 +22,7 @@ import {
 import type { Connect } from "./connection.ts";
 import { LocalStore } from "./db.ts";
 import { newDocRecord } from "./docs.ts";
-import { cleanMultiline, splitItems } from "./items.ts";
+import { cleanMultiline } from "./items.ts";
 import { SyncEngine } from "./sync.ts";
 import type { Change, DocRecord, Folder, LocalLabel, Origin, Snapshot, SyncStatus } from "./types.ts";
 
@@ -67,7 +67,7 @@ function bounded(input: string, max: number, what: string): string {
   return s;
 }
 
-/** One list entry, cleaned like `splitItems` does but never split; line breaks stay. */
+/** One list entry as typed or edited, cleaned with `cleanMultiline`; line breaks stay. */
 function entryText(input: string): string {
   const s = cleanMultiline(input);
   if (s.length < 1 || s.length > MAX_ITEM_TEXT)
@@ -81,23 +81,18 @@ function checkOps(ops: Op[]): void {
 }
 
 /**
- * Keys for `n` entries appended to the list, or null when the entries must go without `pos`: some visible entry has
- * none, or the chain would outgrow `MAX_POS`. Entries without `pos` sort last, so they still land at the bottom.
+ * The key for an entry appended to the list, or null when it must go without `pos`: some visible entry has none,
+ * or the key would outgrow `MAX_POS`. Entries without `pos` sort last, so it still lands at the bottom.
  */
-function nextKeys(state: ListState, n: number): string[] | null {
+function nextKey(state: ListState): string | null {
   let last: string | null = null;
   for (const id of itemOrder(state)) {
     const pos = state.items[id]!.pos;
     if (pos == null) return null;
     if (last === null || pos > last) last = pos;
   }
-  const keys: string[] = [];
-  for (let i = 0; i < n; i++) {
-    last = keyBetween(last, null);
-    if (last.length > MAX_POS) return null;
-    keys.push(last);
-  }
-  return keys;
+  const key = keyBetween(last, null);
+  return key.length > MAX_POS ? null : key;
 }
 
 type Parts = { store: LocalStore; snapshot: Snapshot; opts: TomuOptions; release: () => Promise<void> };
@@ -278,17 +273,18 @@ export class Tomu {
     }
   }
 
-  async addItems(listId: string, input: string): Promise<string[]> {
+  /**
+   * Adds one entry at the bottom of the list. The text is never split: line breaks stay, commas are text.
+   * Returns the new entry's id, or null when nothing is left after cleaning. RangeError when it is too long.
+   */
+  async addItem(listId: string, input: string): Promise<string | null> {
     const rec = this.#list(listId);
-    const texts = splitItems(input);
-    const ids = texts.map(() => crypto.randomUUID());
-    if (texts.length === 0) return ids;
-    const keys = nextKeys(rec.state, texts.length);
-    await this.#ops(
-      listId,
-      texts.map((text, i) => this.#op({ t: "add", item: ids[i]!, text, ...(keys ? { pos: keys[i]! } : {}) })),
-    );
-    return ids;
+    if (cleanMultiline(input) === "") return null;
+    const text = entryText(input);
+    const item = crypto.randomUUID();
+    const pos = nextKey(rec.state);
+    await this.#ops(listId, [this.#op({ t: "add", item, text, ...(pos ? { pos } : {}) })]);
+    return item;
   }
 
   /**

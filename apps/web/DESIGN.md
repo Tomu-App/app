@@ -277,7 +277,7 @@ Small, firm corners (6px) on every field, box, button and tag, with the sheet ro
 
 ### Fields
 
-- **Style:** 3px ink border, 6px radius, transparent background, soft-ink placeholder. Text field 3.5rem high; the add field is a growing textarea (3.75rem to 10rem, 1.2rem text) so pasted lists fit.
+- **Style:** 3px ink border, 6px radius, transparent background, soft-ink placeholder. Text field 3.5rem high; the add field is a growing textarea (3.75rem for one line up to 10rem, 1.2rem text) so a multi-line entry fits. In both the add field and the edit dialog, Enter is a line break; the "+" button, "Save" or Ctrl+Enter (Cmd+Enter) submits.
 - **Focus:** the global focus outline.
 
 ### Entry row (signature)

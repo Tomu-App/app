@@ -8,7 +8,7 @@ import type { Tomu } from "#lib/tomu/index.js";
 import LabelPicker from "#lib/app/components/LabelPicker.svelte";
 import ListRow from "#lib/app/components/ListRow.svelte";
 import Page from "../../src/routes/+page.svelte";
-import { offlineTomu } from "../helpers.ts";
+import { addAll, offlineTomu } from "../helpers.ts";
 import { renderWithTomu } from "./render.ts";
 
 const goto = vi.hoisted(() => vi.fn());
@@ -31,7 +31,7 @@ test("overview shows each list with label and open count", async () => {
   const t = await start();
   const label = await t.createLabel("Familie");
   const id = await t.createList("Einkauf", [label]);
-  await t.addItems(id, "Milch, Brot");
+  await addAll(t, id, "Milch", "Brot");
   renderWithTomu(Page, {}, t);
   await waitFor(() => expect(screen.getByText("Einkauf")).toBeTruthy());
   expect(screen.getByText("Familie")).toBeTruthy();
