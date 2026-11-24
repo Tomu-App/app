@@ -175,7 +175,7 @@ a:active,
 }
 
 /* Page change: the old page fades out and up, the new one fades in from below. The header
-   (view-transition-name: board in Board.svelte) does not fade; the new one replaces the old at once. */
+   (view-transition-name: board in Board.svelte) does not fade, slide or resize; the new one replaces the old at once. */
 @keyframes page-out {
   to {
     opacity: 0;
@@ -196,6 +196,11 @@ a:active,
 
 ::view-transition-new(root) {
   animation: 180ms ease-out both page-in;
+}
+
+/* Without this the group morphs between the two header boxes (about 250ms) when their heights differ. */
+::view-transition-group(board) {
+  animation: none;
 }
 
 ::view-transition-old(board) {
