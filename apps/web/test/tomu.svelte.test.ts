@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { buildLink, MAX_ITEM_TEXT, MAX_TITLE, newDocId, newDocKey, parseLink } from "@tomu/shared";
+import { buildLink, MAX_ITEM_TEXT, MAX_POS, MAX_TITLE, newDocId, newDocKey, parseLink } from "@tomu/shared";
 import { flushSync } from "svelte";
 import { expect, test, vi } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
@@ -557,4 +557,156 @@ test("after the state rebuild an offline start still shows the lists and their e
   ).toEqual(["Brot", "Milch"]);
   expect(again.lists.map((l) => l.title)).toEqual(["Einkauf"]);
   await again.stop();
+});
+
+// ---- entry order ----
+
+/** Stores a list whose entries come from `add` ops with the given `pos` (undefined: an entry from before ordering). */
+async function seedOrdered(
+  opts: ReturnType<typeof offlineOpts>,
+  entries: { id: string; text: string; pos?: string }[],
+): Promise<{ id: string; key: string }> {
+  const id = id22("ordered");
+  const key = newDocKey();
+  const rec = listDoc(id, "own", key);
+  applyToDoc(rec, id22("i1"), op({ t: "init", kind: "list" }, 1));
+  applyToDoc(rec, id22("i2"), op({ t: "title", text: "Alt" }, 2));
+  entries.forEach((e, n) =>
+    applyToDoc(
+      rec,
+      id22(`a${n}`),
+      op({ t: "add", item: e.id, text: e.text, ...(e.pos === undefined ? {} : { pos: e.pos }) }, 3 + n),
+    ),
+  );
+  const store = await LocalStore.open(opts.dbName!);
+  await store.commit({ putDocs: [rec] });
+  await store.close();
+  return { id, key };
+}
+
+const texts = (t: Tomu, id: string): string[] => t.list(id)!.items.map((i) => i.text);
+
+test("moveItem on a new list sends one move", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const id = await t.createList("Einkauf");
+  const [a, b, c] = await t.addItems(id, "a, b, c");
+  expect(texts(t, id)).toEqual(["a", "b", "c"]);
+  const adds = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "add");
+  expect(adds.every((e) => e.op.t === "add" && e.op.pos !== undefined)).toBe(true);
+  const before = (await outboxOf(opts.dbName!, {})).length;
+  await t.moveItem(id, c!, null, a!);
+  expect(texts(t, id)).toEqual(["c", "a", "b"]);
+  const out = await outboxOf(opts.dbName!, {});
+  expect(out.length).toBe(before + 1);
+  expect(out.at(-1)!.op).toMatchObject({ t: "move", item: c });
+  await t.moveItem(id, a!, b!, null);
+  expect(texts(t, id)).toEqual(["c", "b", "a"]);
+  await t.stop();
+});
+
+test("entries without pos: a new entry goes last, the first move gives every entry a pos", async () => {
+  const opts = offlineOpts();
+  const [x, y, z] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const { id } = await seedOrdered(opts, [
+    { id: x, text: "x" },
+    { id: y, text: "y" },
+    { id: z, text: "z" },
+  ]);
+  const t = await startTomu(opts);
+  expect(texts(t, id)).toEqual(["x", "y", "z"]);
+  const [neu] = await t.addItems(id, "neu");
+  expect(texts(t, id)).toEqual(["x", "y", "z", "neu"]);
+  const adds = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "add");
+  expect(adds).toHaveLength(1);
+  expect(adds[0]!.op).not.toHaveProperty("pos");
+
+  await t.moveItem(id, neu!, null, x!);
+  expect(texts(t, id)).toEqual(["neu", "x", "y", "z"]);
+  const moves = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "move");
+  expect(moves.map((e) => (e.op.t === "move" ? e.op.item : "")).sort()).toEqual([neu, x, y, z].sort());
+  await t.stop();
+});
+
+test("moving within the ticked zone uses the global order", async () => {
+  const t = await startTomu(offlineOpts());
+  const id = await t.createList("Einkauf");
+  const [a, b, c] = await t.addItems(id, "a, b, c");
+  await t.setChecked(id, a!, true);
+  await t.setChecked(id, b!, true);
+  expect(t.list(id)!.items.map((i) => [i.text, i.checked])).toEqual([
+    ["c", false],
+    ["a", true],
+    ["b", true],
+  ]);
+  await t.moveItem(id, b!, null, a!);
+  expect(texts(t, id)).toEqual(["c", "b", "a"]);
+  await t.setChecked(id, b!, false);
+  expect(texts(t, id)).toEqual(["b", "c", "a"]);
+  expect(c).toBeDefined();
+  await t.stop();
+});
+
+test("equal keys from concurrent moves: a drag between them gives distinct ordered keys", async () => {
+  const opts = offlineOpts();
+  const [p, q, x] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const { id } = await seedOrdered(opts, [
+    { id: p, text: "p", pos: "V" },
+    { id: q, text: "q", pos: "V" },
+    { id: x, text: "x", pos: "m" },
+  ]);
+  const t = await startTomu(opts);
+  const [first, second] = t.list(id)!.items.map((i) => i.id);
+  expect(t.list(id)!.items.map((i) => i.id)).toEqual([first, second, x]);
+  await t.moveItem(id, x, first!, second!);
+  expect(t.list(id)!.items.map((i) => i.id)).toEqual([first, x, second]);
+  const pos: Record<string, string> = { [p]: "V", [q]: "V", [x]: "m" };
+  for (const e of await outboxOf(opts.dbName!, {})) if (e.op.t === "move") pos[e.op.item] = e.op.pos;
+  const ordered = [first!, x, second!].map((i) => pos[i]!);
+  expect(new Set(ordered).size).toBe(3);
+  expect(ordered).toEqual([...ordered].sort());
+  await t.stop();
+});
+
+test("no key fits between long neighbours: reassign keeps every key within the limit", async () => {
+  const opts = offlineOpts();
+  const [p, q, x] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const longPos = `1${"0".repeat(62)}1`;
+  const { id } = await seedOrdered(opts, [
+    { id: p, text: "p", pos: "1" },
+    { id: q, text: "q", pos: longPos },
+    { id: x, text: "x", pos: "m" },
+  ]);
+  const t = await startTomu(opts);
+  expect(texts(t, id)).toEqual(["p", "q", "x"]);
+  await t.moveItem(id, x, p, q);
+  expect(texts(t, id)).toEqual(["p", "x", "q"]);
+  const moves = (await outboxOf(opts.dbName!, {})).filter((e) => e.op.t === "move");
+  expect(moves.length).toBeGreaterThan(1);
+  for (const e of moves) {
+    if (e.op.t === "move") expect(e.op.pos.length).toBeLessThanOrEqual(MAX_POS);
+  }
+  await t.stop();
+});
+
+test("moveItem rejects unknown input and ignores a move to the current place", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const id = await t.createList("Einkauf");
+  const [a, b, c] = await t.addItems(id, "a, b, c");
+  const count = (await outboxOf(opts.dbName!, {})).length;
+  await expect(t.moveItem(id, crypto.randomUUID(), null, a!)).rejects.toThrow();
+  await expect(t.moveItem(newDocId(), a!, null, b!)).rejects.toThrow();
+  await expect(t.moveItem(id, a!, crypto.randomUUID(), b!)).rejects.toThrow();
+  await expect(t.moveItem(id, a!, a!, b!)).rejects.toThrow();
+  await expect(t.moveItem(id, a!, null, a!)).rejects.toThrow();
+  await t.deleteItem(id, c!);
+  await expect(t.moveItem(id, c!, null, a!)).rejects.toThrow();
+  const afterDel = (await outboxOf(opts.dbName!, {})).length;
+  expect(afterDel).toBe(count + 1);
+  await t.moveItem(id, b!, a!, null);
+  await t.moveItem(id, a!, null, b!);
+  expect((await outboxOf(opts.dbName!, {})).length).toBe(afterDel);
+  expect(texts(t, id)).toEqual(["a", "b"]);
+  await t.stop();
 });

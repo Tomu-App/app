@@ -6,12 +6,17 @@ import {
   MAX_ITEM_TEXT,
   MAX_LABEL_NAME,
   MAX_OWNER,
+  MAX_POS,
   MAX_TITLE,
+  itemOrder,
+  keyBetween,
   newDocId,
   newDocKey,
   opSchema,
   parseLink,
+  spreadKeys,
   type Op,
+  type ListState,
   type ListView,
 } from "@tomu/shared";
 import type { Connect } from "./connection.ts";
@@ -73,6 +78,26 @@ function entryText(input: string): string {
 /** Throws RangeError if any op would be refused by the shared schema, before anything is stored. */
 function checkOps(ops: Op[]): void {
   for (const o of ops) if (!opSchema.safeParse(o).success) throw new RangeError("invalid input");
+}
+
+/**
+ * Keys for `n` entries appended to the list, or null when the entries must go without `pos`: some visible entry has
+ * none, or the chain would outgrow `MAX_POS`. Entries without `pos` sort last, so they still land at the bottom.
+ */
+function nextKeys(state: ListState, n: number): string[] | null {
+  let last: string | null = null;
+  for (const id of itemOrder(state)) {
+    const pos = state.items[id]!.pos;
+    if (pos == null) return null;
+    if (last === null || pos > last) last = pos;
+  }
+  const keys: string[] = [];
+  for (let i = 0; i < n; i++) {
+    last = keyBetween(last, null);
+    if (last.length > MAX_POS) return null;
+    keys.push(last);
+  }
+  return keys;
 }
 
 type Parts = { store: LocalStore; snapshot: Snapshot; opts: TomuOptions; release: () => Promise<void> };
@@ -254,15 +279,63 @@ export class Tomu {
   }
 
   async addItems(listId: string, input: string): Promise<string[]> {
-    this.#list(listId);
+    const rec = this.#list(listId);
     const texts = splitItems(input);
     const ids = texts.map(() => crypto.randomUUID());
     if (texts.length === 0) return ids;
+    const keys = nextKeys(rec.state, texts.length);
     await this.#ops(
       listId,
-      texts.map((text, i) => this.#op({ t: "add", item: ids[i]!, text })),
+      texts.map((text, i) => this.#op({ t: "add", item: ids[i]!, text, ...(keys ? { pos: keys[i]! } : {}) })),
     );
     return ids;
+  }
+
+  /**
+   * Moves an entry between `prevId` and `nextId`, its neighbours in its zone (open or ticked) after the drop;
+   * null is the edge of the zone. Sends nothing when the entry already sits there.
+   */
+  async moveItem(
+    listId: string,
+    itemId: string,
+    prevId: string | null,
+    nextId: string | null,
+  ): Promise<void> {
+    const rec = this.#list(listId);
+    const state = rec.state;
+    const items = listView(rec.state).items;
+    const item = items.find((i) => i.id === itemId);
+    if (!item) throw new Error(`unknown entry ${itemId}`);
+    if (prevId === itemId || nextId === itemId) throw new Error("an entry cannot be its own neighbour");
+    for (const id of [prevId, nextId]) {
+      if (id !== null && !items.some((i) => i.id === id)) throw new Error(`unknown entry ${id}`);
+    }
+    const zone = items.filter((i) => i.checked === item.checked).map((i) => i.id);
+    const at = zone.indexOf(itemId);
+    if (zone[at - 1] === (prevId ?? undefined) && zone[at + 1] === (nextId ?? undefined)) return;
+    if (prevId === null && nextId === null) throw new Error("a move needs a neighbour");
+
+    const order = itemOrder(state);
+    const posOf = (id: string): string | null => state.items[id]!.pos ?? null;
+    if (order.every((id) => posOf(id) !== null)) {
+      const prev = prevId === null ? null : posOf(prevId);
+      const next = nextId === null ? null : posOf(nextId);
+      if (prev === null || next === null || prev < next) {
+        const pos = keyBetween(prev, next);
+        if (pos.length <= MAX_POS) {
+          await this.#ops(listId, [this.#op({ t: "move", item: itemId, pos })]);
+          return;
+        }
+      }
+    }
+    // Entries without a key, equal or crowded keys: spread fresh keys over the whole order.
+    const rest = order.filter((id) => id !== itemId);
+    rest.splice(prevId === null ? rest.indexOf(nextId!) : rest.indexOf(prevId) + 1, 0, itemId);
+    const keys = spreadKeys(rest.length);
+    const moves = rest.flatMap((id, i) =>
+      posOf(id) === keys[i] ? [] : [this.#op({ t: "move", item: id, pos: keys[i]! })],
+    );
+    await this.#ops(listId, moves);
   }
 
   async editItem(listId: string, itemId: string, text: string): Promise<void> {
