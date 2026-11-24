@@ -147,7 +147,7 @@
   }
   /* A filled square shows the pen as a tap target of its own. The grip stays bare: it is held, not tapped. */
   .edit {
-    background: color-mix(in srgb, var(--ink) 8%, var(--sheet));
+    background: var(--tint);
   }
   .sr {
     position: absolute;

@@ -61,6 +61,7 @@
   });
 
   let addField = $state<AddField>();
+  let listMenu = $state<ListMenu>();
   let openEl = $state<HTMLUListElement>();
   let doneEl = $state<HTMLUListElement>();
 
@@ -226,7 +227,7 @@
   {/snippet}
   {#snippet end()}
     <StatusBadge status={tomu.status} />
-    {#if info}<ListMenu listId={id} />{/if}
+    {#if info}<ListMenu bind:this={listMenu} listId={id} />{/if}
   {/snippet}
 </Board>
 
@@ -238,7 +239,18 @@
       </div>
     {/if}
     <div class="head">
-      <h1 class="title">{view.title}</h1>
+      <h1 class="title">
+        {#if info}
+          <button
+            type="button"
+            class="rename"
+            aria-label={m.rename_list_named({ title: view.title })}
+            onclick={() => listMenu?.startRename()}>{view.title}</button
+          >
+        {:else}
+          {view.title}
+        {/if}
+      </h1>
       <p class="open" class:top={view.title.length > 24}>
         <span class="count">{count}</span>
         <span class="open-label">{m.open_label()}</span>
@@ -346,6 +358,32 @@
     line-height: 1.1;
     overflow-wrap: anywhere;
     hyphens: auto;
+  }
+  /* Looks like the plain title; hover and focus show that it can be tapped. The padding is taken back
+     by the margin, so the title's left edge stays where it was. */
+  .rename {
+    /* Not inline: the pressed state scales it. The box hugs the title, wrapped lines included. */
+    display: block;
+    width: fit-content;
+    margin: 0 -0.35rem;
+    padding: 0 0.35rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    overflow-wrap: inherit;
+    hyphens: inherit;
+    cursor: pointer;
+  }
+  .rename:focus-visible {
+    background: var(--tint);
+  }
+  @media (hover: hover) {
+    .rename:hover {
+      background: var(--tint);
+    }
   }
   .open {
     flex: none;

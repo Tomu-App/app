@@ -54,6 +54,7 @@
   "menu_folder": "Ordner",
   "menu_delete": "Liste löschen",
   "menu_back": "Zurück",
+  "rename_list_named": "Liste umbenennen: {title}",
   "rename_title": "Liste umbenennen",
   "delete_list_title": "Liste löschen?",
   "delete_list_body": "Die Liste und alle ihre Einträge werden gelöscht, auch bei allen, mit denen du sie teilst. Das kannst du nicht rückgängig machen.",

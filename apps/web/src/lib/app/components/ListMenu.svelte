@@ -24,6 +24,12 @@
     if (!open) mode = "menu";
   });
 
+  /** Opens the dialog straight on the rename form, as if "Rename" had been chosen in the menu. */
+  export function startRename(): void {
+    show("rename");
+    open = true;
+  }
+
   const heading = $derived(
     mode === "rename"
       ? m.rename_title()

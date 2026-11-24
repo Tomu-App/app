@@ -501,9 +501,9 @@ test("the edit button sits on a filled square; the grip stays bare", async () =>
   expect(edit.classList.contains("edit")).toBe(true);
   // jsdom does not compute scoped Svelte CSS, so check the component rules instead.
   const css = readFileSync(resolve(process.cwd(), "src/lib/app/components/ItemRow.svelte"), "utf8");
-  expect(css.match(/\n\s*\.edit\s*\{([^}]*)\}/)?.[1]).toContain(
-    "background: color-mix(in srgb, var(--ink) 8%, var(--sheet))",
-  );
+  expect(css.match(/\n\s*\.edit\s*\{([^}]*)\}/)?.[1]).toContain("background: var(--tint)");
+  const app = readFileSync(resolve(process.cwd(), "src/routes/app.css"), "utf8");
+  expect(app).toContain("--tint: color-mix(in srgb, var(--ink) 8%, var(--sheet))");
   // The grip only shares the `.edit,\n.grip` size rule, which sets no background.
   expect(css.match(/\}\s*\.grip\s*\{/)).toBeNull();
   expect(css.match(/\.edit,\s*\.grip\s*\{([^}]*)\}/)?.[1]).not.toContain("background");

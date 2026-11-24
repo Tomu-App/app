@@ -21,6 +21,8 @@
   --font-count: "Archivo Variable", "Arial Narrow", sans-serif;
   --tap: 3rem;
   --radius: 6px;
+  /* The quiet fill of a tap target on the sheet: the edit button, and the list title on hover. */
+  --tint: color-mix(in srgb, var(--ink) 8%, var(--sheet));
   /* Only a held entry lifts off the sheet while it is dragged. */
   --lift: 0 0.4rem 1.25rem rgb(0 0 0 / 0.3);
   color-scheme: light dark;

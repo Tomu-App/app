@@ -100,6 +100,37 @@ test("rename validates and saves", async () => {
   await waitFor(() => expect(t.lists[0]!.title).toBe("Wocheneinkauf"));
 });
 
+test("the title is a button that opens the rename dialog with the title filled in", async () => {
+  const t = await start();
+  await open(t);
+  const title = screen.getByRole("button", { name: m.rename_list_named({ title: "Einkauf" }) });
+  expect(title.getAttribute("type")).toBe("button");
+  expect(screen.getByRole("heading", { level: 1 }).contains(title)).toBe(true);
+  expect(screen.queryByLabelText(m.new_list_title_field())).toBeNull();
+  await fireEvent.click(title);
+  expect(screen.getByRole("heading", { name: m.rename_title() })).toBeTruthy();
+  expect((screen.getByLabelText(m.new_list_title_field()) as HTMLInputElement).value).toBe("Einkauf");
+});
+
+test("saving from the title renames the list and closes the dialog", async () => {
+  const t = await start();
+  await open(t);
+  await fireEvent.click(screen.getByRole("button", { name: m.rename_list_named({ title: "Einkauf" }) }));
+  await fireEvent.input(screen.getByLabelText(m.new_list_title_field()), { target: { value: "Fest" } });
+  await fireEvent.click(screen.getByRole("button", { name: m.new_list_save() }));
+  await waitFor(() => expect(t.lists[0]!.title).toBe("Fest"));
+  await waitFor(() => expect(screen.queryByLabelText(m.new_list_title_field())).toBeNull());
+  expect(screen.getByRole("button", { name: m.rename_list_named({ title: "Fest" }) })).toBeTruthy();
+});
+
+test("back from the rename dialog opened by the title shows the menu", async () => {
+  const t = await start();
+  await open(t);
+  await fireEvent.click(screen.getByRole("button", { name: m.rename_list_named({ title: "Einkauf" }) }));
+  await fireEvent.click(screen.getByRole("button", { name: m.menu_back() }));
+  expect(screen.getByRole("button", { name: m.menu_delete() })).toBeTruthy();
+});
+
 const sharedLabelPicker = async (t: Tomu): Promise<string> => {
   const label = await t.createLabel("Familie");
   await t.setDisplayName("Luke");

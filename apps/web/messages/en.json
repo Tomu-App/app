@@ -55,6 +55,7 @@
   "menu_delete": "Delete list",
   "menu_back": "Back",
   "rename_title": "Rename list",
+  "rename_list_named": "Rename list: {title}",
   "delete_list_title": "Delete list?",
   "delete_list_body": "The list and all its entries will be deleted, also for everyone you share it with. You cannot undo this.",
   "delete_list_confirm": "Delete",
