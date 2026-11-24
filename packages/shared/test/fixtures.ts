@@ -12,6 +12,7 @@ export const dropOp = { ...base, t: "drop" as const };
 export const addOp = { ...base, t: "add" as const, item: ITEM, text: "Milch" };
 export const textOp = { ...base, t: "text" as const, item: ITEM, text: "Hafermilch" };
 export const checkOp = { ...base, t: "check" as const, item: ITEM, value: true };
+export const moveOp = { ...base, t: "move" as const, item: ITEM, pos: "V" };
 export const delOp = { ...base, t: "del" as const, item: ITEM };
 export const metaOp = { ...base, t: "meta" as const, name: "Familie", owner: "Lisa" };
 export const linkOp = { ...base, t: "link" as const, list: LIST, key: KEY };
@@ -24,6 +25,7 @@ export const SPEC_EXAMPLES = [
   addOp,
   textOp,
   checkOp,
+  moveOp,
   delOp,
   metaOp,
   linkOp,

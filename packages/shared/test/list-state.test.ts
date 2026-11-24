@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { expect, test } from "vitest";
-import { applyListOp, emptyListState, listView, type ListState } from "../src/list-state.ts";
+import { applyListOp, emptyListState, itemOrder, listView, type ListState } from "../src/list-state.ts";
 import type { ListOp } from "../src/schemas/ops.ts";
 import { shuffleWithDuplicates } from "./shuffle.ts";
 
@@ -9,17 +9,27 @@ const B = "B".repeat(22);
 const I1 = "11111111-1111-4111-8111-111111111111";
 const I2 = "22222222-2222-4222-8222-222222222222";
 const I3 = "33333333-3333-4333-8333-333333333333";
+const I4 = "44444444-4444-4444-8444-444444444444";
 
 let n = 0;
 const id = () => `op${String(n++).padStart(20, "0")}`;
 const run = (ops: ListOp[], state: ListState = emptyListState()) =>
   ops.reduce((s, op) => applyListOp(s, id(), op), state);
 
-const add = (item: string, text: string, ts: number, c = A): ListOp => ({
+const add = (item: string, text: string, ts: number, c = A, pos?: string): ListOp => ({
   v: 1,
   t: "add",
   item,
   text,
+  c,
+  ts,
+  ...(pos === undefined ? {} : { pos }),
+});
+const move = (item: string, pos: string, ts: number, c = A): ListOp => ({
+  v: 1,
+  t: "move",
+  item,
+  pos,
   c,
   ts,
 });
@@ -96,17 +106,88 @@ test("applying the same op id twice changes nothing", () => {
   expect(listView(s).items[0]?.text).toBe("Milch");
 });
 
+const ids = (ops: ListOp[], state?: ListState) => listView(run(ops, state)).items.map((i) => i.id);
+
+test("move sets the order", () => {
+  expect(ids([add(I1, "a", 1), add(I2, "b", 2), move(I2, "5", 3), move(I1, "9", 4)])).toEqual([I2, I1]);
+});
+
+test("an older move loses even when it arrives later", () => {
+  const ops = [add(I1, "a", 1), add(I2, "b", 2), move(I1, "9", 5), move(I1, "1", 4)];
+  expect(ids([...ops, move(I2, "5", 3)])).toEqual([I2, I1]);
+});
+
+test("equal move timestamps resolve to the larger client id", () => {
+  const base = [add(I1, "a", 1), add(I2, "b", 1), move(I2, "5", 1)];
+  const ab = [...base, move(I1, "3", 7, A), move(I1, "8", 7, B)];
+  const ba = [...base, move(I1, "8", 7, B), move(I1, "3", 7, A)];
+  expect(ids(ab)).toEqual([I2, I1]);
+  expect(ids(ba)).toEqual([I2, I1]);
+});
+
+test("add with pos positions the entry; a later move wins over it", () => {
+  const base = [add(I1, "a", 1, A, "5"), add(I2, "b", 2, A, "3")];
+  expect(ids(base)).toEqual([I2, I1]);
+  expect(ids([...base, move(I2, "9", 3)])).toEqual([I1, I2]);
+  expect(ids([...base, move(I2, "9", 1)])).toEqual([I2, I1]); // older than the add: add's pos stays
+});
+
+test("entries with equal pos sort by id", () => {
+  expect(ids([add(I3, "c", 1, A, "5"), add(I1, "a", 2, A, "5"), add(I2, "b", 3, A, "5")])).toEqual([
+    I1,
+    I2,
+    I3,
+  ]);
+});
+
+test("pos compares by code unit, not by locale", () => {
+  // localeCompare would put "a" before "B"
+  expect(ids([add(I1, "x", 1, A, "a"), add(I2, "y", 2, A, "B")])).toEqual([I2, I1]);
+});
+
+test("entries with pos come first, then entries without by add order", () => {
+  const ops = [add(I1, "old", 2), add(I2, "older", 1), add(I3, "new", 5, A, "5"), add(I4, "n2", 6, A, "2")];
+  expect(ids(ops)).toEqual([I4, I3, I2, I1]);
+});
+
+test("open before ticked; ticked keep pos order; unticking returns to the pos place", () => {
+  const base = [add(I1, "a", 1, A, "1"), add(I2, "b", 2, A, "2"), add(I3, "c", 3, A, "3")];
+  expect(ids([...base, check(I1, true, 4)])).toEqual([I2, I3, I1]);
+  expect(ids([...base, check(I1, true, 4), check(I3, true, 5)])).toEqual([I2, I1, I3]);
+  expect(ids([...base, check(I1, true, 4), check(I1, false, 5)])).toEqual([I1, I2, I3]);
+});
+
+test("move before add: not visible, then shows at the moved pos", () => {
+  const s = run([move(I1, "1", 2)]);
+  expect(listView(s).items).toEqual([]);
+  expect(itemOrder(s)).toEqual([]);
+  expect(ids([add(I2, "b", 3, A, "5"), add(I1, "a", 1)], s)).toEqual([I1, I2]);
+});
+
+test("move after del: entry stays hidden", () => {
+  expect(ids([add(I1, "a", 1), del(I1, 2), move(I1, "5", 3)])).toEqual([]);
+  expect(ids([move(I1, "5", 3), del(I1, 2), add(I1, "a", 1)])).toEqual([]);
+});
+
+test("itemOrder ignores checked", () => {
+  const s = run([add(I1, "a", 1, A, "1"), add(I2, "b", 2, A, "2"), add(I3, "c", 3), check(I1, true, 4)]);
+  expect(itemOrder(s)).toEqual([I1, I2, I3]);
+  expect(listView(s).items.map((i) => i.id)).toEqual([I2, I3, I1]);
+});
+
 const CLIENTS = [A, B, "C".repeat(22)];
-const ITEMS = [I1, I2, I3, "44444444-4444-4444-8444-444444444444"];
+const ITEMS = [I1, I2, I3, I4];
 const arbListOpLog = () =>
   fc
     .array(
       fc.record({
-        t: fc.constantFrom("add", "add", "text", "check", "del", "title", "drop"),
+        t: fc.constantFrom("add", "add", "text", "check", "del", "title", "drop", "move", "move"),
         item: fc.constantFrom(...ITEMS),
         c: fc.constantFrom(...CLIENTS),
         text: fc.constantFrom("Milch", "Brot", "Eier"),
         value: fc.boolean(),
+        pos: fc.constantFrom("1", "5", "5V", "V", "z"),
+        withPos: fc.boolean(),
       }),
       { minLength: 1, maxLength: 40 },
     )
@@ -115,16 +196,18 @@ const arbListOpLog = () =>
         const base = { v: 1 as const, c: r.c, ts: i + 1 };
         const op: ListOp =
           r.t === "add"
-            ? { ...base, t: "add", item: r.item, text: r.text }
-            : r.t === "text"
-              ? { ...base, t: "text", item: r.item, text: r.text }
-              : r.t === "check"
-                ? { ...base, t: "check", item: r.item, value: r.value }
-                : r.t === "del"
-                  ? { ...base, t: "del", item: r.item }
-                  : r.t === "title"
-                    ? { ...base, t: "title", text: r.text }
-                    : { ...base, t: "drop" };
+            ? { ...base, t: "add", item: r.item, text: r.text, ...(r.withPos ? { pos: r.pos } : {}) }
+            : r.t === "move"
+              ? { ...base, t: "move", item: r.item, pos: r.pos }
+              : r.t === "text"
+                ? { ...base, t: "text", item: r.item, text: r.text }
+                : r.t === "check"
+                  ? { ...base, t: "check", item: r.item, value: r.value }
+                  : r.t === "del"
+                    ? { ...base, t: "del", item: r.item }
+                    : r.t === "title"
+                      ? { ...base, t: "title", text: r.text }
+                      : { ...base, t: "drop" };
         return [`log${String(i).padStart(19, "0")}`, op];
       }),
     );

@@ -8,6 +8,9 @@ export type ItemState = {
   checkedStamp: Stamp | null;
   /** Stamp of the earliest `add`; null while the item is provisional (an op arrived before its `add`). */
   created: Stamp | null;
+  /** Fractional-index key set by `move` (or `add`); null for entries from before reordering existed. */
+  pos: string | null;
+  posStamp: Stamp | null;
   deleted: boolean;
 };
 
@@ -39,6 +42,8 @@ function itemOf(state: ListState, id: string): ItemState {
     checked: false,
     checkedStamp: null,
     created: null,
+    pos: null,
+    posStamp: null,
     deleted: false,
   });
 }
@@ -74,6 +79,10 @@ export function applyListOp(state: ListState, opId: string, op: ListOp): ListSta
         item.text = op.text;
         item.textStamp = stamp;
       }
+      if (op.t === "add" && op.pos !== undefined && newer(stamp, item.posStamp)) {
+        item.pos = op.pos;
+        item.posStamp = stamp;
+      }
       break;
     }
     case "check": {
@@ -81,6 +90,14 @@ export function applyListOp(state: ListState, opId: string, op: ListOp): ListSta
       if (newer(stamp, item.checkedStamp)) {
         item.checked = op.value;
         item.checkedStamp = stamp;
+      }
+      break;
+    }
+    case "move": {
+      const item = itemOf(state, op.item);
+      if (newer(stamp, item.posStamp)) {
+        item.pos = op.pos;
+        item.posStamp = stamp;
       }
       break;
     }
@@ -97,12 +114,33 @@ export type ListView = {
   items: { id: string; text: string; checked: boolean }[];
 };
 
-/** What the UI shows: no deleted or provisional items; open ones by creation, checked ones below. */
+// Plain `<`/`>` on purpose: keys sort by code unit, never by locale.
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/** Entries with `pos` by `pos` (ties by id), then entries without by creation. */
+function compareOrder([idA, a]: [string, ItemState], [idB, b]: [string, ItemState]): number {
+  if (a.pos !== null && b.pos !== null) return cmp(a.pos, b.pos) || cmp(idA, idB);
+  if (a.pos !== null) return -1;
+  if (b.pos !== null) return 1;
+  return compareStamp(a.created!, b.created!) || cmp(idA, idB);
+}
+
+const visibleEntries = (state: ListState) =>
+  Object.entries(state.items).filter(([, i]) => !i.deleted && i.created !== null);
+
+/** Ids of the visible entries in global order; `checked` plays no role. */
+export function itemOrder(state: ListState): string[] {
+  return visibleEntries(state)
+    .sort(compareOrder)
+    .map(([id]) => id);
+}
+
+/** What the UI shows: no deleted or provisional items; open ones in `itemOrder` order, checked ones below. */
 export function listView(state: ListState): ListView {
   if (state.dropped) return { title: state.title, dropped: true, items: [] };
-  const visible = Object.entries(state.items)
-    .filter(([, i]) => !i.deleted && i.created !== null)
-    .sort(([, a], [, b]) => Number(a.checked) - Number(b.checked) || compareStamp(a.created!, b.created!));
+  const visible = visibleEntries(state).sort(
+    (a, b) => Number(a[1].checked) - Number(b[1].checked) || compareOrder(a, b),
+  );
   return {
     title: state.title,
     dropped: false,

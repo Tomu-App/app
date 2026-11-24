@@ -40,6 +40,7 @@ export {
   emptyListState,
   applyListOp,
   listView,
+  itemOrder,
   type ListState,
   type ItemState,
   type ListView,
