@@ -29,9 +29,11 @@ test("newDocRecord sets defaults and an empty state matching the kind", () => {
     lastSeq: 0,
     labels: [],
     folder: null,
+    rank: 0,
     kind: "list",
     state: emptyListState(),
   });
+  expect(newDocRecord(D, K, "own", "list", -4).rank).toBe(-4);
   expect(newDocRecord(D, K, "link", "label")).toMatchObject({
     created: true,
     kind: "label",

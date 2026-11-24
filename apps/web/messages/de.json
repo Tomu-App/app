@@ -34,6 +34,7 @@
   "fresh_mark": "neu",
   "item_edit": "Bearbeiten",
   "item_move": "Verschieben: {text}",
+  "list_move": "Verschieben: {title}",
   "item_edit_title": "Eintrag bearbeiten",
   "item_text_field": "Eintrag",
   "item_save": "Speichern",

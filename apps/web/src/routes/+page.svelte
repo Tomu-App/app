@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { dragHandle, dragHandleZone, SOURCES, TRIGGERS, type DndEvent } from "@lukez/svelte-dnd";
+  import { flip } from "svelte/animate";
   import Board from "#lib/app/components/Board.svelte";
   import ListRow from "#lib/app/components/ListRow.svelte";
   import Logo from "#lib/app/components/Logo.svelte";
@@ -7,12 +9,63 @@
   import StatusBadge from "#lib/app/components/StatusBadge.svelte";
   import { getTomu } from "#lib/app/context.ts";
   import { groupLists } from "#lib/app/lists.ts";
+  import { FLIP_MS, reduceMotion } from "#lib/app/motion.ts";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
+  import type { ListInfo } from "#lib/tomu/index.js";
 
   const tomu = getTomu();
   let creating = $state(false);
   const groups = $derived(groupLists(tomu.lists, tomu.folders, getLocale()));
+
+  // One drag zone per group, so a list never changes its folder by dragging.
+  const keyOf = (folder: { id: string } | null): string => folder?.id ?? "none";
+  // While a group is held it shows the library's order; changes from elsewhere reach it after the drop.
+  let held = $state.raw<Record<string, ListInfo[] | null>>({});
+  const hold = (key: string, lists: ListInfo[] | null): void => {
+    held = { ...held, [key]: lists };
+  };
+
+  // Saved once per drag. Lists that went away during the drag are skipped; if saving fails the saved order shows again.
+  async function drop(key: string, e: DndEvent<ListInfo>): Promise<void> {
+    const live = new Set(tomu.lists.map((l) => l.id));
+    try {
+      await tomu.reorderLists(e.items.filter((l) => live.has(l.id)).map((l) => l.id));
+    } catch (err) {
+      console.warn("could not save the list order", err);
+    } finally {
+      hold(key, null);
+    }
+  }
+
+  // The held list lifts off the sheet. `scale`, not `transform`: the library moves the element with `transform`.
+  const lift = (el?: HTMLElement): void => {
+    if (!el) return;
+    el.style.boxShadow = "var(--lift)";
+    el.style.background = "var(--sheet)";
+    el.style.scale = "1.02";
+  };
+
+  const zone = (key: string, shown: () => ListInfo[]) =>
+    dragHandleZone<ListInfo>(() => ({
+      items: shown(),
+      type: key,
+      flipDurationMs: reduceMotion() ? 0 : FLIP_MS,
+      // The library's hold time for touch: a swipe that starts on the grip still scrolls.
+      delayTouchStart: true,
+      // The default outline is not part of the sheet; the lifted list shows the drag.
+      dropTargetStyle: {},
+      transformDraggedElement: lift,
+      onconsider: (e) => {
+        hold(key, [...e.items]);
+        // A keyboard drag moves the list on every arrow key and ends here.
+        if (e.info.trigger === TRIGGERS.DRAG_STOPPED) void drop(key, e);
+      },
+      onfinalize: (e) => {
+        hold(key, [...e.items]);
+        if (e.info.source === SOURCES.POINTER) void drop(key, e);
+      },
+    }));
 </script>
 
 <Board>
@@ -74,10 +127,20 @@
   {#if groups.length === 0}
     <p class="empty">{m.overview_empty()}</p>
   {:else}
-    {#each groups as group (group.folder?.id ?? "")}
+    {#each groups as group (keyOf(group.folder))}
+      {@const key = keyOf(group.folder)}
       <section>
         {#if group.folder}<h2>{group.folder.name}</h2>{/if}
-        {#each group.lists as list (list.id)}<ListRow {list} />{/each}
+        <ul
+          aria-label={group.folder?.name ?? m.overview_title()}
+          {@attach zone(key, () => held[key] ?? group.lists)}
+        >
+          {#each held[key] ?? group.lists as list (list.id)}
+            <li aria-label={list.title} animate:flip={{ duration: reduceMotion() ? 0 : FLIP_MS }}>
+              <ListRow {list} handle={dragHandle} />
+            </li>
+          {/each}
+        </ul>
       </section>
     {/each}
   {/if}
@@ -102,6 +165,11 @@
     margin: 2rem 0;
     font-size: 1.5rem;
     line-height: 1.3;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
   h2 {
     margin: 1.5rem 0 0;

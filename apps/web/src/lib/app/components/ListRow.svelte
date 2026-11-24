@@ -1,11 +1,19 @@
 <script lang="ts">
+  import type { Attachment } from "svelte/attachments";
   import { getTomu } from "#lib/app/context.ts";
   import { openCount } from "#lib/app/lists.ts";
   import { m } from "#lib/paraglide/messages.js";
   import type { ListInfo } from "#lib/tomu/index.js";
   import LabelTag from "./LabelTag.svelte";
 
-  let { list }: { list: ListInfo } = $props();
+  let {
+    list,
+    handle,
+  }: {
+    list: ListInfo;
+    /** Marks the grip that drags the row; only it starts a drag, so a tap or a swipe on the row never does. */
+    handle: Attachment<HTMLElement>;
+  } = $props();
 
   const tomu = getTomu();
   const view = $derived(tomu.list(list.id));
@@ -31,23 +39,58 @@
   {/if}
 {/snippet}
 
-{#if view}
-  <a class="row" href={`/list/${list.id}`}>{@render body()}</a>
-{:else}
-  <div class="row">{@render body()}</div>
-{/if}
+<div class="row">
+  {#if view}
+    <a class="main" href={`/list/${list.id}`}>{@render body()}</a>
+  {:else}
+    <div class="main">{@render body()}</div>
+  {/if}
+  <!-- Not a <button>: the library ignores its drag keys on native buttons. It keeps role and tab stop up to date. -->
+  <div
+    class="grip"
+    role="button"
+    tabindex="0"
+    aria-label={m.list_move({ title: list.title })}
+    {@attach handle}
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <circle cx="9" cy="6" r="1.75" />
+      <circle cx="15" cy="6" r="1.75" />
+      <circle cx="9" cy="12" r="1.75" />
+      <circle cx="15" cy="12" r="1.75" />
+      <circle cx="9" cy="18" r="1.75" />
+      <circle cx="15" cy="18" r="1.75" />
+    </svg>
+  </div>
+</div>
 
 <style>
   .row {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--perf);
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    min-width: 0;
     min-height: 4.5rem;
     padding: 0.5rem 0;
-    border-bottom: 2px solid var(--perf);
     color: inherit;
     text-decoration: none;
+  }
+  .grip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--tap);
+    height: var(--tap);
+    border-radius: var(--radius);
+    color: var(--ink-soft);
   }
   .text {
     display: flex;

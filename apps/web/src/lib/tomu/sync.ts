@@ -310,7 +310,18 @@ export class SyncEngine {
     this.emitStatus();
   }
 
-  /** Updates local fields (origin, labels, folder) of docs; server-driven state stays as it is. */
+  /** A rank above every record, so a list that just arrived sits at the top of the overview (0 without records). */
+  topRank(): number {
+    let min = 0;
+    let any = false;
+    for (const r of this.docs.values()) {
+      if (!any || r.rank < min) min = r.rank;
+      any = true;
+    }
+    return any ? min - 1 : 0;
+  }
+
+  /** Updates local fields (origin, labels, folder, rank) of docs; server-driven state stays as it is. */
   async updateDocs(recs: DocRecord[], extra?: Change): Promise<void> {
     const live: DocRecord[] = [];
     for (const r of recs) {
@@ -319,6 +330,7 @@ export class SyncEngine {
       rec.origin = r.origin;
       rec.labels = [...r.labels];
       rec.folder = r.folder;
+      rec.rank = r.rank;
       live.push(rec);
     }
     await this.opts.store.commit(mergeChange({ putDocs: live.map((r) => structuredClone(r)) }, extra));
@@ -519,7 +531,7 @@ export class SyncEngine {
     const { add, remove } = reconcile(this.docs.values(), this.tombstones);
     const putDocs: DocRecord[] = [];
     for (const a of add) {
-      const rec = newDocRecord(a.id, a.key, "label", null);
+      const rec = newDocRecord(a.id, a.key, "label", null, this.topRank());
       this.docs.set(a.id, rec);
       this.catchingUp.add(a.id);
       putDocs.push(structuredClone(rec));

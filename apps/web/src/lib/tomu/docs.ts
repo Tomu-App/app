@@ -21,6 +21,7 @@ export function newDocRecord(
   key: string,
   origin: Origin,
   kind: "list" | "label" | null,
+  rank = 0,
 ): DocRecord {
   const base = {
     id,
@@ -32,6 +33,7 @@ export function newDocRecord(
     lastSeq: 0,
     labels: [],
     folder: null,
+    rank,
   };
   if (kind === "list") return { ...base, kind, state: emptyListState() };
   if (kind === "label") return { ...base, kind, state: emptyLabelState() };

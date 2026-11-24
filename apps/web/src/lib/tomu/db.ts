@@ -1,6 +1,6 @@
 import { newClientId } from "@tomu/shared";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import { rebuildLists, STATE_VERSION } from "./migrate.ts";
+import { rankLists, rebuildLists, STATE_VERSION } from "./migrate.ts";
 import type { Change, DocRecord, Folder, LocalLabel, OutboxEntry, Settings, Snapshot } from "./types.ts";
 
 export const DB_NAME = "tomu";
@@ -61,7 +61,7 @@ export class LocalStore {
 
   async load(): Promise<Snapshot> {
     const tx = this.db.transaction([...STORES], "readonly");
-    const [docs, outbox, tombstones, labels, folders, settings] = await Promise.all([
+    const [stored, outbox, tombstones, labels, folders, settings] = await Promise.all([
       tx.objectStore("docs").getAll(),
       tx.objectStore("outbox").getAll(),
       tx.objectStore("tombstones").getAllKeys(),
@@ -75,6 +75,11 @@ export class LocalStore {
     const onboarded = settings.onboarded ?? settings.displayName !== "";
     // Store the derived value so a later name change cannot flip it.
     if (settings.onboarded === undefined) await this.commit({ settings: { onboarded } });
+    // Records from before the overview order lack `rank`: number them once, whatever the state version says.
+    const ranked = rankLists(stored);
+    if (ranked.length > 0) await this.commit({ putDocs: ranked });
+    const rankedById = new Map(ranked.map((d) => [d.id, d]));
+    const docs = stored.map((d) => rankedById.get(d.id) ?? d);
     const snapshot: Snapshot = {
       docs,
       outbox,

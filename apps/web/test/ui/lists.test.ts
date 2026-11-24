@@ -23,7 +23,7 @@ test("openCount counts unchecked items", () => {
   expect(openCount(null)).toBe(0);
 });
 
-test("groupLists puts lists without folder first, then folders by name", () => {
+test("groupLists puts lists without folder first, then folders by name, and keeps the input order inside a group", () => {
   const folders = [
     { id: "f1", name: "Urlaub" },
     { id: "f2", name: "Arbeit" },
@@ -32,7 +32,7 @@ test("groupLists puts lists without folder first, then folders by name", () => {
   const [b, a, c, d] = [info("B", "B"), info("A", "A"), info("C", "C", "f1"), info("D", "D", "f2")];
   const groups = groupLists([b, a, c, d], folders, "de");
   expect(groups).toEqual([
-    { folder: null, lists: [a, b] },
+    { folder: null, lists: [b, a] },
     { folder: folders[1], lists: [d] },
     { folder: folders[0], lists: [c] },
   ]);

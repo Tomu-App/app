@@ -238,7 +238,7 @@ export class Tomu {
     const ops = [this.#op({ t: "init", kind: "list" }), this.#op({ t: "title", text })];
     const links = shared.map(() => this.#op({ t: "link", list: id, key }));
     checkOps([...ops, ...links]);
-    const rec = newDocRecord(id, key, "own", "list");
+    const rec = newDocRecord(id, key, "own", "list", eng.topRank());
     rec.labels = priv;
     rec.folder = folderId;
     await eng.addDoc(rec);
@@ -501,7 +501,7 @@ export class Tomu {
     if (eng.tombstones.has(docId)) return null;
     const known = eng.docs.get(docId);
     if (!known) {
-      await eng.addDoc(newDocRecord(docId, key, "link", null));
+      await eng.addDoc(newDocRecord(docId, key, "link", null, eng.topRank()));
     } else if (known.origin === "label") {
       await eng.updateDocs([{ ...known, origin: "link" }]);
     }
@@ -547,6 +547,19 @@ export class Tomu {
       throw err;
     }
     this.#rebuild(null);
+  }
+
+  /**
+   * Saves a new overview order. `ids` is the new order of some lists (one group in the overview): they trade
+   * the rank values they hold, so lists outside `ids` keep their place. Nothing changes when an id is unknown.
+   */
+  async reorderLists(ids: string[]): Promise<void> {
+    const eng = this.#eng();
+    const recs = ids.map((id) => this.#list(id));
+    if (new Set(ids).size !== ids.length) throw new Error("duplicate list in the new order");
+    const ranks = recs.map((r) => r.rank).toSorted((a, b) => a - b);
+    if (recs.every((r, i) => r.rank === ranks[i])) return;
+    await eng.updateDocs(recs.map((r, i) => ({ ...r, rank: ranks[i]! })));
   }
 
   async setListFolder(listId: string, folderId: string | null): Promise<void> {
@@ -644,24 +657,27 @@ export class Tomu {
         else labelsOfList.set(list, [rec.id]);
       }
     }
-    const lists: ListInfo[] = [];
+    const ranked: { rank: number; info: ListInfo }[] = [];
     const views = new Map(this.#views);
     const visible = new Set<string>();
     for (const rec of eng.docs.values()) {
       if (rec.kind !== "list" || !rec.state.initialized || rec.state.dropped) continue;
       visible.add(rec.id);
-      lists.push({
-        id: rec.id,
-        title: rec.state.title,
-        labelIds: [...rec.labels.filter((l) => privIds.has(l)), ...(labelsOfList.get(rec.id) ?? [])],
-        folderId: rec.folder,
-        origin: rec.origin,
+      ranked.push({
+        rank: rec.rank,
+        info: {
+          id: rec.id,
+          title: rec.state.title,
+          labelIds: [...rec.labels.filter((l) => privIds.has(l)), ...(labelsOfList.get(rec.id) ?? [])],
+          folderId: rec.folder,
+          origin: rec.origin,
+        },
       });
       if (changed === null || changed.has(rec.id) || !views.has(rec.id))
         views.set(rec.id, listView(rec.state));
     }
     for (const id of [...views.keys()]) if (!visible.has(id)) views.delete(id);
-    this.#lists = lists;
+    this.#lists = ranked.toSorted((a, b) => a.rank - b.rank).map((r) => r.info);
     this.#labels = [
       ...this.#privLabels.map((l) => ({ id: l.id, name: l.name, shared: false, owner: null })),
       ...shared,

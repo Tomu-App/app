@@ -127,6 +127,26 @@ test("label link adds the unknown list as origin label and subscribes it from 0"
   expect(ws().sent.at(-1)).toEqual({ type: "subscribe", docs: [{ doc: L, since: 0 }] });
 });
 
+test("lists that arrive through a label get ranks above every known record, one after the other", async () => {
+  const own = { ...listDoc(D, "own"), rank: 4 };
+  const { engine, ws } = await startEngine({ docs: [labelDoc(A, [], "link", KA), own] });
+  ws().receive({
+    type: "ops",
+    doc: A,
+    ops: await encrypted(A, KA, [
+      [o1, init("label")],
+      [o2, link(L1, K1, 2)],
+      [o3, link(L2, K2, 3)],
+    ]),
+    head: 3,
+  });
+  await vi.waitFor(() => expect(engine.docs.has(L2)).toBe(true));
+  // The label record has rank 0, so the first arrival gets -1 and the next one -2.
+  const ranks = [L1, L2].map((id) => engine.docs.get(id)!.rank).sort((x, y) => x - y);
+  expect(ranks).toEqual([-2, -1]);
+  expect(engine.topRank()).toBe(-3);
+});
+
 test("reconcile waits until every label doc is caught up", async () => {
   const { engine, ws } = await startEngine({ docs: [labelDoc(A, [], "link", KA)] });
   const sentBefore = ws().sent.length;

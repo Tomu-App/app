@@ -33,6 +33,7 @@ export const listDoc = (id: string, origin: Origin = "own", key: string = TEST_K
   lastSeq: 0,
   labels: [],
   folder: null,
+  rank: 0,
   kind: "list",
   state: emptyListState(),
 });

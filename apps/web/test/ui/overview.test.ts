@@ -71,7 +71,7 @@ test("lists still loading show a calm loading row", async () => {
   // Tomu.lists only holds lists with known content, so the row is rendered for a known ListInfo directly.
   renderWithTomu(
     ListRow,
-    { list: { id, title: "Grillen", labelIds: [], folderId: null, origin: "link" } },
+    { list: { id, title: "Grillen", labelIds: [], folderId: null, origin: "link" }, handle: () => {} },
     t,
   );
   expect(screen.getByText(m.list_loading())).toBeTruthy();
@@ -94,4 +94,23 @@ test("header has icon links to share labels and to settings", async () => {
   renderWithTomu(Page, {}, t);
   expect(screen.getByRole("link", { name: m.labels_share_button() }).getAttribute("href")).toBe("/labels");
   expect(screen.getByRole("link", { name: m.settings_button() }).getAttribute("href")).toBe("/settings");
+});
+
+test("each list row has a move button and tapping the title still opens the list", async () => {
+  const t = await start();
+  const a = await t.createList("Einkauf");
+  const b = await t.createList("Grillen");
+  renderWithTomu(Page, {}, t);
+  await waitFor(() => expect(screen.getByText("Grillen")).toBeTruthy());
+  // Newest first.
+  expect(
+    screen.getAllByRole("link").filter((l) => l.getAttribute("href")?.startsWith("/list/")),
+  ).toHaveLength(2);
+  expect(screen.getByRole("button", { name: m.list_move({ title: "Einkauf" }) })).toBeTruthy();
+  expect(screen.getByRole("button", { name: m.list_move({ title: "Grillen" }) })).toBeTruthy();
+  const rows = screen.getAllByRole("link").map((l) => l.getAttribute("href"));
+  expect(rows.indexOf(`/list/${b}`)).toBeLessThan(rows.indexOf(`/list/${a}`));
+  const link = screen.getByRole("link", { name: /Einkauf/ });
+  expect(link.contains(screen.getByRole("button", { name: m.list_move({ title: "Einkauf" }) }))).toBe(false);
+  expect(link.getAttribute("href")).toBe(`/list/${a}`);
 });

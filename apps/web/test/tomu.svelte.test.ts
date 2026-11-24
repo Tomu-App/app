@@ -231,7 +231,7 @@ test("folders: create, assign, rename, delete moves lists out", async () => {
   const a = await t.createList("A", [], f);
   const b = await t.createList("B");
   expect(t.folders).toEqual([{ id: f, name: "Küche" }]);
-  expect(t.lists.map((l) => l.folderId)).toEqual([f, null]);
+  expect(t.lists.map((l) => l.folderId)).toEqual([null, f]);
   await t.setListFolder(b, f);
   expect(t.lists.map((l) => l.folderId)).toEqual([f, f]);
   await t.renameFolder(f, "Keller");
@@ -708,5 +708,94 @@ test("moveItem rejects unknown input and ignores a move to the current place", a
   await t.moveItem(id, a!, null, b!);
   expect((await outboxOf(opts.dbName!, {})).length).toBe(afterDel);
   expect(texts(t, id)).toEqual(["a", "b"]);
+  await t.stop();
+});
+
+// ---- overview order ----
+
+const titlesOf = (t: Tomu): string[] => t.lists.map((l) => l.title);
+
+/** Stored `rank` per doc id (reads the database next to the running Tomu). */
+async function storedRanks(opts: ReturnType<typeof offlineOpts>): Promise<Record<string, number>> {
+  const store = await LocalStore.open(opts.dbName!);
+  const docs = (await store.load()).docs;
+  await store.close();
+  return Object.fromEntries(docs.map((d) => [d.id, d.rank]));
+}
+
+test("new lists go first, reorderLists renumbers a group, and the next list goes above it", async () => {
+  const t = await startTomu(offlineOpts());
+  const a = await t.createList("A");
+  const b = await t.createList("B");
+  expect(titlesOf(t)).toEqual(["B", "A"]);
+  await t.reorderLists([a, b]);
+  expect(titlesOf(t)).toEqual(["A", "B"]);
+  await t.createList("C");
+  expect(titlesOf(t)).toEqual(["C", "A", "B"]);
+  await t.stop();
+});
+
+test("reorderLists reuses the rank values of its group and leaves other lists alone", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const f = await t.createFolder("Küche");
+  const a = await t.createList("A", [], f);
+  const x = await t.createList("X");
+  const b = await t.createList("B", [], f);
+  const before = await storedRanks(opts);
+  await t.reorderLists([a, b]);
+  const after = await storedRanks(opts);
+  expect(after[a]).toBe(before[b]);
+  expect(after[b]).toBe(before[a]);
+  expect(after[x]).toBe(before[x]);
+  await t.stop();
+});
+
+test("the order survives a restart", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const a = await t.createList("A");
+  const b = await t.createList("B");
+  await t.reorderLists([a, b]);
+  await t.stop();
+  const again = await startTomu(opts);
+  expect(titlesOf(again)).toEqual(["A", "B"]);
+  await again.stop();
+});
+
+test("openLink gives a new list the top rank; a list that is already known keeps its place", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const a = await t.createList("A");
+  const b = await t.createList("B");
+  const id = newDocId();
+  await t.openLink(buildLink(id, newDocKey()));
+  const ranks = await storedRanks(opts);
+  expect(ranks[id]).toBeLessThan(Math.min(ranks[a]!, ranks[b]!));
+  expect(await t.openLink(t.shareList(a))).toEqual({ id: a });
+  expect(await storedRanks(opts)).toEqual(ranks);
+  await t.stop();
+});
+
+test("setListFolder keeps the order", async () => {
+  const t = await startTomu(offlineOpts());
+  const f = await t.createFolder("Küche");
+  const a = await t.createList("A");
+  await t.createList("B");
+  await t.setListFolder(a, f);
+  await t.setListFolder(a, null);
+  expect(titlesOf(t)).toEqual(["B", "A"]);
+  await t.stop();
+});
+
+test("reorderLists rejects an unknown id and changes nothing", async () => {
+  const t = await startTomu(offlineOpts());
+  const a = await t.createList("A");
+  const b = await t.createList("B");
+  await expect(t.reorderLists([a, "unknown"])).rejects.toThrow();
+  await expect(t.reorderLists(["unknown"])).rejects.toThrow();
+  expect(titlesOf(t)).toEqual(["B", "A"]);
+  await t.reorderLists([b, a]);
+  expect(titlesOf(t)).toEqual(["B", "A"]);
   await t.stop();
 });

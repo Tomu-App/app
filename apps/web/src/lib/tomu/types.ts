@@ -18,6 +18,8 @@ export type DocBase = {
   labels: string[];
   /** Lists only. */
   folder: string | null;
+  /** Position in the overview, local only: smaller is higher up. Lists only (other records hold 0). */
+  rank: number;
 };
 
 export type DocRecord = DocBase &
