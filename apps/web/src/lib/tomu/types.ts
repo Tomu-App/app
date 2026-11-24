@@ -35,6 +35,8 @@ export type Settings = {
   largeView: boolean;
   clockLast: number;
   onboarded: boolean;
+  /** Version of the derived list state, see `STATE_VERSION`. Missing in records from before it existed. */
+  stateVersion: number;
 };
 
 export type Change = {

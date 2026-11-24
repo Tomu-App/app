@@ -519,3 +519,25 @@ test("setListLabels refuses to link or unlink at a full label before changing an
   expect(t.lists[0]!.labelIds).toEqual([A]);
   await t.stop();
 });
+
+test("after the state rebuild an offline start still shows the lists and their entries", async () => {
+  const opts = offlineOpts();
+  const t = await startTomu(opts);
+  const id = await t.createList("Einkauf");
+  await t.addItems(id, "Milch, Brot");
+  await t.stop();
+
+  const store = await LocalStore.open(opts.dbName);
+  await store.commit({ settings: { stateVersion: 0 } });
+  await store.close();
+
+  const again = await startTomu(opts);
+  expect(
+    again
+      .list(id)!
+      .items.map((i) => i.text)
+      .sort(),
+  ).toEqual(["Brot", "Milch"]);
+  expect(again.lists.map((l) => l.title)).toEqual(["Einkauf"]);
+  await again.stop();
+});

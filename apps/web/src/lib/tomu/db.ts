@@ -1,5 +1,6 @@
 import { newClientId } from "@tomu/shared";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { rebuildLists, STATE_VERSION } from "./migrate.ts";
 import type { Change, DocRecord, Folder, LocalLabel, OutboxEntry, Settings, Snapshot } from "./types.ts";
 
 export const DB_NAME = "tomu";
@@ -50,6 +51,7 @@ export class LocalStore {
         largeView: false,
         clockLast: 0,
         onboarded: false,
+        stateVersion: STATE_VERSION,
       };
       await tx.store.put(fresh, SETTINGS_KEY);
     }
@@ -73,13 +75,23 @@ export class LocalStore {
     const onboarded = settings.onboarded ?? settings.displayName !== "";
     // Store the derived value so a later name change cannot flip it.
     if (settings.onboarded === undefined) await this.commit({ settings: { onboarded } });
-    return {
+    const snapshot: Snapshot = {
       docs,
       outbox,
       tombstones: new Set(tombstones),
       labels,
       folders,
-      settings: { ...settings, onboarded },
+      settings: { ...settings, onboarded, stateVersion: settings.stateVersion ?? 0 },
+    };
+    if (snapshot.settings.stateVersion >= STATE_VERSION) return snapshot;
+    // Older clients dropped ops they could not parse but still advanced lastSeq: fetch every list op again, once.
+    const rebuilt = rebuildLists(docs);
+    await this.commit({ putDocs: rebuilt, settings: { stateVersion: STATE_VERSION } });
+    const byId = new Map(rebuilt.map((d) => [d.id, d]));
+    return {
+      ...snapshot,
+      docs: docs.map((d) => byId.get(d.id) ?? d),
+      settings: { ...snapshot.settings, stateVersion: STATE_VERSION },
     };
   }
 

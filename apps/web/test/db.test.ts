@@ -1,7 +1,8 @@
 import { CLIENT_ID_RE, emptyListState } from "@tomu/shared";
 import { expect, test } from "vitest";
 import { LocalStore } from "../src/lib/tomu/db.ts";
-import { env, freshDbName, listDoc } from "./helpers.ts";
+import { STATE_VERSION } from "../src/lib/tomu/migrate.ts";
+import { env, freshDbName, labelDoc, listDoc } from "./helpers.ts";
 
 test("first open creates settings with a client id that survives reopening", async () => {
   const name = freshDbName();
@@ -16,6 +17,7 @@ test("first open creates settings with a client id that survives reopening", asy
     largeView: false,
     clockLast: 0,
     onboarded: false,
+    stateVersion: STATE_VERSION,
   });
   expect(s2.clientId).toBe(s1.clientId);
 });
@@ -135,4 +137,34 @@ test("list state with thousands of seen ids round-trips", async () => {
   const back = (await s.load()).docs[0];
   expect(back).toEqual(doc);
   expect(Object.keys(back?.state?.seen ?? {})).toHaveLength(5000);
+});
+
+test("a record without stateVersion has its lists refetched once, the outbox stays", async () => {
+  const name = freshDbName();
+  const s = await LocalStore.open(name);
+  const list = listDoc("L");
+  list.lastSeq = 5;
+  const label = labelDoc("B", [["L", "k"]]);
+  label.lastSeq = 3;
+  await s.commit({
+    putDocs: [list, label],
+    addOutbox: [
+      { doc: "L", env: env("a") },
+      { doc: "L", env: env("b") },
+    ],
+    settings: { stateVersion: undefined },
+  });
+  const snap = await s.load();
+  expect(snap.docs.find((d) => d.id === "L")!.lastSeq).toBe(0);
+  expect(snap.docs.find((d) => d.id === "B")!.lastSeq).toBe(3);
+  expect(snap.outbox.map((o) => o.env.id)).toEqual([env("a").id, env("b").id]);
+  expect(snap.settings.stateVersion).toBe(STATE_VERSION);
+
+  // The rebuild runs once: progress made afterwards is kept.
+  await s.commit({ putDocs: [{ ...list, lastSeq: 9 }] });
+  await s.close();
+  const again = await LocalStore.open(name);
+  const second = await again.load();
+  expect(second.docs.find((d) => d.id === "L")!.lastSeq).toBe(9);
+  expect(second.settings.stateVersion).toBe(STATE_VERSION);
 });
